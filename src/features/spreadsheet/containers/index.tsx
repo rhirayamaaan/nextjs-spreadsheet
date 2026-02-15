@@ -1,12 +1,17 @@
 "use client";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type FC, useRef } from "react";
+import { useAtom } from "jotai";
+import { type FC, useCallback, useEffect, useRef } from "react";
 import { CellContainer } from "../Cell/containers";
 import { SpreadsheetPresenter } from "../components";
+import { columnWidthOverridesAtom } from "../stores/layout";
 
 export const SpreadsheetContainer: FC = () => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
+    columnWidthOverridesAtom,
+  );
 
   const rowVirtualizer = useVirtualizer({
     count: 10000,
@@ -19,9 +24,22 @@ export const SpreadsheetContainer: FC = () => {
     count: 26,
     horizontal: true,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 100,
+    estimateSize: (index) => columnWidthOverrides[index] ?? 100,
     overscan: 5,
   });
+
+  // 列幅のカスタマイズが更新されたら、Virtualizer に再計算を促す
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    columnVirtualizer.measure();
+  }, [columnWidthOverrides, columnVirtualizer]);
+
+  const handleChangeColumnWidth = useCallback(
+    (index: number, width: number) => {
+      setColumnWidthOverrides((prev) => ({ ...prev, [index]: width }));
+    },
+    [setColumnWidthOverrides],
+  );
 
   const rows = rowVirtualizer.getVirtualItems().map((item) => ({
     id: item.key,
@@ -45,6 +63,7 @@ export const SpreadsheetContainer: FC = () => {
       totalWidth={columnVirtualizer.getTotalSize()}
       totalHeight={rowVirtualizer.getTotalSize()}
       CellComponent={CellContainer}
+      onChangeColumnWidth={handleChangeColumnWidth}
     />
   );
 };
