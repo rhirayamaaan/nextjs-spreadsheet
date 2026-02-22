@@ -5,7 +5,7 @@ import { useAtom } from "jotai";
 import { type FC, useCallback, useEffect, useRef } from "react";
 import { CellContainer } from "../Cell/containers";
 import { SpreadsheetPresenter } from "../components";
-import { columnWidthOverridesAtom } from "../stores/layout";
+import { columnWidthOverridesAtom } from "../stores";
 
 export const SpreadsheetContainer: FC = () => {
   const parentRef = useRef<HTMLDivElement>(null);

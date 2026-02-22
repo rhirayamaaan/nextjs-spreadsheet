@@ -13,3 +13,7 @@ export const cellFamily = atomFamily(
   },
   (a, b) => a.row === b.row && a.col === b.col,
 );
+
+export const columnWidthOverridesAtom = atom<Record<number, number>>({});
+
+export const editingCellAtom = atom<CellId | null>(null);
