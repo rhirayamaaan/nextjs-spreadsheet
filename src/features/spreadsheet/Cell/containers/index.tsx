@@ -1,21 +1,27 @@
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { ChangeEvent, FC, KeyboardEvent } from "react";
 import { memo, useCallback, useMemo } from "react";
 import {
   activeCellAtom,
+  type ColumnId,
   cellFamily,
+  columnOrderAtom,
+  type RowId,
+  rowOrderAtom,
   selectionAtom,
   spreadsheetStatusAtom,
 } from "../../stores";
 import { Cell as CellPresenter } from "../components";
 
-type Props = {
-  row: number;
-  col: number;
+type InnerProps = Props & {
+  rowId: RowId;
+  colId: ColumnId;
 };
 
-export const CellContainer: FC<Props> = memo(({ row, col }) => {
-  const [value, setValue] = useAtom(cellFamily({ row, col }));
+const CellInner: FC<InnerProps> = memo(({ row, col, rowId, colId }) => {
+  const [value, setValue] = useAtom(
+    useMemo(() => cellFamily({ rowId, colId }), [rowId, colId]),
+  );
   const [activeCell, setEditingCell] = useAtom(activeCellAtom);
   const [spreadsheetStatus, setSpreadsheetStatus] = useAtom(
     spreadsheetStatusAtom,
@@ -88,6 +94,26 @@ export const CellContainer: FC<Props> = memo(({ row, col }) => {
       onMouseEnter={handleSelectionMove}
     />
   );
+});
+
+CellInner.displayName = "CellInner";
+
+type Props = {
+  row: number;
+  col: number;
+};
+
+export const CellContainer: FC<Props> = memo(({ row, col }) => {
+  const rowOrder = useAtomValue(rowOrderAtom);
+  const columnOrder = useAtomValue(columnOrderAtom);
+  const rowId = rowOrder[row];
+  const colId = columnOrder[col];
+
+  if (!rowId || !colId) {
+    return null;
+  }
+
+  return <CellInner rowId={rowId} colId={colId} row={row} col={col} />;
 });
 
 CellContainer.displayName = "CellContainer";

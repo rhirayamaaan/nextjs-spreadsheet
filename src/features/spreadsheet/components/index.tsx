@@ -130,7 +130,7 @@ SpreadsheetBody.displayName = "SpreadsheetBody";
 type HeaderProps = {
   columns: AxisLayout[];
   scrollLeft: number;
-  onChangeColumnWidth: (index: number, width: number) => void;
+  onChangeColumnWidth: (id: string | number | bigint, width: number) => void;
 };
 
 const SpreadsheetHeader: FC<HeaderProps> = ({
@@ -139,18 +139,18 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
   onChangeColumnWidth,
 }) => {
   const [resizing, setResizing] = useState<{
-    index: number;
+    id: string | number | bigint;
     startX: number;
     startWidth: number;
   } | null>(null);
   const [currentX, setCurrentX] = useState(0);
   const handleMouseDown = useCallback(
-    (index: number, width: number) => (event: React.MouseEvent) => {
+    (id: string | number | bigint, width: number) => (event: React.MouseEvent) => {
       event.stopPropagation();
       const startX = event.pageX;
       const startWidth = width;
 
-      setResizing({ index, startX, startWidth });
+      setResizing({ id, startX, startWidth });
       setCurrentX(startX);
 
       const onMouseMove = (e: MouseEvent) => {
@@ -162,7 +162,7 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
         const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
         const finalX = Math.max(minX, e.pageX);
         const diff = finalX - startX;
-        onChangeColumnWidth(index, startWidth + diff);
+        onChangeColumnWidth(id, startWidth + diff);
         setResizing(null);
 
         window.removeEventListener("mousemove", onMouseMove);
@@ -218,7 +218,7 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
             >
               {col.index + 1}
               <hr
-                onMouseDown={handleMouseDown(col.index, col.size)}
+                onMouseDown={handleMouseDown(col.id, col.size)}
                 aria-orientation="vertical"
                 aria-valuemin={MIN_COLUMN_WIDTH}
                 aria-valuenow={col.size}
@@ -234,7 +234,7 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
                   border: "none",
                   margin: 0,
                   backgroundColor:
-                    resizing?.index === col.index ? "#2196f3" : "transparent",
+                    resizing?.id === col.id ? "#2196f3" : "transparent",
                 }}
               />
             </div>
