@@ -63,7 +63,6 @@ export const CellContainer: FC<Props> = memo(({ row, col }) => {
     }
 
     return () => {
-      console.log("handleSelectionMove");
       setSelection((prev) => {
         if (!prev) {
           throw new Error("Invalid selection state");
