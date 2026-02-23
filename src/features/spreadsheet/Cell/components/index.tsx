@@ -1,18 +1,40 @@
-import type { ChangeEvent, FC } from "react";
+import type { ChangeEvent, FC, FocusEvent, KeyboardEvent } from "react";
 
 type Props = {
   value: string;
+  isEditing: boolean;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onDoubleClick: () => void;
+  onBlur: (event: FocusEvent<HTMLInputElement>) => void;
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onMouseDown: () => void;
+  onMouseEnter?: () => void;
 };
 
-export const Cell: FC<Props> = ({ value, onChange }) => {
+export const Cell: FC<Props> = ({
+  value,
+  isEditing,
+  onChange,
+  onDoubleClick,
+  onBlur,
+  onKeyDown,
+  onMouseDown,
+  onMouseEnter,
+}) => {
   return (
-    <div
+    <button
+      type="button"
+      onDoubleClick={onDoubleClick}
+      onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
       style={{
         width: "100%",
         height: "100%",
-        borderRight: "1px solid #e0e0e0",
-        borderBottom: "1px solid #e0e0e0",
+        border: "none",
+        appearance: "none",
+        borderWidth: "0 1px 1px 0",
+        borderStyle: "solid",
+        borderColor: "#e0e0e0",
         backgroundColor: "#ffffff",
         display: "flex",
         alignItems: "center",
@@ -21,21 +43,30 @@ export const Cell: FC<Props> = ({ value, onChange }) => {
         fontSize: "0.875rem",
         overflow: "hidden",
         whiteSpace: "nowrap",
+        cursor: "cell",
       }}
     >
-      <input
-        value={value}
-        onChange={onChange}
-        style={{
-          width: "100%",
-          height: "100%",
-          border: "none",
-          outline: "none",
-          background: "transparent",
-          fontFamily: "inherit",
-          fontSize: "inherit",
-        }}
-      />
-    </div>
+      {isEditing ? (
+        <input
+          // biome-ignore lint/a11y/noAutofocus: 編集モード切替時に即座に入力可能にするため
+          autoFocus
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            fontFamily: "inherit",
+            fontSize: "inherit",
+          }}
+        />
+      ) : (
+        <span style={{ userSelect: "none" }}>{value}</span>
+      )}
+    </button>
   );
 };

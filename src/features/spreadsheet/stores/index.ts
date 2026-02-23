@@ -6,6 +6,13 @@ export type CellId = {
   col: number;
 };
 
+export type Selection = {
+  start: CellId;
+  end: CellId;
+} | null;
+
+export type SpreadsheetStatus = "idle" | "selecting" | "editing";
+
 export const cellFamily = atomFamily(
   (params: CellId) => {
     const initialValue = `${params.col + 1}:${params.row + 1}`;
@@ -16,4 +23,8 @@ export const cellFamily = atomFamily(
 
 export const columnWidthOverridesAtom = atom<Record<number, number>>({});
 
-export const editingCellAtom = atom<CellId | null>(null);
+export const spreadsheetStatusAtom = atom<SpreadsheetStatus>("idle");
+
+export const activeCellAtom = atom<CellId | null>(null);
+
+export const selectionAtom = atom<Selection>(null);

@@ -1,17 +1,23 @@
 "use client";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { type FC, useCallback, useEffect, useRef } from "react";
 import { CellContainer } from "../Cell/containers";
 import { SpreadsheetPresenter } from "../components";
-import { columnWidthOverridesAtom } from "../stores";
+import {
+  columnWidthOverridesAtom,
+  selectionAtom,
+  spreadsheetStatusAtom,
+} from "../stores";
 
 export const SpreadsheetContainer: FC = () => {
   const parentRef = useRef<HTMLDivElement>(null);
   const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
     columnWidthOverridesAtom,
   );
+  const [status, setStatus] = useAtom(spreadsheetStatusAtom);
+  const selection = useAtomValue(selectionAtom);
 
   const rowVirtualizer = useVirtualizer({
     count: 10000,
@@ -41,6 +47,22 @@ export const SpreadsheetContainer: FC = () => {
     [setColumnWidthOverrides],
   );
 
+  const handleStopSelection = useCallback(() => {
+    setStatus((prev) => (prev === "selecting" ? "idle" : prev));
+  }, [setStatus]);
+
+  useEffect(() => {
+    if (status !== "selecting") {
+      return;
+    }
+
+    window.addEventListener("mouseup", handleStopSelection);
+
+    return () => {
+      window.removeEventListener("mouseup", handleStopSelection);
+    };
+  }, [status, handleStopSelection]);
+
   const rows = rowVirtualizer.getVirtualItems().map((item) => ({
     id: item.key,
     index: item.index,
@@ -62,6 +84,7 @@ export const SpreadsheetContainer: FC = () => {
       columns={columns}
       totalWidth={columnVirtualizer.getTotalSize()}
       totalHeight={rowVirtualizer.getTotalSize()}
+      selection={selection}
       CellComponent={CellContainer}
       onChangeColumnWidth={handleChangeColumnWidth}
     />
