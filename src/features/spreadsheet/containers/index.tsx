@@ -31,7 +31,7 @@ export const SpreadsheetContainer: FC = () => {
   // Note: 初期値生成。APIに置き換え予定
   useEffect(() => {
     if (rowOrder.length === 0 && columnOrder.length === 0) {
-      const rows = Array.from({ length: 1000 }, () => createRowId());
+      const rows = Array.from({ length: 10000 }, () => createRowId());
       const cols = Array.from({ length: 26 }, () => createColumnId());
       const initialValues: Record<string, string> = {};
 
