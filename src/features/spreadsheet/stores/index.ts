@@ -22,13 +22,37 @@ export type Selection = {
 } | null;
 
 export type SpreadsheetStatus = "idle" | "selecting" | "editing";
+export type RowStatus = "added" | "edited" | "deleted" | "none";
 
 export const rowOrderAtom = atom<RowId[]>([]);
+export const rowStatusesAtom = atom<Record<RowId, RowStatus>>({});
 export const columnOrderAtom = atom<ColumnId[]>([]);
 
 export const initialCellValuesAtom = atom<
   Record<`${RowId}-${ColumnId}`, string>
 >({});
+
+export const resetRowStatusesAtom = atom(null, (_, set) => {
+  set(rowStatusesAtom, {});
+});
+
+export const addRowAtom = atom(null, (get, set) => {
+  const newId = createRowId();
+  const rowOrder = get(rowOrderAtom);
+  set(rowOrderAtom, [...rowOrder, newId]);
+  set(rowStatusesAtom, {
+    ...get(rowStatusesAtom),
+    [newId]: "added",
+  });
+});
+
+export const deleteRowAtom = atom(null, (get, set, rowId: RowId) => {
+  const rowStatuses = get(rowStatusesAtom);
+  set(rowStatusesAtom, {
+    ...rowStatuses,
+    [rowId]: "deleted",
+  });
+});
 
 export const cellFamily = atomFamily(
   (address: CellAddress) => {
@@ -43,8 +67,22 @@ export const cellFamily = atomFamily(
         }
         return get(initialCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
       },
-      (_, set, newValue: string) => {
+      (get, set, newValue: string) => {
+        const currentValue =
+          get(localValueAtom) ?? get(initialCellValuesAtom)[key] ?? "";
+        if (currentValue === newValue) return;
+
         set(localValueAtom, newValue); // 編集時はローカルのみ更新
+
+        const rowStatuses = get(rowStatusesAtom);
+        const currentStatus = rowStatuses[address.rowId] ?? "none";
+
+        if (currentStatus === "none") {
+          set(rowStatusesAtom, {
+            ...rowStatuses,
+            [address.rowId]: "edited",
+          });
+        }
       },
     );
   },

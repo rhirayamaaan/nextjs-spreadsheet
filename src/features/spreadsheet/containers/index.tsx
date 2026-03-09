@@ -13,6 +13,7 @@ import {
   createRowId,
   initialCellValuesAtom,
   rowOrderAtom,
+  rowStatusesAtom,
   selectionAtom,
   spreadsheetStatusAtom,
 } from "../stores";
@@ -23,6 +24,7 @@ export const SpreadsheetContainer: FC = () => {
     columnWidthOverridesAtom,
   );
   const [rowOrder, setRowOrder] = useAtom(rowOrderAtom);
+  const rowStatuses = useAtomValue(rowStatusesAtom);
   const [columnOrder, setColumnOrder] = useAtom(columnOrderAtom);
   const setInitialValues = useSetAtom(initialCellValuesAtom);
   const [status, setStatus] = useAtom(spreadsheetStatusAtom);
@@ -117,6 +119,7 @@ export const SpreadsheetContainer: FC = () => {
       ref={parentRef}
       rows={rows}
       columns={columns}
+      rowStatuses={rowStatuses}
       totalWidth={columnVirtualizer.getTotalSize()}
       totalHeight={rowVirtualizer.getTotalSize()}
       selection={selection}

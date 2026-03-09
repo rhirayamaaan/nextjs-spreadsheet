@@ -6,7 +6,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import type { Selection } from "../stores";
+import type { RowId, RowStatus, Selection } from "../stores";
 
 export type AxisLayout = {
   id: string | number | bigint;
@@ -16,6 +16,28 @@ export type AxisLayout = {
 };
 
 const MIN_COLUMN_WIDTH = 30;
+const STATUS_COL_WIDTH = 50;
+
+const STATUS_LABEL = {
+  added: "追加",
+  edited: "変更",
+  deleted: "削除",
+  none: "",
+} as const satisfies Record<RowStatus, string>;
+
+const StatusIndicator: FC<{ status?: RowStatus }> = ({ status = "none" }) => {
+  if (status === "none") return null;
+
+  return (
+    <div
+      style={{
+        fontSize: "0.75rem",
+      }}
+    >
+      {STATUS_LABEL[status]}
+    </div>
+  );
+};
 
 const SelectionOverlay = ({
   selection,
@@ -57,9 +79,152 @@ const SelectionOverlay = ({
   );
 };
 
+const SpreadsheetCells = memo(
+  ({
+    row,
+    columns,
+    CellComponent,
+  }: {
+    row: AxisLayout;
+    columns: AxisLayout[];
+    CellComponent: ComponentType<{ row: number; col: number }>;
+  }) => {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: `${row.size}px`,
+          transform: `translateY(${row.start}px)`,
+          willChange: "transform",
+        }}
+      >
+        {columns.map((col) => (
+          <div
+            key={`${row.id}-${col.id}`}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: `${col.size}px`,
+              height: `${row.size}px`,
+              transform: `translateX(${col.start}px)`,
+            }}
+          >
+            <CellComponent row={row.index} col={col.index} />
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+
+SpreadsheetCells.displayName = "SpreadsheetCells";
+
+const SpreadsheetRows = memo(
+  ({
+    rows,
+    columns,
+    totalWidth,
+    totalHeight,
+    selection,
+    CellComponent,
+  }: {
+    rows: AxisLayout[];
+    columns: AxisLayout[];
+    totalWidth: number;
+    totalHeight: number;
+    selection: Selection;
+    CellComponent: ComponentType<{ row: number; col: number }>;
+  }) => {
+    return (
+      <div
+        style={{
+          width: `${totalWidth}px`,
+          height: `${totalHeight}px`,
+          position: "relative",
+        }}
+      >
+        <SelectionOverlay selection={selection} rows={rows} columns={columns} />
+        {rows.map((row) => (
+          <SpreadsheetCells
+            key={row.id}
+            row={row}
+            columns={columns}
+            CellComponent={CellComponent}
+          />
+        ))}
+      </div>
+    );
+  },
+);
+
+SpreadsheetRows.displayName = "SpreadsheetRows";
+
+const StatusColumn = memo(
+  ({
+    rows,
+    rowStatuses,
+    scrollTop,
+  }: {
+    rows: AxisLayout[];
+    rowStatuses: Record<RowId, RowStatus>;
+    scrollTop: number;
+  }) => {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: `${STATUS_COL_WIDTH}px`,
+          height: "100%",
+          overflow: "hidden",
+          backgroundColor: "#f5f5f5",
+          borderRight: "1px solid #e0e0e0",
+          flexShrink: 0,
+          zIndex: 20,
+        }}
+      >
+        <div
+          style={{
+            transform: `translateY(-${scrollTop}px)`,
+            willChange: "transform",
+          }}
+        >
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${STATUS_COL_WIDTH}px`,
+                height: `${row.size}px`,
+                backgroundColor: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderBottom: "1px solid #e0e0e0",
+                boxSizing: "border-box",
+                transform: `translateY(${row.start}px)`,
+              }}
+            >
+              <StatusIndicator status={rowStatuses[row.id as RowId]} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  },
+);
+
+StatusColumn.displayName = "StatusColumn";
+
 type BodyProps = {
   rows: AxisLayout[];
   columns: AxisLayout[];
+  rowStatuses: Record<RowId, RowStatus>;
   totalWidth: number;
   totalHeight: number;
   selection: Selection;
@@ -72,6 +237,7 @@ const SpreadsheetBody = memo(
   ({
     rows,
     columns,
+    rowStatuses,
     totalWidth,
     totalHeight,
     selection,
@@ -79,46 +245,40 @@ const SpreadsheetBody = memo(
     ref,
     CellComponent,
   }: BodyProps) => {
+    const [scrollTop, setScrollTop] = useState(0);
+
+    const handleScroll = useCallback(
+      (event: React.UIEvent<HTMLDivElement>) => {
+        setScrollTop(event.currentTarget.scrollTop);
+        onScroll(event);
+      },
+      [onScroll],
+    );
+
     return (
-      <div
-        ref={ref}
-        onScroll={onScroll}
-        style={{
-          flex: 1,
-          overflow: "auto",
-          position: "relative",
-        }}
-      >
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <StatusColumn
+          rows={rows}
+          rowStatuses={rowStatuses}
+          scrollTop={scrollTop}
+        />
         <div
+          ref={ref}
+          onScroll={handleScroll}
           style={{
-            width: `${totalWidth}px`,
-            height: `${totalHeight}px`,
+            flex: 1,
+            overflow: "auto",
             position: "relative",
           }}
-          onScroll={onScroll}
         >
-          <SelectionOverlay
-            selection={selection}
+          <SpreadsheetRows
             rows={rows}
             columns={columns}
+            totalWidth={totalWidth}
+            totalHeight={totalHeight}
+            selection={selection}
+            CellComponent={CellComponent}
           />
-          {rows.flatMap((row) =>
-            columns.map((col) => (
-              <div
-                key={`${row.id}-${col.id}`}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: `${col.size}px`,
-                  height: `${row.size}px`,
-                  transform: `translateX(${col.start}px) translateY(${row.start}px)`,
-                }}
-              >
-                <CellComponent row={row.index} col={col.index} />
-              </div>
-            )),
-          )}
         </div>
       </div>
     );
@@ -145,55 +305,69 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
   } | null>(null);
   const [currentX, setCurrentX] = useState(0);
   const handleMouseDown = useCallback(
-    (id: string | number | bigint, width: number) => (event: React.MouseEvent) => {
-      event.stopPropagation();
-      const startX = event.pageX;
-      const startWidth = width;
+    (id: string | number | bigint, width: number) =>
+      (event: React.MouseEvent) => {
+        event.stopPropagation();
+        const startX = event.pageX;
+        const startWidth = width;
 
-      setResizing({ id, startX, startWidth });
-      setCurrentX(startX);
+        setResizing({ id, startX, startWidth });
+        setCurrentX(startX);
 
-      const onMouseMove = (e: MouseEvent) => {
-        const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
-        setCurrentX(Math.max(minX, e.pageX));
-      };
+        const onMouseMove = (e: MouseEvent) => {
+          const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
+          setCurrentX(Math.max(minX, e.pageX));
+        };
 
-      const onMouseUp = (e: MouseEvent) => {
-        const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
-        const finalX = Math.max(minX, e.pageX);
-        const diff = finalX - startX;
-        onChangeColumnWidth(id, startWidth + diff);
-        setResizing(null);
+        const onMouseUp = (e: MouseEvent) => {
+          const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
+          const finalX = Math.max(minX, e.pageX);
+          const diff = finalX - startX;
+          onChangeColumnWidth(id, startWidth + diff);
+          setResizing(null);
 
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+        };
 
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-    },
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+      },
     [onChangeColumnWidth],
   );
   return (
     <>
       <div
         style={{
-          height: "30px",
           width: "100%",
+          height: "30px",
           position: "relative",
           backgroundColor: "#f5f5f5",
           borderBottom: "1px solid #e0e0e0",
           overflow: "hidden",
+          display: "flex",
         }}
       >
         <div
           style={{
+            position: "relative",
+            width: `${STATUS_COL_WIDTH}px`,
+            height: "inherit",
+            backgroundColor: "inherit",
+            borderRight: "1px solid #e0e0e0",
+            zIndex: "20",
+          }}
+        />
+        <div
+          style={{
             position: "absolute",
             top: 0,
-            left: 0,
+            left: STATUS_COL_WIDTH,
             transform: `translateX(-${scrollLeft}px)`,
             height: "inherit",
             willChange: "transform",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           {columns.map((col) => (
@@ -265,6 +439,7 @@ type Props = Omit<BodyProps, "onScroll"> &
 export const SpreadsheetPresenter: FC<Props> = ({
   rows,
   columns,
+  rowStatuses,
   totalWidth,
   totalHeight,
   selection,
@@ -297,6 +472,7 @@ export const SpreadsheetPresenter: FC<Props> = ({
       <SpreadsheetBody
         rows={rows}
         columns={columns}
+        rowStatuses={rowStatuses}
         totalWidth={totalWidth}
         totalHeight={totalHeight}
         selection={selection}
