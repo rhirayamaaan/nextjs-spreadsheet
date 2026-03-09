@@ -16,6 +16,7 @@ import {
   rowStatusesAtom,
   selectionAtom,
   spreadsheetStatusAtom,
+  pasteRowsAtom,
 } from "../stores";
 
 export const SpreadsheetContainer: FC = () => {
@@ -29,6 +30,7 @@ export const SpreadsheetContainer: FC = () => {
   const setInitialValues = useSetAtom(initialCellValuesAtom);
   const [status, setStatus] = useAtom(spreadsheetStatusAtom);
   const selection = useAtomValue(selectionAtom);
+  const pasteRows = useSetAtom(pasteRowsAtom);
 
   // Note: 初期値生成。APIに置き換え予定
   useEffect(() => {
@@ -54,6 +56,36 @@ export const SpreadsheetContainer: FC = () => {
     setRowOrder,
     setColumnOrder,
   ]);
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const activeElement = document.activeElement;
+      const isInput =
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          (activeElement as HTMLElement).isContentEditable);
+
+      if (isInput) return;
+
+      const text = event.clipboardData?.getData("text/plain");
+      if (!text) return;
+
+      const rowsData = text
+        .split(/\r?\n/)
+        .filter((row) => row.length > 0)
+        .map((row) => row.split("\t"));
+
+      if (rowsData.length > 0) {
+        pasteRows(rowsData);
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, [pasteRows]);
 
   const rowVirtualizer = useVirtualizer({
     count: rowOrder.length,

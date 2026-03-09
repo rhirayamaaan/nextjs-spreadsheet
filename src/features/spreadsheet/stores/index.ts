@@ -54,6 +54,35 @@ export const deleteRowAtom = atom(null, (get, set, rowId: RowId) => {
   });
 });
 
+export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
+  const columnOrder = get(columnOrderAtom);
+  const currentRowOrder = get(rowOrderAtom);
+  const currentInitialValues = get(initialCellValuesAtom);
+  const currentRowStatuses = get(rowStatusesAtom);
+
+  const newRowIds: RowId[] = [];
+  const newCellValues: Record<string, string> = {};
+  const newRowStatuses: Record<RowId, RowStatus> = { ...currentRowStatuses };
+
+  for (const rowData of rowsData) {
+    const rowId = createRowId();
+    newRowIds.push(rowId);
+    newRowStatuses[rowId] = "added";
+
+    columnOrder.forEach((colId, index) => {
+      const value = rowData[index] ?? "";
+      newCellValues[`${rowId}-${colId}`] = value;
+    });
+  }
+
+  set(rowOrderAtom, [...currentRowOrder, ...newRowIds]);
+  set(initialCellValuesAtom, {
+    ...currentInitialValues,
+    ...newCellValues,
+  });
+  set(rowStatusesAtom, newRowStatuses);
+});
+
 export const cellFamily = atomFamily(
   (address: CellAddress) => {
     const key = `${address.rowId}-${address.colId}` as const;
