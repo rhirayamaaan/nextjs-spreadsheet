@@ -23,6 +23,7 @@ export type Selection = {
 
 export type SpreadsheetStatus = "idle" | "selecting" | "editing";
 export type RowStatus = "added" | "edited" | "deleted" | "none";
+export type InsertPosition = "above" | "below";
 
 export const rowOrderAtom = atom<RowId[]>([]);
 export const rowStatusesAtom = atom<Record<RowId, RowStatus>>({});
@@ -45,6 +46,30 @@ export const addRowAtom = atom(null, (get, set) => {
     [newId]: "added",
   });
 });
+
+export const insertRowAtom = atom(
+  null,
+  (
+    get,
+    set,
+    { rowId, position }: { rowId: RowId; position: InsertPosition },
+  ) => {
+    const rowOrder = get(rowOrderAtom);
+    const rowIndex = rowOrder.indexOf(rowId);
+    if (rowIndex === -1) return;
+
+    const newId = createRowId();
+    const newRowOrder = [...rowOrder];
+    const insertIndex = position === "above" ? rowIndex : rowIndex + 1;
+    newRowOrder.splice(insertIndex, 0, newId);
+
+    set(rowOrderAtom, newRowOrder);
+    set(rowStatusesAtom, {
+      ...get(rowStatusesAtom),
+      [newId]: "added",
+    });
+  },
+);
 
 export const deleteRowAtom = atom(null, (get, set, rowId: RowId) => {
   const rowStatuses = get(rowStatusesAtom);

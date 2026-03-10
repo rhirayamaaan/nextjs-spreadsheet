@@ -6,7 +6,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import type { RowId, RowStatus, Selection } from "../stores";
+import type { RowId, Selection } from "../stores";
 
 export type AxisLayout = {
   id: string | number | bigint;
@@ -17,27 +17,6 @@ export type AxisLayout = {
 
 const MIN_COLUMN_WIDTH = 30;
 const STATUS_COL_WIDTH = 50;
-
-const STATUS_LABEL = {
-  added: "追加",
-  edited: "変更",
-  deleted: "削除",
-  none: "",
-} as const satisfies Record<RowStatus, string>;
-
-const StatusIndicator: FC<{ status?: RowStatus }> = ({ status = "none" }) => {
-  if (status === "none") return null;
-
-  return (
-    <div
-      style={{
-        fontSize: "0.75rem",
-      }}
-    >
-      {STATUS_LABEL[status]}
-    </div>
-  );
-};
 
 const SelectionOverlay = ({
   selection,
@@ -166,12 +145,12 @@ SpreadsheetRows.displayName = "SpreadsheetRows";
 const StatusColumn = memo(
   ({
     rows,
-    rowStatuses,
     scrollTop,
+    RowStatusComponent,
   }: {
     rows: AxisLayout[];
-    rowStatuses: Record<RowId, RowStatus>;
     scrollTop: number;
+    RowStatusComponent: ComponentType<{ rowId: RowId }>;
   }) => {
     return (
       <div
@@ -202,15 +181,12 @@ const StatusColumn = memo(
                 width: `${STATUS_COL_WIDTH}px`,
                 height: `${row.size}px`,
                 backgroundColor: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 borderBottom: "1px solid #e0e0e0",
                 boxSizing: "border-box",
                 transform: `translateY(${row.start}px)`,
               }}
             >
-              <StatusIndicator status={rowStatuses[row.id as RowId]} />
+              <RowStatusComponent rowId={row.id as RowId} />
             </div>
           ))}
         </div>
@@ -224,26 +200,26 @@ StatusColumn.displayName = "StatusColumn";
 type BodyProps = {
   rows: AxisLayout[];
   columns: AxisLayout[];
-  rowStatuses: Record<RowId, RowStatus>;
   totalWidth: number;
   totalHeight: number;
   selection: Selection;
   onScroll: (event: React.UIEvent<HTMLDivElement>) => void;
   ref: Ref<HTMLDivElement>;
   CellComponent: ComponentType<{ row: number; col: number }>;
+  RowStatusComponent: ComponentType<{ rowId: RowId }>;
 };
 
 const SpreadsheetBody = memo(
   ({
     rows,
     columns,
-    rowStatuses,
     totalWidth,
     totalHeight,
     selection,
     onScroll,
     ref,
     CellComponent,
+    RowStatusComponent,
   }: BodyProps) => {
     const [scrollTop, setScrollTop] = useState(0);
 
@@ -259,8 +235,8 @@ const SpreadsheetBody = memo(
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <StatusColumn
           rows={rows}
-          rowStatuses={rowStatuses}
           scrollTop={scrollTop}
+          RowStatusComponent={RowStatusComponent}
         />
         <div
           ref={ref}
@@ -439,11 +415,11 @@ type Props = Omit<BodyProps, "onScroll"> &
 export const SpreadsheetPresenter: FC<Props> = ({
   rows,
   columns,
-  rowStatuses,
   totalWidth,
   totalHeight,
   selection,
   CellComponent,
+  RowStatusComponent,
   onChangeColumnWidth,
   ref,
 }) => {
@@ -472,13 +448,13 @@ export const SpreadsheetPresenter: FC<Props> = ({
       <SpreadsheetBody
         rows={rows}
         columns={columns}
-        rowStatuses={rowStatuses}
         totalWidth={totalWidth}
         totalHeight={totalHeight}
         selection={selection}
         onScroll={handleScroll}
         ref={ref}
         CellComponent={CellComponent}
+        RowStatusComponent={RowStatusComponent}
       />
     </div>
   );

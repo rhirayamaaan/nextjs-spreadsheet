@@ -5,6 +5,7 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type FC, useCallback, useEffect, useRef } from "react";
 import { CellContainer } from "../Cell/containers";
 import { SpreadsheetPresenter } from "../components";
+import { RowStatusContainer } from "../RowStatus/containers";
 import {
   type ColumnId,
   columnOrderAtom,
@@ -12,11 +13,11 @@ import {
   createColumnId,
   createRowId,
   initialCellValuesAtom,
+  pasteRowsAtom,
   rowOrderAtom,
   rowStatusesAtom,
   selectionAtom,
   spreadsheetStatusAtom,
-  pasteRowsAtom,
 } from "../stores";
 
 export const SpreadsheetContainer: FC = () => {
@@ -25,7 +26,6 @@ export const SpreadsheetContainer: FC = () => {
     columnWidthOverridesAtom,
   );
   const [rowOrder, setRowOrder] = useAtom(rowOrderAtom);
-  const rowStatuses = useAtomValue(rowStatusesAtom);
   const [columnOrder, setColumnOrder] = useAtom(columnOrderAtom);
   const setInitialValues = useSetAtom(initialCellValuesAtom);
   const [status, setStatus] = useAtom(spreadsheetStatusAtom);
@@ -151,11 +151,11 @@ export const SpreadsheetContainer: FC = () => {
       ref={parentRef}
       rows={rows}
       columns={columns}
-      rowStatuses={rowStatuses}
       totalWidth={columnVirtualizer.getTotalSize()}
       totalHeight={rowVirtualizer.getTotalSize()}
       selection={selection}
       CellComponent={CellContainer}
+      RowStatusComponent={RowStatusContainer}
       onChangeColumnWidth={handleChangeColumnWidth}
     />
   );
