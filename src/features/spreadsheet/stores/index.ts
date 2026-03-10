@@ -84,6 +84,14 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
   const currentRowOrder = get(rowOrderAtom);
   const currentInitialValues = get(initialCellValuesAtom);
   const currentRowStatuses = get(rowStatusesAtom);
+  const selection = get(selectionAtom);
+
+  const startCol = selection
+    ? Math.min(selection.start.col, selection.end.col)
+    : 0;
+  const insertIndex = selection
+    ? Math.max(selection.start.row, selection.end.row) + 1
+    : currentRowOrder.length;
 
   const newRowIds: RowId[] = [];
   const newCellValues: Record<string, string> = {};
@@ -94,13 +102,19 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
     newRowIds.push(rowId);
     newRowStatuses[rowId] = "added";
 
-    columnOrder.forEach((colId, index) => {
-      const value = rowData[index] ?? "";
-      newCellValues[`${rowId}-${colId}`] = value;
+    rowData.forEach((value, index) => {
+      const colIndex = startCol + index;
+      if (colIndex < columnOrder.length) {
+        const colId = columnOrder[colIndex];
+        newCellValues[`${rowId}-${colId}`] = value;
+      }
     });
   }
 
-  set(rowOrderAtom, [...currentRowOrder, ...newRowIds]);
+  const newRowOrder = [...currentRowOrder];
+  newRowOrder.splice(insertIndex, 0, ...newRowIds);
+
+  set(rowOrderAtom, newRowOrder);
   set(initialCellValuesAtom, {
     ...currentInitialValues,
     ...newCellValues,
