@@ -9,7 +9,7 @@ import {
   type RowId,
   rowOrderAtom,
   selectionAtom,
-  spreadsheetStatusAtom,
+  workbookStatusAtom,
 } from "../../stores";
 import { Cell as CellPresenter } from "../components";
 
@@ -23,9 +23,7 @@ const CellInner: FC<InnerProps> = memo(({ row, col, rowId, colId }) => {
     useMemo(() => cellFamily({ rowId, colId }), [rowId, colId]),
   );
   const [activeCell, setEditingCell] = useAtom(activeCellAtom);
-  const [spreadsheetStatus, setSpreadsheetStatus] = useAtom(
-    spreadsheetStatusAtom,
-  );
+  const [workbookStatus, setWorkbookStatus] = useAtom(workbookStatusAtom);
   const setSelection = useSetAtom(selectionAtom);
 
   const isEditing = activeCell?.row === row && activeCell?.col === col;
@@ -55,16 +53,16 @@ const CellInner: FC<InnerProps> = memo(({ row, col, rowId, colId }) => {
   );
 
   const handleSelectionStart = useCallback(() => {
-    setSpreadsheetStatus("selecting");
+    setWorkbookStatus("selecting");
 
     setSelection({
       start: { row, col },
       end: { row, col },
     });
-  }, [setSelection, setSpreadsheetStatus, row, col]);
+  }, [setSelection, setWorkbookStatus, row, col]);
 
   const handleSelectionMove = useMemo(() => {
-    if (spreadsheetStatus !== "selecting") {
+    if (workbookStatus !== "selecting") {
       return undefined;
     }
 
@@ -80,7 +78,7 @@ const CellInner: FC<InnerProps> = memo(({ row, col, rowId, colId }) => {
         };
       });
     };
-  }, [setSelection, row, col, spreadsheetStatus]);
+  }, [setSelection, row, col, workbookStatus]);
 
   return (
     <CellPresenter

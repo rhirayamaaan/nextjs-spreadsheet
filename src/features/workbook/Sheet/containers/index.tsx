@@ -3,59 +3,42 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type FC, useCallback, useEffect, useRef } from "react";
-import { CellContainer } from "../Cell/containers";
-import { SpreadsheetPresenter } from "../components";
-import { RowStatusContainer } from "../RowStatus/containers";
+import { CellContainer } from "../../Cell/containers";
+import { RowStatusContainer } from "../../RowStatus/containers";
 import {
+  activeSheetIdAtom,
   type ColumnId,
   columnOrderAtom,
   columnWidthOverridesAtom,
-  createColumnId,
-  createRowId,
-  initialCellValuesAtom,
   pasteRowsAtom,
   type RowId,
   rowOrderAtom,
   selectionAtom,
-  spreadsheetStatusAtom,
-} from "../stores";
+  workbookStatusAtom,
+} from "../../stores";
+import { SheetPresenter } from "../components";
 
-export const SpreadsheetContainer: FC = () => {
+export const SheetContainer: FC = () => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const activeSheetId = useAtomValue(activeSheetIdAtom);
   const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
     columnWidthOverridesAtom,
   );
-  const [rowOrder, setRowOrder] = useAtom(rowOrderAtom);
-  const [columnOrder, setColumnOrder] = useAtom(columnOrderAtom);
-  const setInitialValues = useSetAtom(initialCellValuesAtom);
-  const [status, setStatus] = useAtom(spreadsheetStatusAtom);
+
+  const [rowOrder] = useAtom(rowOrderAtom);
+  const [columnOrder] = useAtom(columnOrderAtom);
+  const [status, setStatus] = useAtom(workbookStatusAtom);
   const selection = useAtomValue(selectionAtom);
   const pasteRows = useSetAtom(pasteRowsAtom);
 
-  // Note: 初期値生成。APIに置き換え予定
+  // Tab switch scroll reset
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeSheetId is used as a trigger for resetting scroll on tab switch
   useEffect(() => {
-    if (rowOrder.length === 0 && columnOrder.length === 0) {
-      const rows = Array.from({ length: 10000 }, () => createRowId());
-      const cols = Array.from({ length: 26 }, () => createColumnId());
-      const initialValues: Record<string, string> = {};
-
-      for (let r = 0; r < rows.length; r++) {
-        for (let c = 0; c < cols.length; c++) {
-          initialValues[`${rows[r]}-${cols[c]}`] = `${c + 1}:${r + 1}`;
-        }
-      }
-
-      setInitialValues(initialValues);
-      setRowOrder(rows);
-      setColumnOrder(cols);
+    if (parentRef.current) {
+      parentRef.current.scrollTop = 0;
+      parentRef.current.scrollLeft = 0;
     }
-  }, [
-    rowOrder.length,
-    columnOrder.length,
-    setInitialValues,
-    setRowOrder,
-    setColumnOrder,
-  ]);
+  }, [activeSheetId]);
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
@@ -155,7 +138,7 @@ export const SpreadsheetContainer: FC = () => {
   }));
 
   return (
-    <SpreadsheetPresenter
+    <SheetPresenter
       ref={parentRef}
       rows={rows}
       columns={columns}

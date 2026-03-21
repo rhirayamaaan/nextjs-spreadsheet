@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { SpreadsheetContainerDynamic } from "@/features/spreadsheet/containers/dynamic";
+import { WorkbookContainerDynamic } from "@/features/workbook/containers/dynamic";
 
 export default function Home() {
   return (
     <Suspense fallback={<div>Loading Spreadsheet...</div>}>
-      <SpreadsheetContainerDynamic />
+      <WorkbookContainerDynamic />
     </Suspense>
   );
 }

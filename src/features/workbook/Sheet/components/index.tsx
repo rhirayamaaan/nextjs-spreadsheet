@@ -6,7 +6,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import type { Selection } from "../stores";
+import type { Selection } from "../../stores";
 
 export type AxisLayout = {
   id: string | number | bigint;
@@ -63,7 +63,7 @@ const SelectionOverlay = ({
   );
 };
 
-const SpreadsheetCells = memo(
+const SheetCells = memo(
   ({ row, columns }: { row: RowLayout; columns: AxisLayout[] }) => {
     return (
       <div
@@ -97,9 +97,9 @@ const SpreadsheetCells = memo(
   },
 );
 
-SpreadsheetCells.displayName = "SpreadsheetCells";
+SheetCells.displayName = "SheetCells";
 
-const SpreadsheetRows = memo(
+const SheetRows = memo(
   ({
     rows,
     columns,
@@ -123,14 +123,14 @@ const SpreadsheetRows = memo(
       >
         <SelectionOverlay selection={selection} rows={rows} columns={columns} />
         {rows.map((row) => (
-          <SpreadsheetCells key={row.id} row={row} columns={columns} />
+          <SheetCells key={row.id} row={row} columns={columns} />
         ))}
       </div>
     );
   },
 );
 
-SpreadsheetRows.displayName = "SpreadsheetRows";
+SheetRows.displayName = "SheetRows";
 
 const StatusColumn = memo(
   ({ rows, scrollTop }: { rows: RowLayout[]; scrollTop: number }) => {
@@ -189,7 +189,7 @@ type BodyProps = {
   ref: Ref<HTMLDivElement>;
 };
 
-const SpreadsheetBody = memo(
+const SheetBody = memo(
   ({
     rows,
     columns,
@@ -221,7 +221,7 @@ const SpreadsheetBody = memo(
             position: "relative",
           }}
         >
-          <SpreadsheetRows
+          <SheetRows
             rows={rows}
             columns={columns}
             totalWidth={totalWidth}
@@ -234,7 +234,7 @@ const SpreadsheetBody = memo(
   },
 );
 
-SpreadsheetBody.displayName = "SpreadsheetBody";
+SheetBody.displayName = "SheetBody";
 
 type HeaderProps = {
   columns: AxisLayout[];
@@ -242,7 +242,7 @@ type HeaderProps = {
   onChangeColumnWidth: (id: string | number | bigint, width: number) => void;
 };
 
-const SpreadsheetHeader: FC<HeaderProps> = ({
+const SheetHeader: FC<HeaderProps> = ({
   columns,
   scrollLeft,
   onChangeColumnWidth,
@@ -385,7 +385,7 @@ const SpreadsheetHeader: FC<HeaderProps> = ({
 type Props = Omit<BodyProps, "onScroll"> &
   Pick<HeaderProps, "onChangeColumnWidth">;
 
-export const SpreadsheetPresenter: FC<Props> = ({
+export const SheetPresenter: FC<Props> = ({
   rows,
   columns,
   totalWidth,
@@ -404,19 +404,19 @@ export const SpreadsheetPresenter: FC<Props> = ({
       style={{
         display: "flex",
         flexDirection: "column",
-        width: "100vw",
-        height: "100vh",
+        width: "100%",
+        height: "100%",
         backgroundColor: "#ffffff",
         overflow: "hidden",
         position: "relative",
       }}
     >
-      <SpreadsheetHeader
+      <SheetHeader
         columns={columns}
         scrollLeft={scrollLeft}
         onChangeColumnWidth={onChangeColumnWidth}
       />
-      <SpreadsheetBody
+      <SheetBody
         rows={rows}
         columns={columns}
         totalWidth={totalWidth}

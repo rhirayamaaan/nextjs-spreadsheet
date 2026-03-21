@@ -21,20 +21,85 @@ export type Selection = {
   end: { row: number; col: number };
 } | null;
 
-export type SpreadsheetStatus = "idle" | "selecting" | "editing";
+export type WorkbookStatus = "idle" | "selecting" | "editing";
 export type RowStatus = "added" | "edited" | "deleted" | "none";
 export type InsertPosition = "above" | "below";
 
-export const rowOrderAtom = atom<RowId[]>([]);
+// --- Tab (Sheet) Management ---
+export const activeSheetIdAtom = atom<string | null>(null);
+
+// --- Diff State (Global across all tabs because of UUIDs) ---
+export const cellEditsAtom = atom<Record<string, string>>({});
 export const rowStatusesAtom = atom<Record<RowId, RowStatus>>({});
-export const columnOrderAtom = atom<ColumnId[]>([]);
+export const columnWidthOverridesAtom = atom<Record<ColumnId, number>>({});
 
-export const initialCellValuesAtom = atom<
-  Record<`${RowId}-${ColumnId}`, string>
->({});
+export const modifiedRowOrdersAtom = atom<Record<string, RowId[]>>({});
+export const modifiedColumnOrdersAtom = atom<Record<string, ColumnId[]>>({});
 
-export const resetRowStatusesAtom = atom(null, (_, set) => {
-  set(rowStatusesAtom, {});
+// --- Base State (Populated from API for the active tab) ---
+export const baseCellValuesAtom = atom<Record<string, string>>({});
+export const baseRowOrderAtom = atom<RowId[]>([]);
+export const baseColumnOrderAtom = atom<ColumnId[]>([]);
+
+// --- Derived State for Active Tab ---
+export const rowOrderAtom = atom(
+  (get) => {
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return get(baseRowOrderAtom);
+
+    const modifiedOrders = get(modifiedRowOrdersAtom);
+    return modifiedOrders[activeSheetId] ?? get(baseRowOrderAtom);
+  },
+  (get, set, newOrder: RowId[] | ((prev: RowId[]) => RowId[])) => {
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return;
+
+    const currentOrder = get(rowOrderAtom);
+    const nextOrder =
+      typeof newOrder === "function" ? newOrder(currentOrder) : newOrder;
+
+    set(modifiedRowOrdersAtom, {
+      ...get(modifiedRowOrdersAtom),
+      [activeSheetId]: nextOrder,
+    });
+  },
+);
+
+export const columnOrderAtom = atom(
+  (get) => {
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return get(baseColumnOrderAtom);
+
+    const modifiedOrders = get(modifiedColumnOrdersAtom);
+    return modifiedOrders[activeSheetId] ?? get(baseColumnOrderAtom);
+  },
+  (get, set, newOrder: ColumnId[] | ((prev: ColumnId[]) => ColumnId[])) => {
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return;
+
+    const currentOrder = get(columnOrderAtom);
+    const nextOrder =
+      typeof newOrder === "function" ? newOrder(currentOrder) : newOrder;
+
+    set(modifiedColumnOrdersAtom, {
+      ...get(modifiedColumnOrdersAtom),
+      [activeSheetId]: nextOrder,
+    });
+  },
+);
+
+// --- Actions ---
+
+export const resetRowStatusesAtom = atom(null, (get, set) => {
+  const activeRowIds = get(rowOrderAtom);
+  const currentStatuses = { ...get(rowStatusesAtom) };
+
+  // Only reset statuses for rows in the active sheet
+  activeRowIds.forEach((id) => {
+    delete currentStatuses[id];
+  });
+
+  set(rowStatusesAtom, currentStatuses);
 });
 
 export const addRowAtom = atom(null, (get, set) => {
@@ -82,7 +147,7 @@ export const deleteRowAtom = atom(null, (get, set, rowId: RowId) => {
 export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
   const columnOrder = get(columnOrderAtom);
   const currentRowOrder = get(rowOrderAtom);
-  const currentInitialValues = get(initialCellValuesAtom);
+  const currentEdits = get(cellEditsAtom);
   const currentRowStatuses = get(rowStatusesAtom);
   const selection = get(selectionAtom);
 
@@ -94,7 +159,7 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
     : currentRowOrder.length;
 
   const newRowIds: RowId[] = [];
-  const newCellValues: Record<string, string> = {};
+  const newCellEdits: Record<string, string> = {};
   const newRowStatuses: Record<RowId, RowStatus> = { ...currentRowStatuses };
 
   for (const rowData of rowsData) {
@@ -106,7 +171,7 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
       const colIndex = startCol + index;
       if (colIndex < columnOrder.length) {
         const colId = columnOrder[colIndex];
-        newCellValues[`${rowId}-${colId}`] = value;
+        newCellEdits[`${rowId}-${colId}`] = value;
       }
     });
   }
@@ -115,9 +180,9 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
   newRowOrder.splice(insertIndex, 0, ...newRowIds);
 
   set(rowOrderAtom, newRowOrder);
-  set(initialCellValuesAtom, {
-    ...currentInitialValues,
-    ...newCellValues,
+  set(cellEditsAtom, {
+    ...currentEdits,
+    ...newCellEdits,
   });
   set(rowStatusesAtom, newRowStatuses);
 });
@@ -125,22 +190,23 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
 export const cellFamily = atomFamily(
   (address: CellAddress) => {
     const key = `${address.rowId}-${address.colId}` as const;
-    const localValueAtom = atom<string | undefined>(undefined);
 
     return atom(
       (get) => {
-        const localValue = get(localValueAtom);
-        if (localValue !== undefined) {
-          return localValue;
+        const edits = get(cellEditsAtom);
+        if (key in edits) {
+          return edits[key];
         }
-        return get(initialCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
+        return get(baseCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
       },
       (get, set, newValue: string) => {
-        const currentValue =
-          get(localValueAtom) ?? get(initialCellValuesAtom)[key] ?? "";
+        const baseValue = get(baseCellValuesAtom)[key] ?? "";
+        const edits = get(cellEditsAtom);
+        const currentValue = edits[key] ?? baseValue;
+
         if (currentValue === newValue) return;
 
-        set(localValueAtom, newValue); // 編集時はローカルのみ更新
+        set(cellEditsAtom, { ...edits, [key]: newValue }); // 編集時はDiffのみ更新
 
         const rowStatuses = get(rowStatusesAtom);
         const currentStatus = rowStatuses[address.rowId] ?? "none";
@@ -157,9 +223,7 @@ export const cellFamily = atomFamily(
   (a, b) => a.rowId === b.rowId && a.colId === b.colId,
 );
 
-export const columnWidthOverridesAtom = atom<Record<ColumnId, number>>({});
-
-export const spreadsheetStatusAtom = atom<SpreadsheetStatus>("idle");
+export const workbookStatusAtom = atom<WorkbookStatus>("idle");
 
 export const activeCellAtom = atom<{ row: number; col: number } | null>(null);
 
