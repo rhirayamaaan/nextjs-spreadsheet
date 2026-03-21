@@ -14,8 +14,8 @@ import {
   createRowId,
   initialCellValuesAtom,
   pasteRowsAtom,
+  type RowId,
   rowOrderAtom,
-  rowStatusesAtom,
   selectionAtom,
   spreadsheetStatusAtom,
 } from "../stores";
@@ -132,18 +132,26 @@ export const SpreadsheetContainer: FC = () => {
     };
   }, [status, handleStopSelection]);
 
-  const rows = rowVirtualizer.getVirtualItems().map((item) => ({
+  const columns = columnVirtualizer.getVirtualItems().map((item) => ({
     id: item.key,
     index: item.index,
     start: item.start,
     size: item.size,
   }));
 
-  const columns = columnVirtualizer.getVirtualItems().map((item) => ({
+  const rows = rowVirtualizer.getVirtualItems().map((item) => ({
     id: item.key,
     index: item.index,
     start: item.start,
     size: item.size,
+    status: <RowStatusContainer key={item.key} rowId={item.key as RowId} />,
+    cells: columns.map((col) => (
+      <CellContainer
+        key={`${item.key}-${col.id}`}
+        row={item.index}
+        col={col.index}
+      />
+    )),
   }));
 
   return (
@@ -154,8 +162,6 @@ export const SpreadsheetContainer: FC = () => {
       totalWidth={columnVirtualizer.getTotalSize()}
       totalHeight={rowVirtualizer.getTotalSize()}
       selection={selection}
-      CellComponent={CellContainer}
-      RowStatusComponent={RowStatusContainer}
       onChangeColumnWidth={handleChangeColumnWidth}
     />
   );

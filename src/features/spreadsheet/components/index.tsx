@@ -1,18 +1,23 @@
 import {
-  type ComponentType,
   type FC,
   memo,
+  type ReactNode,
   type Ref,
   useCallback,
   useState,
 } from "react";
-import type { RowId, Selection } from "../stores";
+import type { Selection } from "../stores";
 
 export type AxisLayout = {
   id: string | number | bigint;
   index: number;
   start: number;
   size: number;
+};
+
+export type RowLayout = AxisLayout & {
+  status: ReactNode;
+  cells: ReactNode[];
 };
 
 const MIN_COLUMN_WIDTH = 30;
@@ -59,15 +64,7 @@ const SelectionOverlay = ({
 };
 
 const SpreadsheetCells = memo(
-  ({
-    row,
-    columns,
-    CellComponent,
-  }: {
-    row: AxisLayout;
-    columns: AxisLayout[];
-    CellComponent: ComponentType<{ row: number; col: number }>;
-  }) => {
+  ({ row, columns }: { row: RowLayout; columns: AxisLayout[] }) => {
     return (
       <div
         style={{
@@ -80,7 +77,7 @@ const SpreadsheetCells = memo(
           willChange: "transform",
         }}
       >
-        {columns.map((col) => (
+        {columns.map((col, index) => (
           <div
             key={`${row.id}-${col.id}`}
             style={{
@@ -92,7 +89,7 @@ const SpreadsheetCells = memo(
               transform: `translateX(${col.start}px)`,
             }}
           >
-            <CellComponent row={row.index} col={col.index} />
+            {row.cells[index]}
           </div>
         ))}
       </div>
@@ -109,14 +106,12 @@ const SpreadsheetRows = memo(
     totalWidth,
     totalHeight,
     selection,
-    CellComponent,
   }: {
-    rows: AxisLayout[];
+    rows: RowLayout[];
     columns: AxisLayout[];
     totalWidth: number;
     totalHeight: number;
     selection: Selection;
-    CellComponent: ComponentType<{ row: number; col: number }>;
   }) => {
     return (
       <div
@@ -128,12 +123,7 @@ const SpreadsheetRows = memo(
       >
         <SelectionOverlay selection={selection} rows={rows} columns={columns} />
         {rows.map((row) => (
-          <SpreadsheetCells
-            key={row.id}
-            row={row}
-            columns={columns}
-            CellComponent={CellComponent}
-          />
+          <SpreadsheetCells key={row.id} row={row} columns={columns} />
         ))}
       </div>
     );
@@ -143,15 +133,7 @@ const SpreadsheetRows = memo(
 SpreadsheetRows.displayName = "SpreadsheetRows";
 
 const StatusColumn = memo(
-  ({
-    rows,
-    scrollTop,
-    RowStatusComponent,
-  }: {
-    rows: AxisLayout[];
-    scrollTop: number;
-    RowStatusComponent: ComponentType<{ rowId: RowId }>;
-  }) => {
+  ({ rows, scrollTop }: { rows: RowLayout[]; scrollTop: number }) => {
     return (
       <div
         style={{
@@ -186,7 +168,7 @@ const StatusColumn = memo(
                 transform: `translateY(${row.start}px)`,
               }}
             >
-              <RowStatusComponent rowId={row.id as RowId} />
+              {row.status}
             </div>
           ))}
         </div>
@@ -198,15 +180,13 @@ const StatusColumn = memo(
 StatusColumn.displayName = "StatusColumn";
 
 type BodyProps = {
-  rows: AxisLayout[];
+  rows: RowLayout[];
   columns: AxisLayout[];
   totalWidth: number;
   totalHeight: number;
   selection: Selection;
   onScroll: (event: React.UIEvent<HTMLDivElement>) => void;
   ref: Ref<HTMLDivElement>;
-  CellComponent: ComponentType<{ row: number; col: number }>;
-  RowStatusComponent: ComponentType<{ rowId: RowId }>;
 };
 
 const SpreadsheetBody = memo(
@@ -218,8 +198,6 @@ const SpreadsheetBody = memo(
     selection,
     onScroll,
     ref,
-    CellComponent,
-    RowStatusComponent,
   }: BodyProps) => {
     const [scrollTop, setScrollTop] = useState(0);
 
@@ -233,11 +211,7 @@ const SpreadsheetBody = memo(
 
     return (
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <StatusColumn
-          rows={rows}
-          scrollTop={scrollTop}
-          RowStatusComponent={RowStatusComponent}
-        />
+        <StatusColumn rows={rows} scrollTop={scrollTop} />
         <div
           ref={ref}
           onScroll={handleScroll}
@@ -253,7 +227,6 @@ const SpreadsheetBody = memo(
             totalWidth={totalWidth}
             totalHeight={totalHeight}
             selection={selection}
-            CellComponent={CellComponent}
           />
         </div>
       </div>
@@ -418,8 +391,6 @@ export const SpreadsheetPresenter: FC<Props> = ({
   totalWidth,
   totalHeight,
   selection,
-  CellComponent,
-  RowStatusComponent,
   onChangeColumnWidth,
   ref,
 }) => {
@@ -453,8 +424,6 @@ export const SpreadsheetPresenter: FC<Props> = ({
         selection={selection}
         onScroll={handleScroll}
         ref={ref}
-        CellComponent={CellComponent}
-        RowStatusComponent={RowStatusComponent}
       />
     </div>
   );
