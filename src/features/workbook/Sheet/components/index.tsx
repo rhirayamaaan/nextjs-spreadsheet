@@ -22,6 +22,7 @@ export type RowLayout = AxisLayout & {
 
 const MIN_COLUMN_WIDTH = 30;
 const STATUS_COL_WIDTH = 50;
+const HEADER_HEIGHT = 30;
 
 const SelectionOverlay = ({
   selection,
@@ -133,26 +134,20 @@ const SheetRows = memo(
 SheetRows.displayName = "SheetRows";
 
 const StatusColumn = memo(
-  ({ rows, scrollTop }: { rows: RowLayout[]; scrollTop: number }) => {
+  ({ rows, totalHeight }: { rows: RowLayout[]; totalHeight: number }) => {
     return (
       <div
         style={{
-          position: "relative",
+          position: "sticky",
+          left: 0,
           width: `${STATUS_COL_WIDTH}px`,
-          height: "100%",
-          overflow: "hidden",
-          backgroundColor: "#f5f5f5",
-          borderRight: "1px solid #e0e0e0",
+          height: `${totalHeight}px`,
           flexShrink: 0,
-          zIndex: 20,
+          zIndex: 10,
+          boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            transform: `translateY(-${scrollTop}px)`,
-            willChange: "transform",
-          }}
-        >
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
           {rows.map((row) => (
             <div
               key={row.id}
@@ -163,6 +158,7 @@ const StatusColumn = memo(
                 width: `${STATUS_COL_WIDTH}px`,
                 height: `${row.size}px`,
                 backgroundColor: "#ffffff",
+                borderRight: "1px solid #e0e0e0",
                 borderBottom: "1px solid #e0e0e0",
                 boxSizing: "border-box",
                 transform: `translateY(${row.start}px)`,
@@ -185,40 +181,21 @@ type BodyProps = {
   totalWidth: number;
   totalHeight: number;
   selection: Selection;
-  onScroll: (event: React.UIEvent<HTMLDivElement>) => void;
-  ref: Ref<HTMLDivElement>;
 };
 
 const SheetBody = memo(
-  ({
-    rows,
-    columns,
-    totalWidth,
-    totalHeight,
-    selection,
-    onScroll,
-    ref,
-  }: BodyProps) => {
-    const [scrollTop, setScrollTop] = useState(0);
-
-    const handleScroll = useCallback(
-      (event: React.UIEvent<HTMLDivElement>) => {
-        setScrollTop(event.currentTarget.scrollTop);
-        onScroll(event);
-      },
-      [onScroll],
-    );
-
+  ({ rows, columns, totalWidth, totalHeight, selection }: BodyProps) => {
     return (
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <StatusColumn rows={rows} scrollTop={scrollTop} />
+      <>
+        <StatusColumn rows={rows} totalHeight={totalHeight} />
         <div
-          ref={ref}
-          onScroll={handleScroll}
           style={{
-            flex: 1,
-            overflow: "auto",
-            position: "relative",
+            position: "absolute",
+            top: HEADER_HEIGHT,
+            left: STATUS_COL_WIDTH,
+            width: `${totalWidth}px`,
+            height: `${totalHeight}px`,
+            zIndex: 1,
           }}
         >
           <SheetRows
@@ -229,7 +206,7 @@ const SheetBody = memo(
             selection={selection}
           />
         </div>
-      </div>
+      </>
     );
   },
 );
@@ -238,13 +215,13 @@ SheetBody.displayName = "SheetBody";
 
 type HeaderProps = {
   columns: AxisLayout[];
-  scrollLeft: number;
+  totalWidth: number;
   onChangeColumnWidth: (id: string | number | bigint, width: number) => void;
 };
 
 const SheetHeader: FC<HeaderProps> = ({
   columns,
-  scrollLeft,
+  totalWidth,
   onChangeColumnWidth,
 }) => {
   const [resizing, setResizing] = useState<{
@@ -253,6 +230,7 @@ const SheetHeader: FC<HeaderProps> = ({
     startWidth: number;
   } | null>(null);
   const [currentX, setCurrentX] = useState(0);
+
   const handleMouseDown = useCallback(
     (id: string | number | bigint, width: number) =>
       (event: React.MouseEvent) => {
@@ -284,39 +262,43 @@ const SheetHeader: FC<HeaderProps> = ({
       },
     [onChangeColumnWidth],
   );
+
   return (
     <>
       <div
         style={{
-          width: "100%",
-          height: "30px",
-          position: "relative",
-          backgroundColor: "#f5f5f5",
-          borderBottom: "1px solid #e0e0e0",
-          overflow: "hidden",
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
           display: "flex",
+          width: "100%",
+          height: `${HEADER_HEIGHT}px`,
+          backgroundColor: "#f5f5f5",
         }}
       >
         <div
           style={{
-            position: "relative",
+            position: "sticky",
+            left: 0,
+            zIndex: 30,
             width: `${STATUS_COL_WIDTH}px`,
-            height: "inherit",
+            height: "100%",
             backgroundColor: "inherit",
             borderRight: "1px solid #e0e0e0",
-            zIndex: "20",
+            borderBottom: "1px solid #e0e0e0",
+            boxSizing: "border-box",
+            flexShrink: 0,
           }}
         />
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            left: STATUS_COL_WIDTH,
-            transform: `translateX(-${scrollLeft}px)`,
-            height: "inherit",
-            willChange: "transform",
+            position: "relative",
+            width: `${totalWidth}px`,
+            height: "100%",
             display: "flex",
             alignItems: "center",
+            borderBottom: "1px solid #e0e0e0",
+            boxSizing: "border-box",
           }}
         >
           {columns.map((col) => (
@@ -327,7 +309,7 @@ const SheetHeader: FC<HeaderProps> = ({
                 top: 0,
                 left: 0,
                 width: `${col.size}px`,
-                height: "inherit",
+                height: "100%",
                 transform: `translateX(${col.start}px)`,
                 display: "flex",
                 alignItems: "center",
@@ -382,8 +364,8 @@ const SheetHeader: FC<HeaderProps> = ({
   );
 };
 
-type Props = Omit<BodyProps, "onScroll"> &
-  Pick<HeaderProps, "onChangeColumnWidth">;
+type Props = BodyProps &
+  Pick<HeaderProps, "onChangeColumnWidth"> & { ref: Ref<HTMLDivElement> };
 
 export const SheetPresenter: FC<Props> = ({
   rows,
@@ -394,37 +376,37 @@ export const SheetPresenter: FC<Props> = ({
   onChangeColumnWidth,
   ref,
 }) => {
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
-    setScrollLeft(event.currentTarget.scrollLeft);
-  }, []);
-
   return (
     <div
+      ref={ref}
       style={{
-        display: "flex",
-        flexDirection: "column",
         width: "100%",
         height: "100%",
         backgroundColor: "#ffffff",
-        overflow: "hidden",
+        overflow: "auto",
         position: "relative",
       }}
     >
-      <SheetHeader
-        columns={columns}
-        scrollLeft={scrollLeft}
-        onChangeColumnWidth={onChangeColumnWidth}
-      />
-      <SheetBody
-        rows={rows}
-        columns={columns}
-        totalWidth={totalWidth}
-        totalHeight={totalHeight}
-        selection={selection}
-        onScroll={handleScroll}
-        ref={ref}
-      />
+      <div
+        style={{
+          width: `${totalWidth + STATUS_COL_WIDTH}px`,
+          height: `${totalHeight + HEADER_HEIGHT}px`,
+          position: "relative",
+        }}
+      >
+        <SheetHeader
+          columns={columns}
+          totalWidth={totalWidth}
+          onChangeColumnWidth={onChangeColumnWidth}
+        />
+        <SheetBody
+          rows={rows}
+          columns={columns}
+          totalWidth={totalWidth}
+          totalHeight={totalHeight}
+          selection={selection}
+        />
+      </div>
     </div>
   );
 };
