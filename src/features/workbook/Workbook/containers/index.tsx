@@ -3,6 +3,8 @@
 import { useAtom, useSetAtom } from "jotai";
 import { type FC, useCallback, useEffect } from "react";
 import { useExportExcel } from "../../hooks/useExportExcel";
+import { useExportPdf } from "../../hooks/useExportPdf";
+import { PdfPreviewContainer } from "../../PdfPreview/containers";
 import { SheetContainer } from "../../Sheet/containers";
 import {
   activeSheetIdAtom,
@@ -13,6 +15,7 @@ import {
   createColumnId,
   createRowId,
   type RowId,
+  viewModeAtom,
 } from "../../stores";
 import { WorkbookPresenter } from "../components";
 import { SheetTabs } from "../components/SheetTabs";
@@ -45,10 +48,14 @@ const sheetDataCache: Record<
 
 export const WorkbookContainer: FC = () => {
   const { exportCurrentSheet } = useExportExcel();
+  const { previewCurrentSheetPdf, isExporting: isExportingPdf } =
+    useExportPdf();
   const [activeSheetId, setActiveSheetId] = useAtom(activeSheetIdAtom);
   const setBaseRowOrder = useSetAtom(baseRowOrderAtom);
   const setBaseColumnOrder = useSetAtom(baseColumnOrderAtom);
   const setBaseValues = useSetAtom(baseCellValuesAtom);
+
+  const [viewMode] = useAtom(viewModeAtom);
 
   const loadSheetData = useCallback(
     (sheetId: string) => {
@@ -96,12 +103,18 @@ export const WorkbookContainer: FC = () => {
 
   const activeSheet = MOCK_SHEETS.find((s) => s.id === activeSheetId);
 
+  if (viewMode === "pdf-preview") {
+    return <PdfPreviewContainer />;
+  }
+
   return (
     <WorkbookPresenter
       toolbar={
         <Toolbar
           sheetName={activeSheet?.name}
           onExport={exportCurrentSheet}
+          onPreviewPdf={previewCurrentSheetPdf}
+          isExportingPdf={isExportingPdf}
         />
       }
       tabs={

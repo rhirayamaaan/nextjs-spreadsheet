@@ -226,3 +226,8 @@ export const workbookStatusAtom = atom<WorkbookStatus>("idle");
 export const activeCellAtom = atom<{ row: number; col: number } | null>(null);
 
 export const selectionAtom = atom<Selection>(null);
+
+// --- UI State ---
+export type ViewMode = "editor" | "pdf-preview";
+export const viewModeAtom = atom<ViewMode>("editor");
+export const pdfPreviewUrlAtom = atom<string | null>(null);
