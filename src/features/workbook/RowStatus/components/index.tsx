@@ -37,18 +37,23 @@ const RowActionMenu: FC<{
   onDeleteRow: () => void;
 }> = ({ popoverId, onInsertRow, onDeleteRow }) => {
   const handleToggle = (event: React.ToggleEvent<HTMLDivElement>) => {
-    if ((event.nativeEvent as any).newState === "open") {
-      const popover = event.currentTarget;
-      const trigger = document.querySelector(`[popovertarget="${popoverId}"]`);
-
-      if (trigger && popover) {
-        const rect = trigger.getBoundingClientRect();
-        popover.style.position = "fixed";
-        popover.style.top = `${rect.bottom}px`;
-        popover.style.left = `${rect.left}px`;
-        popover.style.margin = "0";
-      }
+    const nativeEvent = event.nativeEvent;
+    if (!(nativeEvent instanceof ToggleEvent) || nativeEvent.newState !== "open") {
+      return;
     }
+
+    const popover = event.currentTarget;
+    const trigger = document.querySelector(`[popovertarget="${popoverId}"]`);
+
+    if (!trigger || !popover) {
+      return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+    popover.style.position = "fixed";
+    popover.style.top = `${rect.bottom}px`;
+    popover.style.left = `${rect.left}px`;
+    popover.style.margin = "0";
   };
 
   return (
