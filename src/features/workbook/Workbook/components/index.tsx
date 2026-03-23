@@ -1,11 +1,13 @@
 import type { FC, ReactNode } from "react";
 
 type WorkbookPresenterProps = {
+  toolbar?: ReactNode;
   tabs: ReactNode;
   sheet: ReactNode;
 };
 
 export const WorkbookPresenter: FC<WorkbookPresenterProps> = ({
+  toolbar,
   tabs,
   sheet,
 }) => {
@@ -20,6 +22,7 @@ export const WorkbookPresenter: FC<WorkbookPresenterProps> = ({
         overflow: "hidden",
       }}
     >
+      {toolbar}
       {tabs}
       <div style={{ flex: 1, overflow: "hidden" }}>{sheet}</div>
     </div>
