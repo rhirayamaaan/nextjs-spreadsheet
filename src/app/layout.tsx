@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Next.js Spreadsheet",
-  description: "A simple and powerful spreadsheet application built with Next.js",
+  description:
+    "A simple and powerful spreadsheet application built with Next.js",
 };
 
 export default function RootLayout({
