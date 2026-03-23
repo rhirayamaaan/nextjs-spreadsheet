@@ -151,9 +151,7 @@ export const pasteRowsAtom = atom(null, (get, set, rowsData: string[][]) => {
   const currentRowStatuses = get(rowStatusesAtom);
   const selection = get(selectionAtom);
 
-  const startCol = selection
-    ? Math.min(selection.start.col, selection.end.col)
-    : 0;
+  const startCol = 0;
   const insertIndex = selection
     ? Math.max(selection.start.row, selection.end.row) + 1
     : currentRowOrder.length;
