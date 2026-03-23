@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cmk && next dev",
-    "build": "cmk && next build",
+    "dev": "npm run type:gen:css && next dev",
+    "build": "npm run type:gen:css && next build",
     "start": "next start",
-    "lint": "biome check",
-    "format": "biome format --write",
-    "typecheck:css": "cmk"
+    "type:gen:css": "cmk",
+    "type:check": "tsc --noEmit",
+    "lint:check": "biome check",
+    "lint:fix": "biome check --write"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
