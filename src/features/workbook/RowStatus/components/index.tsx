@@ -38,7 +38,10 @@ const RowActionMenu: FC<{
 }> = ({ popoverId, onInsertRow, onDeleteRow }) => {
   const handleToggle = (event: React.ToggleEvent<HTMLDivElement>) => {
     const nativeEvent = event.nativeEvent;
-    if (!(nativeEvent instanceof ToggleEvent) || nativeEvent.newState !== "open") {
+    if (
+      !(nativeEvent instanceof ToggleEvent) ||
+      nativeEvent.newState !== "open"
+    ) {
       return;
     }
 
