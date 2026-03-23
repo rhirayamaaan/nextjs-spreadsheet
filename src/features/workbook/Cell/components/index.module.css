@@ -1,0 +1,29 @@
+.cell {
+  width: 100%;
+  height: 100%;
+  border-width: 0 1px 1px 0;
+  border-style: solid;
+  border-color: #e0e0e0;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: cell;
+}
+
+.cell__input {
+  width: inherit;
+  height: inherit;
+  outline: none;
+  background-color: transparent;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.cell__content {
+  user-select: none;
+}

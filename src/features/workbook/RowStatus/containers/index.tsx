@@ -7,7 +7,7 @@ import {
   type RowId,
   rowStatusesAtom,
 } from "../../stores";
-import { RowStatusPresenter } from "../components";
+import { RowStatus } from "../components";
 
 export const RowStatusContainer: FC<{ rowId: RowId }> = ({ rowId }) => {
   const rowStatuses = useAtomValue(rowStatusesAtom);
@@ -29,7 +29,7 @@ export const RowStatusContainer: FC<{ rowId: RowId }> = ({ rowId }) => {
   }, [deleteRow, rowId]);
 
   return (
-    <RowStatusPresenter
+    <RowStatus
       status={status}
       popoverId={popoverId}
       onInsertRow={handleInsertRow}

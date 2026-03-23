@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import type { Selection } from "../../stores";
+import styles from "./index.module.css";
 
 export type AxisLayout = {
   id: string | number | bigint;
@@ -49,16 +50,12 @@ const SelectionOverlay = ({
 
   return (
     <div
+      className={styles.sheet__selection}
       style={{
-        position: "absolute",
         left: startCol.start,
         top: startRow.start,
         width: endCol.start + endCol.size - startCol.start,
         height: endRow.start + endRow.size - startRow.start,
-        border: "2px solid #2196f3",
-        backgroundColor: "rgba(33, 150, 243, 0.1)",
-        pointerEvents: "none",
-        zIndex: 5,
       }}
     />
   );
@@ -68,23 +65,17 @@ const SheetCells = memo(
   ({ row, columns }: { row: RowLayout; columns: AxisLayout[] }) => {
     return (
       <div
+        className={styles.sheet__cellsLayer}
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
           height: `${row.size}px`,
           transform: `translateY(${row.start}px)`,
-          willChange: "transform",
         }}
       >
         {columns.map((col, index) => (
           <div
             key={`${row.id}-${col.id}`}
+            className={styles.sheet__cellWrapper}
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
               width: `${col.size}px`,
               height: `${row.size}px`,
               transform: `translateX(${col.start}px)`,
@@ -116,10 +107,10 @@ const SheetRows = memo(
   }) => {
     return (
       <div
+        className={styles.sheet__rowsContainer}
         style={{
           width: `${totalWidth}px`,
           height: `${totalHeight}px`,
-          position: "relative",
         }}
       >
         <SelectionOverlay selection={selection} rows={rows} columns={columns} />
@@ -137,30 +128,20 @@ const StatusColumn = memo(
   ({ rows, totalHeight }: { rows: RowLayout[]; totalHeight: number }) => {
     return (
       <div
+        className={styles.sheet__statusColumn}
         style={{
-          position: "sticky",
-          left: 0,
           width: `${STATUS_COL_WIDTH}px`,
           height: `${totalHeight}px`,
-          flexShrink: 0,
-          zIndex: 10,
-          boxSizing: "border-box",
         }}
       >
-        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <div className={styles.sheet__statusColumnInner}>
           {rows.map((row) => (
             <div
               key={row.id}
+              className={styles.sheet__statusColumnCell}
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
                 width: `${STATUS_COL_WIDTH}px`,
                 height: `${row.size}px`,
-                backgroundColor: "#ffffff",
-                borderRight: "1px solid #e0e0e0",
-                borderBottom: "1px solid #e0e0e0",
-                boxSizing: "border-box",
                 transform: `translateY(${row.start}px)`,
               }}
             >
@@ -189,13 +170,12 @@ const SheetBody = memo(
       <>
         <StatusColumn rows={rows} totalHeight={totalHeight} />
         <div
+          className={styles.sheet__bodyContainer}
           style={{
-            position: "absolute",
             top: HEADER_HEIGHT,
             left: STATUS_COL_WIDTH,
             width: `${totalWidth}px`,
             height: `${totalHeight}px`,
-            zIndex: 1,
           }}
         >
           <SheetRows
@@ -266,59 +246,24 @@ const SheetHeader: FC<HeaderProps> = ({
   return (
     <>
       <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          display: "flex",
-          width: "100%",
-          height: `${HEADER_HEIGHT}px`,
-          backgroundColor: "#f5f5f5",
-        }}
+        className={styles.sheet__header}
+        style={{ height: `${HEADER_HEIGHT}px` }}
       >
         <div
-          style={{
-            position: "sticky",
-            left: 0,
-            zIndex: 30,
-            width: `${STATUS_COL_WIDTH}px`,
-            height: "100%",
-            backgroundColor: "inherit",
-            borderRight: "1px solid #e0e0e0",
-            borderBottom: "1px solid #e0e0e0",
-            boxSizing: "border-box",
-            flexShrink: 0,
-          }}
+          className={styles.sheet__headerStatusCorner}
+          style={{ width: `${STATUS_COL_WIDTH}px` }}
         />
         <div
-          style={{
-            position: "relative",
-            width: `${totalWidth}px`,
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            borderBottom: "1px solid #e0e0e0",
-            boxSizing: "border-box",
-          }}
+          className={styles.sheet__headerColumns}
+          style={{ width: `${totalWidth}px` }}
         >
           {columns.map((col) => (
             <div
               key={col.id}
+              className={styles.sheet__headerCell}
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
                 width: `${col.size}px`,
-                height: "100%",
                 transform: `translateX(${col.start}px)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.75rem",
-                fontWeight: "bold",
-                color: "#666666",
-                borderRight: "1px solid #e0e0e0",
-                boxSizing: "border-box",
               }}
             >
               {col.index + 1}
@@ -328,19 +273,11 @@ const SheetHeader: FC<HeaderProps> = ({
                 aria-valuemin={MIN_COLUMN_WIDTH}
                 aria-valuenow={col.size}
                 tabIndex={-1}
-                style={{
-                  position: "absolute",
-                  right: -2,
-                  top: 0,
-                  width: "5px",
-                  height: "100%",
-                  cursor: "col-resize",
-                  zIndex: 10,
-                  border: "none",
-                  margin: 0,
-                  backgroundColor:
-                    resizing?.id === col.id ? "#2196f3" : "transparent",
-                }}
+                className={`${styles.sheet__headerResizer} ${
+                  resizing?.id === col.id
+                    ? styles["sheet__headerResizer--active"]
+                    : ""
+                }`}
               />
             </div>
           ))}
@@ -348,16 +285,8 @@ const SheetHeader: FC<HeaderProps> = ({
       </div>
       {resizing && (
         <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: currentX,
-            width: "2px",
-            height: "100%",
-            backgroundColor: "#2196f3",
-            zIndex: 100,
-            pointerEvents: "none",
-          }}
+          className={styles.sheet__resizerIndicator}
+          style={{ left: currentX }}
         />
       )}
     </>
@@ -367,7 +296,7 @@ const SheetHeader: FC<HeaderProps> = ({
 type Props = BodyProps &
   Pick<HeaderProps, "onChangeColumnWidth"> & { ref: Ref<HTMLDivElement> };
 
-export const SheetPresenter: FC<Props> = ({
+export const Sheet: FC<Props> = ({
   rows,
   columns,
   totalWidth,
@@ -377,21 +306,12 @@ export const SheetPresenter: FC<Props> = ({
   ref,
 }) => {
   return (
-    <div
-      ref={ref}
-      style={{
-        width: "100%",
-        height: "100%",
-        backgroundColor: "#ffffff",
-        overflow: "auto",
-        position: "relative",
-      }}
-    >
+    <div ref={ref} className={styles.sheet}>
       <div
+        className={styles.sheet__inner}
         style={{
           width: `${totalWidth + STATUS_COL_WIDTH}px`,
           height: `${totalHeight + HEADER_HEIGHT}px`,
-          position: "relative",
         }}
       >
         <SheetHeader

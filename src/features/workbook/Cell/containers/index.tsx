@@ -11,7 +11,7 @@ import {
   selectionAtom,
   workbookStatusAtom,
 } from "../../stores";
-import { Cell as CellPresenter } from "../components";
+import { Cell } from "../components";
 
 type InnerProps = Props & {
   rowId: RowId;
@@ -81,7 +81,7 @@ const CellInner: FC<InnerProps> = memo(({ row, col, rowId, colId }) => {
   }, [setSelection, row, col, workbookStatus]);
 
   return (
-    <CellPresenter
+    <Cell
       value={value}
       isEditing={isEditing}
       onChange={handleChange}

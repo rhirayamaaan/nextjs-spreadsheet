@@ -7,7 +7,7 @@ import {
   pdfPreviewUrlAtom,
   viewModeAtom,
 } from "../../stores";
-import { PdfPreviewPresenter } from "../components";
+import { PdfPreview } from "../components";
 
 export const PdfPreviewContainer: FC = () => {
   const [pdfUrl, setPdfUrl] = useAtom(pdfPreviewUrlAtom);
@@ -46,7 +46,7 @@ export const PdfPreviewContainer: FC = () => {
   }
 
   return (
-    <PdfPreviewPresenter
+    <PdfPreview
       pdfUrl={pdfUrl}
       sheetName={activeSheetId ?? undefined}
       onBack={handleBack}

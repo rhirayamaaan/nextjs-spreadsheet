@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import styles from "./Toolbar.module.css";
 
 type ToolbarProps = {
   sheetName?: string;
@@ -13,42 +14,14 @@ export const Toolbar: FC<ToolbarProps> = ({
   onPreviewPdf,
   isExportingPdf,
 }) => {
-  const buttonStyle: React.CSSProperties = {
-    height: "32px",
-    padding: "0 16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: 500,
-    color: "white",
-  };
-
   const displayName = sheetName ? `"${sheetName}"` : "Sheet";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        padding: "8px 16px",
-        backgroundColor: "#f3f4f6",
-        borderBottom: "1px solid #e5e7eb",
-        height: "48px",
-        boxSizing: "border-box",
-      }}
-    >
+    <div className={styles.toolbar}>
       <button
         type="button"
         onClick={onExport}
-        style={{
-          ...buttonStyle,
-          backgroundColor: "#10b981",
-        }}
+        className={`${styles.toolbar__button} ${styles["toolbar__button--excel"]}`}
       >
         Export {displayName} to Excel
       </button>
@@ -56,12 +29,9 @@ export const Toolbar: FC<ToolbarProps> = ({
         type="button"
         onClick={onPreviewPdf}
         disabled={isExportingPdf}
-        style={{
-          ...buttonStyle,
-          backgroundColor: "#3b82f6",
-          cursor: isExportingPdf ? "wait" : "pointer",
-          opacity: isExportingPdf ? 0.7 : 1,
-        }}
+        className={`${styles.toolbar__button} ${styles["toolbar__button--preview"]} ${
+          isExportingPdf ? styles["toolbar__button--disabled"] : ""
+        }`}
       >
         {isExportingPdf
           ? `Generating ${displayName} PDF...`

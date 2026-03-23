@@ -16,7 +16,7 @@ import {
   selectionAtom,
   workbookStatusAtom,
 } from "../../stores";
-import { SheetPresenter } from "../components";
+import { Sheet } from "../components";
 
 export const SheetContainer: FC = () => {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -138,7 +138,7 @@ export const SheetContainer: FC = () => {
   }));
 
   return (
-    <SheetPresenter
+    <Sheet
       ref={parentRef}
       rows={rows}
       columns={columns}

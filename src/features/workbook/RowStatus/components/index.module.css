@@ -1,0 +1,60 @@
+.rowStatus {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.rowStatus__marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 10px;
+}
+
+.rowStatus__marker--added {
+  background-color: #4caf50;
+}
+
+.rowStatus__marker--edited {
+  background-color: #2196f3;
+}
+
+.rowStatus__marker--deleted {
+  background-color: #f44336;
+}
+
+.rowStatus__actionMenu {
+  position: relative;
+}
+
+.rowStatus__actionMenuTrigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.rowStatus__actionMenuPopover {
+  margin: 0;
+  padding: 4px 0;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  border-radius: 4px;
+  inset: auto;
+}
+
+.rowStatus__actionMenuItem {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  width: 100%;
+  display: block;
+}

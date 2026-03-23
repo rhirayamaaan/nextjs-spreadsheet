@@ -1,32 +1,23 @@
 import type { FC } from "react";
-import type { InsertPosition, RowStatus } from "../../stores";
+import type { InsertPosition, RowStatus as RowStatusType } from "../../stores";
+import styles from "./index.module.css";
 
 const STATUS_LABEL = {
   added: "追加",
   edited: "変更",
   deleted: "削除",
   none: "",
-} as const satisfies Record<RowStatus, string>;
+} as const satisfies Record<RowStatusType, string>;
 
-const STATUS_COLOR = {
-  added: "#4caf50", // Green
-  edited: "#2196f3", // Blue
-  deleted: "#f44336", // Red
-  none: "transparent",
-} as const satisfies Record<RowStatus, string>;
-
-const RowStatusMarker: FC<{ status?: RowStatus }> = ({ status = "none" }) => {
-  if (status === "none") return <div style={{ width: 10, height: 10 }} />;
+const RowStatusMarker: FC<{ status?: RowStatusType }> = ({
+  status = "none",
+}) => {
+  if (status === "none") return <div className={styles.rowStatus__marker} />;
 
   return (
     <div
       title={STATUS_LABEL[status]}
-      style={{
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        backgroundColor: STATUS_COLOR[status],
-      }}
+      className={`${styles.rowStatus__marker} ${styles[`rowStatus__marker--${status}`]}`}
     />
   );
 };
@@ -60,21 +51,11 @@ const RowActionMenu: FC<{
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className={styles.rowStatus__actionMenu}>
       <button
         type="button"
         popoverTarget={popoverId}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: "4px",
-          fontSize: "1rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#666",
-        }}
+        className={styles.rowStatus__actionMenuTrigger}
       >
         ⋮
       </button>
@@ -82,16 +63,7 @@ const RowActionMenu: FC<{
         id={popoverId}
         popover="auto"
         onToggle={handleToggle}
-        style={{
-          margin: 0,
-          padding: "4px 0",
-          backgroundColor: "white",
-          border: "1px solid #e0e0e0",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          minWidth: "120px",
-          borderRadius: "4px",
-          inset: "auto",
-        }}
+        className={styles.rowStatus__actionMenuPopover}
       >
         {[
           { label: "上に行を挿入", onClick: () => onInsertRow("above") },
@@ -123,16 +95,7 @@ const RowActionMenu: FC<{
 
               element.hidePopover();
             }}
-            style={{
-              background: "none",
-              border: "none",
-              padding: "8px 12px",
-              textAlign: "left",
-              cursor: "pointer",
-              fontSize: "0.75rem",
-              width: "100%",
-              display: "block",
-            }}
+            className={styles.rowStatus__actionMenuItem}
           >
             {item.label}
           </button>
@@ -142,22 +105,14 @@ const RowActionMenu: FC<{
   );
 };
 
-export const RowStatusPresenter: FC<{
-  status: RowStatus;
+export const RowStatus: FC<{
+  status: RowStatusType;
   popoverId: string;
   onInsertRow: (position: InsertPosition) => void;
   onDeleteRow: () => void;
 }> = ({ status, popoverId, onInsertRow, onDeleteRow }) => {
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-around",
-      }}
-    >
+    <div className={styles.rowStatus}>
       <RowStatusMarker status={status} />
       <RowActionMenu
         popoverId={popoverId}

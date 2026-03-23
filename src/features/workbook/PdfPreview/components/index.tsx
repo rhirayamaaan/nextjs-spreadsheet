@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import styles from "./index.module.css";
 
 type Props = {
   pdfUrl: string;
@@ -7,52 +8,24 @@ type Props = {
   onDownload: () => void;
 };
 
-export const PdfPreviewPresenter: FC<Props> = ({
+export const PdfPreview: FC<Props> = ({
   pdfUrl,
   sheetName,
   onBack,
   onDownload,
 }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100vh",
-        backgroundColor: "#525659",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 16px",
-          backgroundColor: "#323639",
-          color: "white",
-          height: "48px",
-          boxSizing: "border-box",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+    <div className={styles.pdfPreview}>
+      <div className={styles.pdfPreview__header}>
+        <div className={styles.pdfPreview__headerLeft}>
           <button
             type="button"
             onClick={onBack}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: "#4b5563",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
+            className={styles.pdfPreview__backButton}
           >
             ← Back to Editor
           </button>
-          <div style={{ fontSize: "14px", fontWeight: 500 }}>
+          <div className={styles.pdfPreview__title}>
             Print Preview (PDF) {sheetName ? `- ${sheetName}` : ""}
           </div>
         </div>
@@ -60,38 +33,17 @@ export const PdfPreviewPresenter: FC<Props> = ({
         <button
           type="button"
           onClick={onDownload}
-          style={{
-            padding: "6px 16px",
-            backgroundColor: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 500,
-          }}
+          className={styles.pdfPreview__downloadButton}
         >
           Download PDF
         </button>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          width: "100%",
-          height: "calc(100vh - 48px)",
-          overflow: "hidden",
-        }}
-      >
+      <div className={styles.pdfPreview__content}>
         <iframe
           src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
           title="PDF Preview"
-          style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
-            display: "block",
-          }}
+          className={styles.pdfPreview__iframe}
         />
       </div>
     </div>

@@ -17,7 +17,7 @@ import {
   type RowId,
   viewModeAtom,
 } from "../../stores";
-import { WorkbookPresenter } from "../components";
+import { Workbook } from "../components";
 import { SheetTabs } from "../components/SheetTabs";
 import { Toolbar } from "../components/Toolbar";
 
@@ -108,7 +108,7 @@ export const WorkbookContainer: FC = () => {
   }
 
   return (
-    <WorkbookPresenter
+    <Workbook
       toolbar={
         <Toolbar
           sheetName={activeSheet?.name}

@@ -1,30 +1,18 @@
 import type { FC, ReactNode } from "react";
+import styles from "./index.module.css";
 
-type WorkbookPresenterProps = {
+type WorkbookProps = {
   toolbar?: ReactNode;
   tabs: ReactNode;
   sheet: ReactNode;
 };
 
-export const WorkbookPresenter: FC<WorkbookPresenterProps> = ({
-  toolbar,
-  tabs,
-  sheet,
-}) => {
+export const Workbook: FC<WorkbookProps> = ({ toolbar, tabs, sheet }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "#ffffff",
-        overflow: "hidden",
-      }}
-    >
+    <div className={styles.workbook}>
       {toolbar}
       {tabs}
-      <div style={{ flex: 1, overflow: "hidden" }}>{sheet}</div>
+      <div className={styles.workbook__content}>{sheet}</div>
     </div>
   );
 };
