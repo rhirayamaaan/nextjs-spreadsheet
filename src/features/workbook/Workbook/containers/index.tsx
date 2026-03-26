@@ -47,7 +47,8 @@ const sheetDataCache: Record<
 > = {};
 
 export const WorkbookContainer: FC = () => {
-  const { exportCurrentSheet } = useExportExcel();
+  const { exportCurrentSheet, isExporting: isExportingExcel } =
+    useExportExcel();
   const { previewCurrentSheetPdf, isExporting: isExportingPdf } =
     useExportPdf();
   const [activeSheetId, setActiveSheetId] = useAtom(activeSheetIdAtom);
@@ -114,6 +115,7 @@ export const WorkbookContainer: FC = () => {
           sheetName={activeSheet?.name}
           onExport={exportCurrentSheet}
           onPreviewPdf={previewCurrentSheetPdf}
+          isExportingExcel={isExportingExcel}
           isExportingPdf={isExportingPdf}
         />
       }

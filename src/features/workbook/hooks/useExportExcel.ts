@@ -1,6 +1,6 @@
+import ExcelJS from "exceljs";
 import { useStore } from "jotai";
-import { useCallback } from "react";
-import * as xlsx from "xlsx";
+import { useCallback, useState } from "react";
 import {
   activeSheetIdAtom,
   baseCellValuesAtom,
@@ -11,39 +11,57 @@ import {
 
 export const useExportExcel = () => {
   const store = useStore();
+  const [isExporting, setIsExporting] = useState(false);
 
-  const exportCurrentSheet = useCallback(() => {
+  const exportCurrentSheet = useCallback(async () => {
     const activeSheetId = store.get(activeSheetIdAtom);
     if (!activeSheetId) return;
 
-    const rowOrder = store.get(rowOrderAtom);
-    const colOrder = store.get(columnOrderAtom);
-    const baseValues = store.get(baseCellValuesAtom);
-    const edits = store.get(cellEditsAtom);
+    setIsExporting(true);
+    try {
+      const rowOrder = store.get(rowOrderAtom);
+      const colOrder = store.get(columnOrderAtom);
+      const baseValues = store.get(baseCellValuesAtom);
+      const edits = store.get(cellEditsAtom);
 
-    const data: string[][] = [];
+      const data: string[][] = [];
 
-    // Construct the 2D array of data representing the spreadsheet
-    for (const rowId of rowOrder) {
-      const rowData: string[] = [];
-      for (const colId of colOrder) {
-        const key = `${rowId}-${colId}`;
-        const value = edits[key] ?? baseValues[key] ?? "";
-        rowData.push(value);
+      // Construct the 2D array of data representing the spreadsheet
+      for (const rowId of rowOrder) {
+        const rowData: string[] = [];
+        for (const colId of colOrder) {
+          const key = `${rowId}-${colId}`;
+          const value = edits[key] ?? baseValues[key] ?? "";
+          rowData.push(value);
+        }
+        data.push(rowData);
       }
-      data.push(rowData);
+
+      // Create a new workbook and add a worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(activeSheetId);
+
+      // Add data to the worksheet
+      worksheet.addRows(data);
+
+      // Write to a buffer and trigger download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${activeSheetId}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Excel export failed", error);
+      alert("Excel export failed");
+    } finally {
+      setIsExporting(false);
     }
-
-    // Convert the array of arrays to a worksheet
-    const worksheet = xlsx.utils.aoa_to_sheet(data);
-
-    // Create a new workbook and append the worksheet
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, activeSheetId);
-
-    // Write the workbook and trigger download
-    xlsx.writeFile(workbook, `${activeSheetId}.xlsx`);
   }, [store]);
 
-  return { exportCurrentSheet };
+  return { exportCurrentSheet, isExporting };
 };

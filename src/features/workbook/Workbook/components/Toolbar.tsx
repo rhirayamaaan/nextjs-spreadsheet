@@ -3,8 +3,9 @@ import styles from "./Toolbar.module.css";
 
 type ToolbarProps = {
   sheetName?: string;
-  onExport: () => void;
-  onPreviewPdf: () => void;
+  onExport: () => void | Promise<void>;
+  onPreviewPdf: () => void | Promise<void>;
+  isExportingExcel?: boolean;
   isExportingPdf?: boolean;
 };
 
@@ -12,6 +13,7 @@ export const Toolbar: FC<ToolbarProps> = ({
   sheetName,
   onExport,
   onPreviewPdf,
+  isExportingExcel,
   isExportingPdf,
 }) => {
   const displayName = sheetName ? `"${sheetName}"` : "Sheet";
@@ -21,9 +23,14 @@ export const Toolbar: FC<ToolbarProps> = ({
       <button
         type="button"
         onClick={onExport}
-        className={`${styles.toolbar__button} ${styles["toolbar__button--excel"]}`}
+        disabled={isExportingExcel}
+        className={`${styles.toolbar__button} ${styles["toolbar__button--excel"]} ${
+          isExportingExcel ? styles["toolbar__button--disabled"] : ""
+        }`}
       >
-        Export {displayName} to Excel
+        {isExportingExcel
+          ? `Exporting ${displayName} to Excel...`
+          : `Export ${displayName} to Excel`}
       </button>
       <button
         type="button"
