@@ -9,7 +9,6 @@ A web-based spreadsheet application built with Next.js and React. This project d
 - **Export Capabilities:**
   - Export to Excel (`.xlsx`) using `xlsx`.
   - Export to PDF with preview generation using `jspdf` and `jspdf-autotable`.
-- **Form Handling & Validation:** Built with `react-hook-form` and `zod`.
 - **Type-Safe Styling:** Uses CSS Modules with `@css-modules-kit/codegen` for strict typed styles.
 
 ## 🛠 Tech Stack
