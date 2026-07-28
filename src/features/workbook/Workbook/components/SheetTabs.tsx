@@ -1,3 +1,4 @@
+import { TabNav } from "@radix-ui/themes";
 import type { FC } from "react";
 import styles from "./SheetTabs.module.css";
 
@@ -13,19 +14,16 @@ export const SheetTabs: FC<SheetTabsProps> = ({
   onSelectSheet,
 }) => {
   return (
-    <div className={styles.sheetTabs}>
+    <TabNav.Root size="2" className={styles.sheetTabs}>
       {sheets.map((sheet) => (
-        <button
+        <TabNav.Link
           key={sheet.id}
-          type="button"
+          active={activeSheetId === sheet.id}
           onClick={() => onSelectSheet(sheet.id)}
-          className={`${styles.sheetTabs__tab} ${
-            activeSheetId === sheet.id ? styles["sheetTabs__tab--active"] : ""
-          }`}
         >
           {sheet.name}
-        </button>
+        </TabNav.Link>
       ))}
-    </div>
+    </TabNav.Root>
   );
 };

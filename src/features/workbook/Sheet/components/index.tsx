@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import {
   type FC,
   memo,
@@ -273,11 +274,11 @@ const SheetHeader: FC<HeaderProps> = ({
                 aria-valuemin={MIN_COLUMN_WIDTH}
                 aria-valuenow={col.size}
                 tabIndex={-1}
-                className={`${styles.sheet__headerResizer} ${
-                  resizing?.id === col.id
-                    ? styles["sheet__headerResizer--active"]
-                    : ""
-                }`}
+                className={clsx(
+                  styles.sheet__headerResizer,
+                  resizing?.id === col.id &&
+                    styles["sheet__headerResizer--active"],
+                )}
               />
             </div>
           ))}

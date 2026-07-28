@@ -1,5 +1,8 @@
+import clsx from "clsx";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Providers } from "./Providers";
+import "@radix-ui/themes/styles.css";
 import "./globals.css";
 import { Suspense } from "react";
 
@@ -25,9 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Suspense fallback={<div>Loading Pages...</div>}>{children}</Suspense>
+    <html lang="ja" suppressHydrationWarning>
+      <body className={clsx(geistSans.variable, geistMono.variable)}>
+        <Providers>
+          <Suspense fallback={<div>Loading Pages...</div>}>{children}</Suspense>
+        </Providers>
       </body>
     </html>
   );

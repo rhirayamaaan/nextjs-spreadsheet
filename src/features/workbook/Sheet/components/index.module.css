@@ -1,7 +1,8 @@
 .sheet {
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
+  background-color: var(--gray-1);
+  color: var(--gray-12);
   overflow: auto;
   position: relative;
 }
@@ -12,10 +13,11 @@
 
 .sheet__selection {
   position: absolute;
-  border: 2px solid #2196f3;
-  background-color: rgba(33, 150, 243, 0.1);
+  border: 2px solid var(--accent-9);
+  background-color: var(--accent-a3);
   pointer-events: none;
   z-index: 5;
+  box-sizing: border-box;
 }
 
 .sheet__cellsLayer {
@@ -54,9 +56,10 @@
   position: absolute;
   top: 0;
   left: 0;
-  background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--gray-2);
+  color: var(--gray-12);
+  border-right: 1px solid var(--gray-a5);
+  border-bottom: 1px solid var(--gray-a5);
   box-sizing: border-box;
 }
 
@@ -71,7 +74,7 @@
   z-index: 20;
   display: flex;
   width: 100%;
-  background-color: #f5f5f5;
+  background-color: var(--gray-2);
 }
 
 .sheet__headerStatusCorner {
@@ -79,8 +82,8 @@
   left: 0;
   z-index: 30;
   background-color: inherit;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid var(--gray-a5);
+  border-bottom: 1px solid var(--gray-a5);
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -90,7 +93,7 @@
   height: 100%;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--gray-a5);
   box-sizing: border-box;
 }
 
@@ -104,8 +107,8 @@
   justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
-  color: #666666;
-  border-right: 1px solid #e0e0e0;
+  color: var(--gray-11);
+  border-right: 1px solid var(--gray-a5);
   box-sizing: border-box;
 }
 
@@ -123,7 +126,7 @@
 }
 
 .sheet__headerResizer--active {
-  background-color: #2196f3;
+  background-color: var(--accent-9);
 }
 
 .sheet__resizerIndicator {
@@ -131,7 +134,7 @@
   top: 0;
   width: 2px;
   height: 100%;
-  background-color: #2196f3;
+  background-color: var(--accent-9);
   z-index: 100;
   pointer-events: none;
 }

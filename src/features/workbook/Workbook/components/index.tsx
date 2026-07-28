@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from "react";
-import styles from "./index.module.css";
+import { Box, Flex } from "@radix-ui/themes";
 
 type WorkbookProps = {
   toolbar?: ReactNode;
@@ -9,10 +9,12 @@ type WorkbookProps = {
 
 export const Workbook: FC<WorkbookProps> = ({ toolbar, tabs, sheet }) => {
   return (
-    <div className={styles.workbook}>
+    <Flex direction="column" width="100vw" height="100vh" overflow="hidden">
       {toolbar}
       {tabs}
-      <div className={styles.workbook__content}>{sheet}</div>
-    </div>
+      <Box flexGrow="1" overflow="hidden">
+        {sheet}
+      </Box>
+    </Flex>
   );
 };

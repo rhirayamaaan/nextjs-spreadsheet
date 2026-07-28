@@ -1,3 +1,6 @@
+import { DotsVerticalIcon } from "@radix-ui/react-icons";
+import { Box, DropdownMenu, Flex, IconButton } from "@radix-ui/themes";
+import clsx from "clsx";
 import type { FC } from "react";
 import type { InsertPosition, RowStatus as RowStatusType } from "../../stores";
 import styles from "./index.module.css";
@@ -12,113 +15,56 @@ const STATUS_LABEL = {
 const RowStatusMarker: FC<{ status?: RowStatusType }> = ({
   status = "none",
 }) => {
-  if (status === "none") return <div className={styles.rowStatus__marker} />;
-
   return (
-    <div
+    <Box
       title={STATUS_LABEL[status]}
-      className={`${styles.rowStatus__marker} ${styles[`rowStatus__marker--${status}`]}`}
+      className={clsx(styles.marker, status !== "none" && styles[status])}
     />
   );
 };
 
 const RowActionMenu: FC<{
-  popoverId: string;
   onInsertRow: (position: InsertPosition) => void;
   onDeleteRow: () => void;
-}> = ({ popoverId, onInsertRow, onDeleteRow }) => {
-  const handleToggle = (event: React.ToggleEvent<HTMLDivElement>) => {
-    const nativeEvent = event.nativeEvent;
-    if (
-      !(nativeEvent instanceof ToggleEvent) ||
-      nativeEvent.newState !== "open"
-    ) {
-      return;
-    }
-
-    const popover = event.currentTarget;
-    const trigger = document.querySelector(`[popovertarget="${popoverId}"]`);
-
-    if (!trigger || !popover) {
-      return;
-    }
-
-    const rect = trigger.getBoundingClientRect();
-    popover.style.position = "fixed";
-    popover.style.top = `${rect.bottom}px`;
-    popover.style.left = `${rect.left}px`;
-    popover.style.margin = "0";
-  };
-
+}> = ({ onInsertRow, onDeleteRow }) => {
   return (
-    <div className={styles.rowStatus__actionMenu}>
-      <button
-        type="button"
-        popoverTarget={popoverId}
-        className={styles.rowStatus__actionMenuTrigger}
-      >
-        ⋮
-      </button>
-      <div
-        id={popoverId}
-        popover="auto"
-        onToggle={handleToggle}
-        className={styles.rowStatus__actionMenuPopover}
-      >
-        {[
-          { label: "上に行を挿入", onClick: () => onInsertRow("above") },
-          { label: "下に行を挿入", onClick: () => onInsertRow("below") },
-          { label: "行を削除", onClick: () => onDeleteRow() },
-        ].map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            onClick={(event) => {
-              item.onClick();
-              if (!(event.target instanceof HTMLElement)) {
-                return;
-              }
-
-              const element = event.target.closest("[popover]");
-              if (!element) {
-                return;
-              }
-
-              if (
-                !(
-                  "hidePopover" in element &&
-                  typeof element.hidePopover === "function"
-                )
-              ) {
-                return;
-              }
-
-              element.hidePopover();
-            }}
-            className={styles.rowStatus__actionMenuItem}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger>
+        <IconButton
+          size="1"
+          variant="ghost"
+          color="gray"
+          aria-label="行操作メニュー"
+        >
+          <DotsVerticalIcon />
+        </IconButton>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content size="1">
+        <DropdownMenu.Item onClick={() => onInsertRow("above")}>
+          上に行を挿入
+        </DropdownMenu.Item>
+        <DropdownMenu.Item onClick={() => onInsertRow("below")}>
+          下に行を挿入
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item color="red" onClick={onDeleteRow}>
+          行を削除
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 };
 
 export const RowStatus: FC<{
   status: RowStatusType;
-  popoverId: string;
+  popoverId?: string;
   onInsertRow: (position: InsertPosition) => void;
   onDeleteRow: () => void;
-}> = ({ status, popoverId, onInsertRow, onDeleteRow }) => {
+}> = ({ status, onInsertRow, onDeleteRow }) => {
   return (
-    <div className={styles.rowStatus}>
+    <Flex align="center" width="100%" height="100%">
       <RowStatusMarker status={status} />
-      <RowActionMenu
-        popoverId={popoverId}
-        onInsertRow={onInsertRow}
-        onDeleteRow={onDeleteRow}
-      />
-    </div>
+      <RowActionMenu onInsertRow={onInsertRow} onDeleteRow={onDeleteRow} />
+    </Flex>
   );
 };

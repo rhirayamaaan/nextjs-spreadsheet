@@ -1,9 +1,31 @@
-@import "destyle.css";
+@layer reset, radix-themes, components, utilities;
 
-body {
-  color: #171717;
-  background-color: #fff;
-  font-family: Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer reset {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--gray-1);
+    color: var(--gray-12);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Radix Themes Cursors Configuration */
+/* https://www.radix-ui.com/themes/docs/theme/cursors */
+.radix-themes {
+  --cursor-button: pointer;
+  --cursor-checkbox: pointer;
+  --cursor-link: pointer;
+  --cursor-menu-item: pointer;
+  --cursor-radio: pointer;
+  --cursor-slider-thumb: pointer;
+  --cursor-switch: pointer;
+  --cursor-disabled: not-allowed;
 }
