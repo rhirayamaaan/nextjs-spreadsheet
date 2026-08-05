@@ -39,13 +39,15 @@ export function useI18n<L extends Messages | undefined = undefined>(
       params?: Params,
     ): string => {
       if (localMessages !== undefined) {
-        const localeMsgs: Readonly<Record<string, string>> = localMessages[locale];
+        const localeMsgs: Readonly<Record<string, string>> =
+          localMessages[locale];
         if (key in localeMsgs) {
           return replaceParams(localeMsgs[key], params);
         }
       }
 
-      const commonMsgs: Readonly<Record<string, string>> = commonMessages[locale];
+      const commonMsgs: Readonly<Record<string, string>> =
+        commonMessages[locale];
       if (isCommonKey(key, locale)) {
         return replaceParams(commonMsgs[key], params);
       }

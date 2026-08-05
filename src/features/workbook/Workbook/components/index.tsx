@@ -1,5 +1,5 @@
-import type { FC, ReactNode } from "react";
 import { Box, Flex } from "@radix-ui/themes";
+import type { FC, ReactNode } from "react";
 
 type WorkbookProps = {
   toolbar?: ReactNode;
