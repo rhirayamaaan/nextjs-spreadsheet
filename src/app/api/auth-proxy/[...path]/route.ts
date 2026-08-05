@@ -54,7 +54,7 @@ async function proxyRequest(req: NextRequest, context: ProxyContext) {
       );
     }
     accessToken = sessionData.accessToken;
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json(
       { error: "Unauthorized. Invalid session format." },
       { status: 401 },
