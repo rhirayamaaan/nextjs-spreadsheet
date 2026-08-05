@@ -1,4 +1,6 @@
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { localMessages } from "./i18n";
 import styles from "./index.module.css";
 
 type Props = {
@@ -14,6 +16,8 @@ export const PdfPreview: FC<Props> = ({
   onBack,
   onDownload,
 }) => {
+  const { t } = useI18n(localMessages);
+
   if (!pdfUrl) {
     return null;
   }
@@ -27,10 +31,11 @@ export const PdfPreview: FC<Props> = ({
             onClick={onBack}
             className={styles.pdfPreview__backButton}
           >
-            ← Back to Editor
+            {t("backToEditor")}
           </button>
           <div className={styles.pdfPreview__title}>
-            Print Preview (PDF) {sheetName ? `- ${sheetName}` : ""}
+            {t("printPreview")}
+            {sheetName ? ` - ${sheetName}` : ""}
           </div>
         </div>
 
@@ -39,14 +44,14 @@ export const PdfPreview: FC<Props> = ({
           onClick={onDownload}
           className={styles.pdfPreview__downloadButton}
         >
-          Download PDF
+          {t("downloadPdf")}
         </button>
       </div>
 
       <div className={styles.pdfPreview__content}>
         <iframe
           src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-          title="PDF Preview"
+          title={t("pdfPreviewIframeTitle")}
           className={styles.pdfPreview__iframe}
         />
       </div>

@@ -2,22 +2,26 @@ import { DotsVerticalIcon } from "@radix-ui/react-icons";
 import { Box, DropdownMenu, Flex, IconButton } from "@radix-ui/themes";
 import clsx from "clsx";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { InsertPosition, RowStatus as RowStatusType } from "../../stores";
+import { localMessages } from "./i18n";
 import styles from "./index.module.css";
-
-const STATUS_LABEL = {
-  added: "追加",
-  edited: "変更",
-  deleted: "削除",
-  none: "",
-} as const satisfies Record<RowStatusType, string>;
 
 const RowStatusMarker: FC<{ status?: RowStatusType }> = ({
   status = "none",
 }) => {
+  const { t } = useI18n(localMessages);
+
+  const statusLabel: Record<RowStatusType, string> = {
+    added: t("statusAdded"),
+    edited: t("statusEdited"),
+    deleted: t("statusDeleted"),
+    none: t("statusNone"),
+  };
+
   return (
     <Box
-      title={STATUS_LABEL[status]}
+      title={statusLabel[status]}
       className={clsx(styles.marker, status !== "none" && styles[status])}
     />
   );
@@ -27,6 +31,8 @@ const RowActionMenu: FC<{
   onInsertRow: (position: InsertPosition) => void;
   onDeleteRow: () => void;
 }> = ({ onInsertRow, onDeleteRow }) => {
+  const { t } = useI18n(localMessages);
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
@@ -34,21 +40,21 @@ const RowActionMenu: FC<{
           size="1"
           variant="ghost"
           color="gray"
-          aria-label="行操作メニュー"
+          aria-label={t("menuAriaLabel")}
         >
           <DotsVerticalIcon />
         </IconButton>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content size="1">
         <DropdownMenu.Item onClick={() => onInsertRow("above")}>
-          上に行を挿入
+          {t("insertAbove")}
         </DropdownMenu.Item>
         <DropdownMenu.Item onClick={() => onInsertRow("below")}>
-          下に行を挿入
+          {t("insertBelow")}
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red" onClick={onDeleteRow}>
-          行を削除
+          {t("deleteRow")}
         </DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
