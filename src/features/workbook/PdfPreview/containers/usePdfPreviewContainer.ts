@@ -1,15 +1,13 @@
-"use client";
-
 import { useAtom, useSetAtom } from "jotai";
-import { type FC, useCallback } from "react";
+import { type ComponentProps, useCallback } from "react";
 import {
   activeSheetIdAtom,
   pdfPreviewUrlAtom,
   viewModeAtom,
 } from "../../stores";
-import { PdfPreview } from "../components";
+import type { PdfPreview } from "../components"; // Type-only import
 
-export const PdfPreviewContainer: FC = () => {
+export const usePdfPreviewContainer = (): ComponentProps<typeof PdfPreview> => {
   const [pdfUrl, setPdfUrl] = useAtom(pdfPreviewUrlAtom);
   const [activeSheetId] = useAtom(activeSheetIdAtom);
   const setViewMode = useSetAtom(viewModeAtom);
@@ -30,27 +28,10 @@ export const PdfPreviewContainer: FC = () => {
     a.click();
   }, [pdfUrl, activeSheetId]);
 
-  if (!pdfUrl) {
-    return (
-      <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
-        <p>Generating PDF preview...</p>
-        <button
-          type="button"
-          onClick={handleBack}
-          style={{ marginTop: "10px", padding: "8px 16px", cursor: "pointer" }}
-        >
-          Back to Editor
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <PdfPreview
-      pdfUrl={pdfUrl}
-      sheetName={activeSheetId ?? undefined}
-      onBack={handleBack}
-      onDownload={handleDownload}
-    />
-  );
+  return {
+    pdfUrl,
+    sheetName: activeSheetId ?? undefined,
+    onBack: handleBack,
+    onDownload: handleDownload,
+  };
 };

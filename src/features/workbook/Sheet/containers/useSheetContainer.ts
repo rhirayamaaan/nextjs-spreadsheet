@@ -1,24 +1,17 @@
-"use client";
-
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { type FC, useCallback, useEffect, useRef } from "react";
-import { CellContainer } from "../../Cell/containers";
-import { RowStatusContainer } from "../../RowStatus/containers";
+import { useAtom, useAtomValue } from "jotai";
+import { useCallback, useEffect, useRef } from "react";
 import {
   activeSheetIdAtom,
   type ColumnId,
   columnOrderAtom,
   columnWidthOverridesAtom,
-  pasteRowsAtom,
-  type RowId,
   rowOrderAtom,
   selectionAtom,
   workbookStatusAtom,
 } from "../../stores";
-import { Sheet } from "../components";
 
-export const SheetContainer: FC = () => {
+export const useSheetContainer = () => {
   const parentRef = useRef<HTMLDivElement>(null);
   const activeSheetId = useAtomValue(activeSheetIdAtom);
   const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
@@ -29,7 +22,6 @@ export const SheetContainer: FC = () => {
   const [columnOrder] = useAtom(columnOrderAtom);
   const [status, setStatus] = useAtom(workbookStatusAtom);
   const selection = useAtomValue(selectionAtom);
-  const pasteRows = useSetAtom(pasteRowsAtom);
 
   // Tab switch scroll reset
   // biome-ignore lint/correctness/useExhaustiveDependencies: activeSheetId is used as a trigger for resetting scroll on tab switch
@@ -39,36 +31,6 @@ export const SheetContainer: FC = () => {
       parentRef.current.scrollLeft = 0;
     }
   }, [activeSheetId]);
-
-  useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      const activeElement = document.activeElement;
-      const isInput =
-        activeElement &&
-        (activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA" ||
-          (activeElement as HTMLElement).isContentEditable);
-
-      if (isInput) return;
-
-      const text = event.clipboardData?.getData("text/plain");
-      if (!text) return;
-
-      const rowsData = text
-        .split(/\r?\n/)
-        .filter((row) => row.length > 0)
-        .map((row) => row.split("\t"));
-
-      if (rowsData.length > 0) {
-        pasteRows(rowsData);
-      }
-    };
-
-    window.addEventListener("paste", handlePaste);
-    return () => {
-      window.removeEventListener("paste", handlePaste);
-    };
-  }, [pasteRows]);
 
   const rowVirtualizer = useVirtualizer({
     count: rowOrder.length,
@@ -104,48 +66,18 @@ export const SheetContainer: FC = () => {
   }, [setStatus]);
 
   useEffect(() => {
-    if (status !== "selecting") {
-      return;
-    }
-
+    if (status !== "selecting") return;
     window.addEventListener("mouseup", handleStopSelection);
-
     return () => {
       window.removeEventListener("mouseup", handleStopSelection);
     };
   }, [status, handleStopSelection]);
 
-  const columns = columnVirtualizer.getVirtualItems().map((item) => ({
-    id: item.key,
-    index: item.index,
-    start: item.start,
-    size: item.size,
-  }));
-
-  const rows = rowVirtualizer.getVirtualItems().map((item) => ({
-    id: item.key,
-    index: item.index,
-    start: item.start,
-    size: item.size,
-    status: <RowStatusContainer key={item.key} rowId={item.key as RowId} />,
-    cells: columns.map((col) => (
-      <CellContainer
-        key={`${item.key}-${col.id}`}
-        row={item.index}
-        col={col.index}
-      />
-    )),
-  }));
-
-  return (
-    <Sheet
-      ref={parentRef}
-      rows={rows}
-      columns={columns}
-      totalWidth={columnVirtualizer.getTotalSize()}
-      totalHeight={rowVirtualizer.getTotalSize()}
-      selection={selection}
-      onChangeColumnWidth={handleChangeColumnWidth}
-    />
-  );
+  return {
+    parentRef,
+    rowVirtualizer,
+    columnVirtualizer,
+    selection,
+    handleChangeColumnWidth,
+  };
 };

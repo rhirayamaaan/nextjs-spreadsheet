@@ -1,5 +1,11 @@
 import { useAtomValue, useSetAtom } from "jotai";
-import { type FC, useCallback } from "react";
+import {
+  type ComponentProps,
+  type FC,
+  memo,
+  type ReactNode,
+  useCallback,
+} from "react";
 import {
   deleteRowAtom,
   type InsertPosition,
@@ -7,9 +13,16 @@ import {
   type RowId,
   rowStatusesAtom,
 } from "../../stores";
-import { RowStatus } from "../components";
+import type { RowStatus } from "../components"; // Type-only import
 
-export const RowStatusContainer: FC<{ rowId: RowId }> = ({ rowId }) => {
+type RowStatusProps = ComponentProps<typeof RowStatus>;
+
+type Props = {
+  rowId: RowId;
+  children: (props: RowStatusProps) => ReactNode;
+};
+
+export const RowStatusContainer: FC<Props> = memo(({ rowId, children }) => {
   const rowStatuses = useAtomValue(rowStatusesAtom);
   const insertRow = useSetAtom(insertRowAtom);
   const deleteRow = useSetAtom(deleteRowAtom);
@@ -29,11 +42,15 @@ export const RowStatusContainer: FC<{ rowId: RowId }> = ({ rowId }) => {
   }, [deleteRow, rowId]);
 
   return (
-    <RowStatus
-      status={status}
-      popoverId={popoverId}
-      onInsertRow={handleInsertRow}
-      onDeleteRow={handleDeleteRow}
-    />
+    <>
+      {children({
+        status,
+        popoverId,
+        onInsertRow: handleInsertRow,
+        onDeleteRow: handleDeleteRow,
+      })}
+    </>
   );
-};
+});
+
+RowStatusContainer.displayName = "RowStatusContainer";

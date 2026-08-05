@@ -1,11 +1,5 @@
-"use client";
-
 import { useAtom, useSetAtom } from "jotai";
-import { type FC, useCallback, useEffect } from "react";
-import { useExportExcel } from "../../hooks/useExportExcel";
-import { useExportPdf } from "../../hooks/useExportPdf";
-import { PdfPreviewContainer } from "../../PdfPreview/containers";
-import { SheetContainer } from "../../Sheet/containers";
+import { useCallback, useEffect } from "react";
 import {
   activeSheetIdAtom,
   baseCellValuesAtom,
@@ -15,11 +9,7 @@ import {
   createColumnId,
   createRowId,
   type RowId,
-  viewModeAtom,
-} from "../../stores";
-import { Workbook } from "../components";
-import { SheetTabs } from "../components/SheetTabs";
-import { Toolbar } from "../components/Toolbar";
+} from "../stores";
 
 export const MOCK_SHEETS = Array.from({ length: 20 }, (_, i) => {
   const sheetIndex = i + 1;
@@ -34,29 +24,21 @@ export const MOCK_SHEETS = Array.from({ length: 20 }, (_, i) => {
   return {
     id: `sheet-${sheetIndex}`,
     name: `シート ${sheetIndex}`,
-    // Static counts: rows between 1000-10000, cols between 10-50 based on index
     rowCount: 1000 + ((sheetIndex * 450) % 9001),
     colCount: 10 + ((sheetIndex * 2) % 41),
   };
 });
 
-// Stable mock data cache to ensure RowIds/ColumnIds don't change on tab switch
 const sheetDataCache: Record<
   string,
   { rows: RowId[]; cols: ColumnId[]; values: Record<string, string> }
 > = {};
 
-export const WorkbookContainer: FC = () => {
-  const { exportCurrentSheet, isExporting: isExportingExcel } =
-    useExportExcel();
-  const { previewCurrentSheetPdf, isExporting: isExportingPdf } =
-    useExportPdf();
+export const useSheetLoader = () => {
   const [activeSheetId, setActiveSheetId] = useAtom(activeSheetIdAtom);
   const setBaseRowOrder = useSetAtom(baseRowOrderAtom);
   const setBaseColumnOrder = useSetAtom(baseColumnOrderAtom);
   const setBaseValues = useSetAtom(baseCellValuesAtom);
-
-  const [viewMode] = useAtom(viewModeAtom);
 
   const loadSheetData = useCallback(
     (sheetId: string) => {
@@ -104,29 +86,9 @@ export const WorkbookContainer: FC = () => {
 
   const activeSheet = MOCK_SHEETS.find((s) => s.id === activeSheetId);
 
-  if (viewMode === "pdf-preview") {
-    return <PdfPreviewContainer />;
-  }
-
-  return (
-    <Workbook
-      toolbar={
-        <Toolbar
-          sheetName={activeSheet?.name}
-          onExport={exportCurrentSheet}
-          onPreviewPdf={previewCurrentSheetPdf}
-          isExportingExcel={isExportingExcel}
-          isExportingPdf={isExportingPdf}
-        />
-      }
-      tabs={
-        <SheetTabs
-          activeSheetId={activeSheetId}
-          sheets={MOCK_SHEETS}
-          onSelectSheet={handleSelectSheet}
-        />
-      }
-      sheet={<SheetContainer />}
-    />
-  );
+  return {
+    activeSheet,
+    activeSheetId,
+    handleSelectSheet,
+  };
 };

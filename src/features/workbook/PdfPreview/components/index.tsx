@@ -2,7 +2,7 @@ import type { FC } from "react";
 import styles from "./index.module.css";
 
 type Props = {
-  pdfUrl: string;
+  pdfUrl: string | null;
   sheetName?: string;
   onBack: () => void;
   onDownload: () => void;
@@ -14,6 +14,10 @@ export const PdfPreview: FC<Props> = ({
   onBack,
   onDownload,
 }) => {
+  if (!pdfUrl) {
+    return null;
+  }
+
   return (
     <div className={styles.pdfPreview}>
       <div className={styles.pdfPreview__header}>
