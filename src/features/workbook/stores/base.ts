@@ -5,3 +5,4 @@ import type { ColumnId, RowId } from "./types";
 export const baseCellValuesAtom = atom<Record<string, string>>({});
 export const baseRowOrderAtom = atom<RowId[]>([]);
 export const baseColumnOrderAtom = atom<ColumnId[]>([]);
+export const baseColumnNamesAtom = atom<Record<ColumnId, string>>({});

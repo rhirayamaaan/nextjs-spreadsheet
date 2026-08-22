@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import type { Selection } from "../../stores";
+import type { ColumnHeaderPresenterProps } from "../containers/ColumnHeaderContainer";
 import styles from "./index.module.css";
 
 export type AxisLayout = {
@@ -15,6 +16,7 @@ export type AxisLayout = {
   index: number;
   start: number;
   size: number;
+  label?: string;
 };
 
 export type RowLayout = AxisLayout & {
@@ -198,12 +200,67 @@ type HeaderProps = {
   columns: AxisLayout[];
   totalWidth: number;
   onChangeColumnWidth: (id: string | number | bigint, width: number) => void;
+  renderHeaderCell: (
+    col: AxisLayout,
+    resizingId: string | number | bigint | null,
+    handleMouseDown: (
+      id: string | number | bigint,
+      width: number,
+    ) => (event: React.MouseEvent) => void,
+  ) => ReactNode;
+};
+
+export const HeaderCell: FC<ColumnHeaderPresenterProps> = ({
+  col,
+  setNodeRef,
+  dndStyle,
+  attributes,
+  listeners,
+  isDragging,
+  isResizing,
+  onMouseDownResizer,
+}) => {
+  return (
+    <div
+      className={styles.sheet__headerCellWrapper}
+      style={{
+        width: `${col.size}px`,
+        transform: `translateX(${col.start}px)`,
+      }}
+    >
+      <div
+        ref={setNodeRef}
+        style={dndStyle}
+        className={clsx(
+          styles.sheet__headerCell,
+          isDragging && styles["sheet__headerCell--dragging"],
+        )}
+        {...attributes}
+        {...listeners}
+      >
+        {col.label ?? col.index + 1}
+        <hr
+          onMouseDown={onMouseDownResizer}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-orientation="vertical"
+          aria-valuemin={MIN_COLUMN_WIDTH}
+          aria-valuenow={col.size}
+          tabIndex={-1}
+          className={clsx(
+            styles.sheet__headerResizer,
+            isResizing && styles["sheet__headerResizer--active"],
+          )}
+        />
+      </div>
+    </div>
+  );
 };
 
 const SheetHeader: FC<HeaderProps> = ({
   columns,
   totalWidth,
   onChangeColumnWidth,
+  renderHeaderCell,
 }) => {
   const [resizing, setResizing] = useState<{
     id: string | number | bigint;
@@ -258,30 +315,9 @@ const SheetHeader: FC<HeaderProps> = ({
           className={styles.sheet__headerColumns}
           style={{ width: `${totalWidth}px` }}
         >
-          {columns.map((col) => (
-            <div
-              key={col.id}
-              className={styles.sheet__headerCell}
-              style={{
-                width: `${col.size}px`,
-                transform: `translateX(${col.start}px)`,
-              }}
-            >
-              {col.index + 1}
-              <hr
-                onMouseDown={handleMouseDown(col.id, col.size)}
-                aria-orientation="vertical"
-                aria-valuemin={MIN_COLUMN_WIDTH}
-                aria-valuenow={col.size}
-                tabIndex={-1}
-                className={clsx(
-                  styles.sheet__headerResizer,
-                  resizing?.id === col.id &&
-                    styles["sheet__headerResizer--active"],
-                )}
-              />
-            </div>
-          ))}
+          {columns.map((col) =>
+            renderHeaderCell(col, resizing?.id ?? null, handleMouseDown),
+          )}
         </div>
       </div>
       {resizing && (
@@ -295,7 +331,9 @@ const SheetHeader: FC<HeaderProps> = ({
 };
 
 type Props = BodyProps &
-  Pick<HeaderProps, "onChangeColumnWidth"> & { ref: Ref<HTMLDivElement> };
+  Pick<HeaderProps, "onChangeColumnWidth" | "renderHeaderCell"> & {
+    ref: Ref<HTMLDivElement>;
+  };
 
 export const Sheet: FC<Props> = ({
   rows,
@@ -304,6 +342,7 @@ export const Sheet: FC<Props> = ({
   totalHeight,
   selection,
   onChangeColumnWidth,
+  renderHeaderCell,
   ref,
 }) => {
   return (
@@ -319,6 +358,7 @@ export const Sheet: FC<Props> = ({
           columns={columns}
           totalWidth={totalWidth}
           onChangeColumnWidth={onChangeColumnWidth}
+          renderHeaderCell={renderHeaderCell}
         />
         <SheetBody
           rows={rows}

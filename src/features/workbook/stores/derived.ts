@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 import {
   baseCellValuesAtom,
+  baseColumnNamesAtom,
   baseColumnOrderAtom,
   baseRowOrderAtom,
 } from "./base";
@@ -59,6 +60,8 @@ export const columnOrderAtom = atom(
     });
   },
 );
+
+export const columnNamesAtom = atom((get) => get(baseColumnNamesAtom));
 
 export const cellFamily = atomFamily(
   (address: CellAddress) => {

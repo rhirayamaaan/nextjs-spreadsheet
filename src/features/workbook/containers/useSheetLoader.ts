@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 import {
   activeSheetIdAtom,
   baseCellValuesAtom,
+  baseColumnNamesAtom,
   baseColumnOrderAtom,
   baseRowOrderAtom,
   type ColumnId,
@@ -10,6 +11,17 @@ import {
   createRowId,
   type RowId,
 } from "../stores";
+
+const getColumnLabel = (index: number): string => {
+  let label = "";
+  let n = index + 1;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    label = String.fromCharCode(65 + rem) + label;
+    n = Math.floor((n - 1) / 26);
+  }
+  return label;
+};
 
 export const MOCK_SHEETS = Array.from({ length: 20 }, (_, i) => {
   const sheetIndex = i + 1;
@@ -31,13 +43,19 @@ export const MOCK_SHEETS = Array.from({ length: 20 }, (_, i) => {
 
 const sheetDataCache: Record<
   string,
-  { rows: RowId[]; cols: ColumnId[]; values: Record<string, string> }
+  {
+    rows: RowId[];
+    cols: ColumnId[];
+    colNames: Record<ColumnId, string>;
+    values: Record<string, string>;
+  }
 > = {};
 
 export const useSheetLoader = () => {
   const [activeSheetId, setActiveSheetId] = useAtom(activeSheetIdAtom);
   const setBaseRowOrder = useSetAtom(baseRowOrderAtom);
   const setBaseColumnOrder = useSetAtom(baseColumnOrderAtom);
+  const setBaseColumnNames = useSetAtom(baseColumnNamesAtom);
   const setBaseValues = useSetAtom(baseCellValuesAtom);
 
   const loadSheetData = useCallback(
@@ -51,6 +69,11 @@ export const useSheetLoader = () => {
 
         const rows = Array.from({ length: rowCount }, () => createRowId());
         const cols = Array.from({ length: colCount }, () => createColumnId());
+        const colNames: Record<ColumnId, string> = {};
+        for (let c = 0; c < cols.length; c++) {
+          colNames[cols[c]] = getColumnLabel(c);
+        }
+
         const initialValues: Record<string, string> = {};
 
         for (let r = 0; r < rows.length; r++) {
@@ -59,16 +82,28 @@ export const useSheetLoader = () => {
               `${sheetIndex + 1}-${c + 1}:${r + 1}`;
           }
         }
-        sheetDataCache[sheetId] = { rows, cols, values: initialValues };
+        sheetDataCache[sheetId] = {
+          rows,
+          cols,
+          colNames,
+          values: initialValues,
+        };
       }
 
-      const { rows, cols, values } = sheetDataCache[sheetId];
+      const { rows, cols, colNames, values } = sheetDataCache[sheetId];
       setBaseValues(values);
       setBaseRowOrder(rows);
       setBaseColumnOrder(cols);
+      setBaseColumnNames(colNames);
       setActiveSheetId(sheetId);
     },
-    [setBaseValues, setBaseRowOrder, setBaseColumnOrder, setActiveSheetId],
+    [
+      setBaseValues,
+      setBaseRowOrder,
+      setBaseColumnOrder,
+      setBaseColumnNames,
+      setActiveSheetId,
+    ],
   );
 
   useEffect(() => {

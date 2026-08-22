@@ -27,7 +27,9 @@ export function parseAddress(
 
   let col = 0;
   for (let i = 0; i < colStr.length; i++) {
-    col = col * ALPHABET_SIZE + (colStr.charCodeAt(i) - ASCII_OFFSET_FOR_1_INDEXED_COL);
+    col =
+      col * ALPHABET_SIZE +
+      (colStr.charCodeAt(i) - ASCII_OFFSET_FOR_1_INDEXED_COL);
   }
 
   const row = Number.parseInt(rowStr, 10);
@@ -156,7 +158,8 @@ export function evaluateFormula(
 
   try {
     // 1. Mask string literals so quotes aren't affected by range/cell replacement
-    const { maskedExpression, restoreStringLiterals } = maskStringLiterals(rawExpression);
+    const { maskedExpression, restoreStringLiterals } =
+      maskStringLiterals(rawExpression);
 
     // 2. Expand range references like A1:A10 into JSON array literals
     let processed = maskedExpression.replace(
@@ -175,8 +178,11 @@ export function evaluateFormula(
         return upperToken;
       }
       const cellVal = getValue(upperToken);
-      if (cellVal === undefined || cellVal === null || cellVal === "") return "0";
-      return typeof cellVal === "string" ? JSON.stringify(cellVal) : String(cellVal);
+      if (cellVal === undefined || cellVal === null || cellVal === "")
+        return "0";
+      return typeof cellVal === "string"
+        ? JSON.stringify(cellVal)
+        : String(cellVal);
     });
 
     // 4. Convert Excel operators (=, <>, &) to JavaScript operators
@@ -208,5 +214,3 @@ export function evaluateFormula(
     return rawFormula;
   }
 }
-
-
