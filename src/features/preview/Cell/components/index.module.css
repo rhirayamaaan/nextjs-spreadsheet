@@ -1,0 +1,16 @@
+.excelCell {
+  border-right: 1px solid var(--gray-4);
+  border-bottom: 1px solid var(--gray-4);
+  padding: 2px 4px;
+  height: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: cell;
+  position: relative;
+}
+
+.excelCell:hover {
+  background-color: var(--gray-2);
+}

@@ -1,0 +1,132 @@
+.sheetWrapper {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  background-color: var(--color-background);
+}
+
+.excelTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 13px;
+  color: var(--gray-12);
+  background-color: var(--color-background);
+  user-select: none;
+}
+
+/* Header styling */
+.headerCorner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background-color: var(--gray-3);
+  border-right: 1px solid var(--gray-5);
+  border-bottom: 1px solid var(--gray-5);
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.columnHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--gray-3);
+  color: var(--gray-11);
+  font-weight: normal;
+  text-align: center;
+  border-right: 1px solid var(--gray-5);
+  border-bottom: 1px solid var(--gray-5);
+  height: 28px;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.rowHeader {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: var(--gray-3);
+  color: var(--gray-11);
+  text-align: center;
+  border-right: 1px solid var(--gray-5);
+  border-bottom: 1px solid var(--gray-5);
+  width: 45px;
+  height: 24px;
+  vertical-align: middle;
+  box-sizing: border-box;
+  font-size: 11px;
+}
+
+/* Cells */
+.excelCell {
+  border-right: 1px solid var(--gray-4);
+  border-bottom: 1px solid var(--gray-4);
+  padding: 2px 4px;
+  height: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: cell;
+  position: relative;
+}
+
+.excelCell:hover {
+  background-color: var(--gray-2);
+}
+
+.excelCell__content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Column resizer */
+.headerResizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.headerResizer:hover,
+.headerResizer--active {
+  background-color: var(--blue-8);
+  width: 4px;
+  right: -2px;
+}
+
+.resizerIndicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--blue-8);
+  z-index: 100;
+  pointer-events: none;
+  border-left: 1px dashed var(--blue-8);
+}
+
+/* Cell selection highlight */
+.excelCell--selected {
+  outline: 2px solid var(--blue-8);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.selectionOverlay {
+  pointer-events: none;
+  box-sizing: border-box;
+}
