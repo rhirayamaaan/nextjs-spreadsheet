@@ -7,3 +7,6 @@ export const rowStatusesAtom = atom<Record<RowId, RowStatus>>({});
 
 export const modifiedRowOrdersAtom = atom<Record<string, RowId[]>>({});
 export const modifiedColumnOrdersAtom = atom<Record<string, ColumnId[]>>({});
+export const modifiedColumnNamesAtom = atom<
+  Record<string, Record<ColumnId, string>>
+>({});

@@ -6,7 +6,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +17,7 @@ import {
   columnOrderAtom,
   columnWidthOverridesAtom,
   pasteRowsAtom,
+  reorderColumnsWithFollowersAtom,
   rowOrderAtom,
   selectionAtom,
   workbookStatusAtom,
@@ -30,7 +31,8 @@ export const useSheetContainer = () => {
   );
 
   const [rowOrder] = useAtom(rowOrderAtom);
-  const [columnOrder, setColumnOrder] = useAtom(columnOrderAtom);
+  const columnOrder = useAtomValue(columnOrderAtom);
+
   const columnNames = useAtomValue(columnNamesAtom);
   const [status, setStatus] = useAtom(workbookStatusAtom);
   const selection = useAtomValue(selectionAtom);
@@ -40,7 +42,11 @@ export const useSheetContainer = () => {
   );
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -77,18 +83,13 @@ export const useSheetContainer = () => {
     columnVirtualizer.measure();
   }, [columnWidthOverrides, columnVirtualizer]);
 
+  const reorderColumns = useSetAtom(reorderColumnsWithFollowersAtom);
+
   const handleReorderColumn = useCallback(
     (activeColId: ColumnId, overColId: ColumnId) => {
-      setColumnOrder((prev) => {
-        const oldIndex = prev.indexOf(activeColId);
-        const newIndex = prev.indexOf(overColId);
-        if (oldIndex !== -1 && newIndex !== -1) {
-          return arrayMove(prev, oldIndex, newIndex);
-        }
-        return prev;
-      });
+      reorderColumns({ activeColId, overColId });
     },
-    [setColumnOrder],
+    [reorderColumns],
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {

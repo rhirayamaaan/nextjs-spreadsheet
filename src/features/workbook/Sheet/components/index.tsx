@@ -1,3 +1,5 @@
+import { DotsVerticalIcon } from "@radix-ui/react-icons";
+import { Badge, DropdownMenu, IconButton } from "@radix-ui/themes";
 import clsx from "clsx";
 import {
   type FC,
@@ -7,7 +9,8 @@ import {
   useCallback,
   useState,
 } from "react";
-import type { Selection } from "../../stores";
+import type { ColumnId, Selection } from "../../stores";
+
 import type { ColumnHeaderPresenterProps } from "../containers/ColumnHeaderContainer";
 import styles from "./index.module.css";
 
@@ -210,8 +213,15 @@ type HeaderProps = {
   ) => ReactNode;
 };
 
-export const HeaderCell: FC<ColumnHeaderPresenterProps> = ({
+export const HeaderCell: FC<
+  ColumnHeaderPresenterProps & {
+    onOpenSettingModal?: (colId: ColumnId) => void;
+    onRemoveBinding?: (colId: ColumnId) => void;
+  }
+> = ({
   col,
+  colId,
+  config,
   setNodeRef,
   dndStyle,
   attributes,
@@ -219,7 +229,11 @@ export const HeaderCell: FC<ColumnHeaderPresenterProps> = ({
   isDragging,
   isResizing,
   onMouseDownResizer,
+  onOpenSettingModal,
+  onRemoveBinding,
 }) => {
+  const isLookup = config?.type === "lookup";
+
   return (
     <div
       className={styles.sheet__headerCellWrapper}
@@ -234,11 +248,76 @@ export const HeaderCell: FC<ColumnHeaderPresenterProps> = ({
         className={clsx(
           styles.sheet__headerCell,
           isDragging && styles["sheet__headerCell--dragging"],
+          isLookup && styles["sheet__headerCell--lookup"],
         )}
         {...attributes}
-        {...listeners}
+        {...(isLookup ? {} : listeners)}
       >
-        {col.label ?? col.index + 1}
+        <span className={styles.sheet__headerCellTitle}>
+          {col.label ?? col.index + 1}
+        </span>
+
+        {isLookup && (
+          <Badge
+            size="1"
+            color="blue"
+            variant="soft"
+            style={{ fontSize: "0.6rem", padding: "0 3px", marginRight: 2 }}
+          >
+            参照
+          </Badge>
+        )}
+
+        <div className={styles.sheet__headerCellMenuTrigger}>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <IconButton
+                size="1"
+                variant="ghost"
+                color="gray"
+                aria-label="列操作メニュー"
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <DotsVerticalIcon width={12} height={12} />
+              </IconButton>
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Content size="1">
+              {config?.type === "pulldown" ? (
+                <>
+                  <DropdownMenu.Item
+                    onSelect={() => colId && onOpenSettingModal?.(colId)}
+                  >
+                    プルダウン設定を編集
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item
+                    color="red"
+                    onSelect={() => colId && onRemoveBinding?.(colId)}
+                  >
+                    プルダウン設定を解除
+                  </DropdownMenu.Item>
+                </>
+              ) : config?.type === "lookup" ? (
+                <DropdownMenu.Item
+                  onSelect={() =>
+                    onOpenSettingModal?.(config.lookup.parentColId)
+                  }
+                >
+                  親列の設定を編集
+                </DropdownMenu.Item>
+              ) : (
+                <DropdownMenu.Item
+                  onSelect={() => colId && onOpenSettingModal?.(colId)}
+                >
+                  プルダウン設定を追加...
+                </DropdownMenu.Item>
+              )}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        </div>
+
         <hr
           onMouseDown={onMouseDownResizer}
           onPointerDown={(e) => e.stopPropagation()}

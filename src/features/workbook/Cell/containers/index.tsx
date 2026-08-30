@@ -11,10 +11,13 @@ import {
 } from "react";
 import {
   activeCellAtom,
+  activeColumnConfigFamily,
   type ColumnId,
+  cellEditsAtom,
   cellFamily,
   columnOrderAtom,
   type RowId,
+  referencedSheetsDataAtom,
   rowOrderAtom,
   selectionAtom,
   workbookStatusAtom,
@@ -40,11 +43,49 @@ const CellInner: FC<InnerProps> = memo(
     const [workbookStatus, setWorkbookStatus] = useAtom(workbookStatusAtom);
     const setSelection = useSetAtom(selectionAtom);
 
+    const config = useAtomValue(
+      useMemo(() => activeColumnConfigFamily(colId), [colId]),
+    );
+    const referencedSheets = useAtomValue(referencedSheetsDataAtom);
+    const cellEdits = useAtomValue(cellEditsAtom);
+
+    const isLookup = config.type === "lookup";
+    const isPulldown = config.type === "pulldown";
+    const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
+
+    const pulldownOptions = useMemo(() => {
+      if (!isPulldown) return undefined;
+      const { sourceSheetId, sourceKeyColId, lookupColumns } = config.pulldown;
+      const masterSheet = referencedSheets[sourceSheetId];
+      if (!masterSheet) return [];
+
+      return masterSheet.rows.map((rId) => {
+        const key = `${rId}-${sourceKeyColId}`;
+        const keyVal =
+          key in cellEdits ? cellEdits[key] : (masterSheet.values[key] ?? "");
+        const labels = lookupColumns
+          .map((l) => {
+            const lKey = `${rId}-${l.sourceColId}`;
+            return lKey in cellEdits
+              ? cellEdits[lKey]
+              : (masterSheet.values[lKey] ?? "");
+          })
+          .filter(Boolean)
+          .join(" - ");
+
+        return {
+          key: keyVal,
+          label: labels ? `${keyVal} (${labels})` : keyVal,
+        };
+      });
+    }, [isPulldown, config, referencedSheets, cellEdits]);
+
     const isEditing = activeCell?.row === row && activeCell?.col === col;
 
     const handleDoubleClick = useCallback(() => {
+      if (isLookup) return;
       setEditingCell({ row, col });
-    }, [row, col, setEditingCell]);
+    }, [isLookup, row, col, setEditingCell]);
 
     const handleBlur = useCallback(() => {
       setEditingCell(null);
@@ -65,6 +106,17 @@ const CellInner: FC<InnerProps> = memo(
       },
       [setValue],
     );
+
+    const handleSelectPulldown = useCallback(
+      (newVal: string) => {
+        setValue(newVal);
+      },
+      [setValue],
+    );
+
+    const handleClosePulldown = useCallback(() => {
+      setEditingCell(null);
+    }, [setEditingCell]);
 
     const handleSelectionStart = useCallback(() => {
       setWorkbookStatus("selecting");
@@ -97,6 +149,12 @@ const CellInner: FC<InnerProps> = memo(
         {children({
           value,
           isEditing,
+          isLookup,
+          isPulldown,
+          pulldownMode,
+          pulldownOptions,
+          onSelectPulldown: handleSelectPulldown,
+          onClosePulldown: handleClosePulldown,
           onChange: handleChange,
           onDoubleClick: handleDoubleClick,
           onBlur: handleBlur,

@@ -1,10 +1,19 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useAtomValue } from "jotai";
 import type { FC, ReactNode } from "react";
+import {
+  activeColumnConfigsAtom,
+  type ColumnConfig,
+  type ColumnId,
+  isColumnId,
+} from "../../stores";
 import type { AxisLayout } from "../components";
 
 export type ColumnHeaderPresenterProps = {
   col: AxisLayout;
+  colId: ColumnId | null;
+  config?: ColumnConfig;
   setNodeRef: (node: HTMLElement | null) => void;
   dndStyle: {
     transform?: string;
@@ -33,6 +42,11 @@ export const ColumnHeaderContainer: FC<Props> = ({
   onMouseDownResizer,
   children,
 }) => {
+  const configs = useAtomValue(activeColumnConfigsAtom);
+  const colId = isColumnId(col.id) ? col.id : null;
+  const config = colId ? configs[colId] : undefined;
+  const isLookup = config?.type === "lookup";
+
   const {
     attributes,
     listeners,
@@ -40,7 +54,10 @@ export const ColumnHeaderContainer: FC<Props> = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: col.id as string });
+  } = useSortable({
+    id: String(col.id),
+    disabled: isLookup,
+  });
 
   const dndStyle = {
     transform: transform ? CSS.Transform.toString(transform) : undefined,
@@ -49,14 +66,22 @@ export const ColumnHeaderContainer: FC<Props> = ({
 
   const isResizing = resizingId === col.id;
 
-  return children({
-    col,
-    setNodeRef,
-    dndStyle,
-    attributes,
-    listeners,
-    isDragging,
-    isResizing,
-    onMouseDownResizer: onMouseDownResizer(col.id, col.size),
-  });
+  return (
+    <>
+      {children({
+        col,
+        colId,
+        config,
+        setNodeRef,
+        dndStyle,
+        attributes,
+        listeners,
+        isDragging,
+        isResizing,
+        onMouseDownResizer: onMouseDownResizer(col.id, col.size),
+      })}
+    </>
+  );
 };
+
+ColumnHeaderContainer.displayName = "ColumnHeaderContainer";

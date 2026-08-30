@@ -129,6 +129,44 @@
     cursor: grabbing;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+
+  &.sheet__headerCell--lookup {
+    cursor: default;
+    background-color: var(--gray-3);
+  }
+}
+
+.sheet__headerCellTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  padding: 0 4px;
+  max-width: calc(100% - 20px);
+}
+
+.sheet__headerCellMenuTrigger {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+
+  & button {
+    margin: 0;
+  }
+}
+
+.sheet__headerCell:hover .sheet__headerCellMenuTrigger,
+.sheet__headerCellMenuTrigger:focus-within,
+.sheet__headerCellMenuTrigger[data-state="open"] {
+  opacity: 1;
 }
 
 .sheet__headerResizer {

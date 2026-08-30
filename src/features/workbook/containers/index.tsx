@@ -5,8 +5,8 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from "@dnd-kit/sortable";
-import { useAtom } from "jotai";
-import { type FC, useCallback, useMemo } from "react";
+import { useAtom, useSetAtom } from "jotai";
+import { type FC, useCallback, useMemo, useState } from "react";
 import { Cell } from "../Cell/components";
 import { CellContainer } from "../Cell/containers";
 import { Workbook } from "../components";
@@ -17,9 +17,16 @@ import { usePdfPreviewContainer } from "../PdfPreview/containers/usePdfPreviewCo
 import { RowStatus } from "../RowStatus/components";
 import { RowStatusContainer } from "../RowStatus/containers";
 import { type AxisLayout, HeaderCell, Sheet } from "../Sheet/components";
+import { ColumnSettingModal } from "../Sheet/components/ColumnSettingModal";
 import { ColumnHeaderContainer } from "../Sheet/containers/ColumnHeaderContainer";
 import { useSheetContainer } from "../Sheet/containers/useSheetContainer";
-import { type ColumnId, type RowId, viewModeAtom } from "../stores";
+
+import {
+  type ColumnId,
+  type RowId,
+  removeColumnBindingAtom,
+  viewModeAtom,
+} from "../stores";
 import { useExportExcel } from "./useExportExcel";
 import { useExportPdf } from "./useExportPdf";
 import { MOCK_SHEETS, useSheetLoader } from "./useSheetLoader";
@@ -90,9 +97,16 @@ export const WorkbookContainer: FC = () => {
     [virtualRows, composedColumns],
   );
 
+  const [settingModalColId, setSettingModalColId] = useState<ColumnId | null>(
+    null,
+  );
+
+  const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
+
   const renderHeaderCell = useCallback(
     (
       col: AxisLayout,
+
       resizingId: string | number | bigint | null,
       handleMouseDownResizer: (
         id: string | number | bigint,
@@ -105,10 +119,16 @@ export const WorkbookContainer: FC = () => {
         resizingId={resizingId}
         onMouseDownResizer={handleMouseDownResizer}
       >
-        {(headerProps) => <HeaderCell {...headerProps} />}
+        {(headerProps) => (
+          <HeaderCell
+            {...headerProps}
+            onOpenSettingModal={(colId) => setSettingModalColId(colId)}
+            onRemoveBinding={(colId) => removeColumnBinding(colId)}
+          />
+        )}
       </ColumnHeaderContainer>
     ),
-    [],
+    [removeColumnBinding],
   );
 
   if (viewMode === "pdf-preview") {
@@ -116,47 +136,59 @@ export const WorkbookContainer: FC = () => {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <Workbook
-        toolbar={
-          <Toolbar
-            sheetName={activeSheet?.name}
-            onExport={exportCurrentSheet}
-            onPreviewPdf={previewCurrentSheetPdf}
-            isExportingExcel={isExportingExcel}
-            isExportingPdf={isExportingPdf}
-          />
-        }
-        tabs={
-          <SheetTabs
-            activeSheetId={activeSheetId}
-            sheets={MOCK_SHEETS}
-            onSelectSheet={handleSelectSheet}
-          />
-        }
-        sheet={
-          <SortableContext
-            items={columnOrder}
-            strategy={horizontalListSortingStrategy}
-          >
-            <Sheet
-              ref={parentRef}
-              rows={composedRows}
-              columns={composedColumns}
-              totalWidth={columnVirtualizer.getTotalSize()}
-              totalHeight={rowVirtualizer.getTotalSize()}
-              selection={selection}
-              onChangeColumnWidth={handleChangeColumnWidth}
-              renderHeaderCell={renderHeaderCell}
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <Workbook
+          toolbar={
+            <Toolbar
+              sheetName={activeSheet?.name}
+              onExport={exportCurrentSheet}
+              onPreviewPdf={previewCurrentSheetPdf}
+              isExportingExcel={isExportingExcel}
+              isExportingPdf={isExportingPdf}
             />
-          </SortableContext>
-        }
-      />
-    </DndContext>
+          }
+          tabs={
+            <SheetTabs
+              activeSheetId={activeSheetId}
+              sheets={MOCK_SHEETS}
+              onSelectSheet={handleSelectSheet}
+            />
+          }
+          sheet={
+            <SortableContext
+              items={columnOrder}
+              strategy={horizontalListSortingStrategy}
+            >
+              <Sheet
+                ref={parentRef}
+                rows={composedRows}
+                columns={composedColumns}
+                totalWidth={columnVirtualizer.getTotalSize()}
+                totalHeight={rowVirtualizer.getTotalSize()}
+                selection={selection}
+                onChangeColumnWidth={handleChangeColumnWidth}
+                renderHeaderCell={renderHeaderCell}
+              />
+            </SortableContext>
+          }
+        />
+      </DndContext>
+      {settingModalColId !== null && (
+        <ColumnSettingModal
+          key={settingModalColId}
+          targetColId={settingModalColId}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setSettingModalColId(null);
+          }}
+        />
+      )}
+    </>
   );
 };

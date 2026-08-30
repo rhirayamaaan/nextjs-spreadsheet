@@ -1,9 +1,24 @@
+import { CaretDownIcon } from "@radix-ui/react-icons";
+import clsx from "clsx";
 import type { ChangeEvent, FC, FocusEvent, KeyboardEvent } from "react";
+import type { PulldownMode } from "../../stores";
 import styles from "./index.module.css";
+import { PulldownEditor } from "./PulldownEditor";
+
+type Option = {
+  key: string;
+  label: string;
+};
 
 type Props = {
   value: string;
   isEditing: boolean;
+  isLookup?: boolean;
+  isPulldown?: boolean;
+  pulldownMode?: PulldownMode;
+  pulldownOptions?: Option[];
+  onSelectPulldown?: (val: string) => void;
+  onClosePulldown?: () => void;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onDoubleClick: () => void;
   onBlur: (event: FocusEvent<HTMLInputElement>) => void;
@@ -15,6 +30,12 @@ type Props = {
 export const Cell: FC<Props> = ({
   value,
   isEditing,
+  isLookup,
+  isPulldown,
+  pulldownMode,
+  pulldownOptions,
+  onSelectPulldown,
+  onClosePulldown,
   onChange,
   onDoubleClick,
   onBlur,
@@ -22,15 +43,44 @@ export const Cell: FC<Props> = ({
   onMouseDown,
   onMouseEnter,
 }) => {
+  const handleDoubleClick = isLookup ? undefined : onDoubleClick;
+
   return (
     <button
       type="button"
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
-      className={styles.cell}
+      className={clsx(
+        styles.cell,
+        isLookup && styles["cell--lookup"],
+        isPulldown && styles["cell--pulldown"],
+      )}
     >
-      {isEditing ? (
+      {isEditing &&
+      isPulldown &&
+      pulldownMode &&
+      pulldownOptions &&
+      onSelectPulldown ? (
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <span className={styles.cell__content}>{value}</span>
+          <PulldownEditor
+            value={value}
+            mode={pulldownMode}
+            options={pulldownOptions}
+            onSelect={onSelectPulldown}
+            onClose={onClosePulldown ?? (() => {})}
+          />
+        </div>
+      ) : isEditing && !isLookup ? (
         <input
           type="text"
           // biome-ignore lint/a11y/noAutofocus: 編集モード切替時に即座に入力可能にするため
@@ -42,7 +92,14 @@ export const Cell: FC<Props> = ({
           className={styles.cell__input}
         />
       ) : (
-        <span className={styles.cell__content}>{value}</span>
+        <>
+          <span className={styles.cell__content}>{value}</span>
+          {isPulldown && (
+            <span className={styles.cell__pulldownIndicator}>
+              <CaretDownIcon width={12} height={12} />
+            </span>
+          )}
+        </>
       )}
     </button>
   );

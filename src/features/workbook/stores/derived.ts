@@ -6,8 +6,10 @@ import {
   baseColumnOrderAtom,
   baseRowOrderAtom,
 } from "./base";
+import { activeColumnConfigsAtom, getLookupValue } from "./binding";
 import {
   cellEditsAtom,
+  modifiedColumnNamesAtom,
   modifiedColumnOrdersAtom,
   modifiedRowOrdersAtom,
   rowStatusesAtom,
@@ -61,7 +63,34 @@ export const columnOrderAtom = atom(
   },
 );
 
-export const columnNamesAtom = atom((get) => get(baseColumnNamesAtom));
+export const columnNamesAtom = atom(
+  (get) => {
+    const baseNames = get(baseColumnNamesAtom);
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return baseNames;
+    const modified = get(modifiedColumnNamesAtom)[activeSheetId] ?? {};
+    return { ...baseNames, ...modified };
+  },
+  (
+    get,
+    set,
+    newNames:
+      | Record<ColumnId, string>
+      | ((prev: Record<ColumnId, string>) => Record<ColumnId, string>),
+  ) => {
+    const activeSheetId = get(activeSheetIdAtom);
+    if (!activeSheetId) return;
+
+    const currentNames = get(columnNamesAtom);
+    const nextNames =
+      typeof newNames === "function" ? newNames(currentNames) : newNames;
+
+    set(modifiedColumnNamesAtom, {
+      ...get(modifiedColumnNamesAtom),
+      [activeSheetId]: nextNames,
+    });
+  },
+);
 
 export const cellFamily = atomFamily(
   (address: CellAddress) => {
@@ -69,6 +98,18 @@ export const cellFamily = atomFamily(
 
     return atom(
       (get) => {
+        // If column is a lookup column, resolve dynamically from master sheet
+        const configs = get(activeColumnConfigsAtom);
+        const colConfig = configs[address.colId];
+        if (colConfig && colConfig.type === "lookup") {
+          return getLookupValue(
+            get,
+            address,
+            colConfig.lookup,
+            get(baseCellValuesAtom),
+          );
+        }
+
         const edits = get(cellEditsAtom);
         if (key in edits) {
           return edits[key];
@@ -76,6 +117,13 @@ export const cellFamily = atomFamily(
         return get(baseCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
       },
       (get, set, newValue: string) => {
+        // Lookup column is read-only
+        const configs = get(activeColumnConfigsAtom);
+        const colConfig = configs[address.colId];
+        if (colConfig && colConfig.type === "lookup") {
+          return;
+        }
+
         const baseValue = get(baseCellValuesAtom)[key] ?? "";
         const edits = get(cellEditsAtom);
         const currentValue = edits[key] ?? baseValue;
