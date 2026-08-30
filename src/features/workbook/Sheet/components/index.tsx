@@ -1,6 +1,7 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons";
 import { Badge, DropdownMenu, IconButton } from "@radix-ui/themes";
 import clsx from "clsx";
+import { useAtomValue } from "jotai";
 import {
   type FC,
   memo,
@@ -9,7 +10,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import type { ColumnId, Selection } from "../../stores";
+import { type ColumnId, type Selection, selectionAtom } from "../../stores";
 
 import type { ColumnHeaderPresenterProps } from "../containers/ColumnHeaderContainer";
 import styles from "./index.module.css";
@@ -31,15 +32,26 @@ const MIN_COLUMN_WIDTH = 30;
 const STATUS_COL_WIDTH = 50;
 const HEADER_HEIGHT = 30;
 
+export type ItemLayout = {
+  start: number;
+  size: number;
+};
+
 const SelectionOverlay = ({
-  selection,
+  selection: propSelection,
   rows,
   columns,
+  getRowLayout,
+  getColumnLayout,
 }: {
-  selection: Selection;
-  rows: AxisLayout[];
-  columns: AxisLayout[];
+  selection?: Selection;
+  rows?: AxisLayout[];
+  columns?: AxisLayout[];
+  getRowLayout?: (index: number) => ItemLayout | undefined;
+  getColumnLayout?: (index: number) => ItemLayout | undefined;
 }) => {
+  const atomSelection = useAtomValue(selectionAtom);
+  const selection = propSelection !== undefined ? propSelection : atomSelection;
   if (!selection) return null;
 
   const minRow = Math.min(selection.start.row, selection.end.row);
@@ -47,10 +59,18 @@ const SelectionOverlay = ({
   const minCol = Math.min(selection.start.col, selection.end.col);
   const maxCol = Math.max(selection.start.col, selection.end.col);
 
-  const startRow = rows.find((r) => r.index === minRow);
-  const endRow = rows.find((r) => r.index === maxRow);
-  const startCol = columns.find((c) => c.index === minCol);
-  const endCol = columns.find((c) => c.index === maxCol);
+  const startRow = getRowLayout
+    ? getRowLayout(minRow)
+    : rows?.find((r) => r.index === minRow);
+  const endRow = getRowLayout
+    ? getRowLayout(maxRow)
+    : rows?.find((r) => r.index === maxRow);
+  const startCol = getColumnLayout
+    ? getColumnLayout(minCol)
+    : columns?.find((c) => c.index === minCol);
+  const endCol = getColumnLayout
+    ? getColumnLayout(maxCol)
+    : columns?.find((c) => c.index === maxCol);
 
   if (!startRow || !endRow || !startCol || !endCol) return null;
 
@@ -104,12 +124,16 @@ const SheetRows = memo(
     totalWidth,
     totalHeight,
     selection,
+    getRowLayout,
+    getColumnLayout,
   }: {
     rows: RowLayout[];
     columns: AxisLayout[];
     totalWidth: number;
     totalHeight: number;
-    selection: Selection;
+    selection?: Selection;
+    getRowLayout?: (index: number) => ItemLayout | undefined;
+    getColumnLayout?: (index: number) => ItemLayout | undefined;
   }) => {
     return (
       <div
@@ -119,7 +143,13 @@ const SheetRows = memo(
           height: `${totalHeight}px`,
         }}
       >
-        <SelectionOverlay selection={selection} rows={rows} columns={columns} />
+        <SelectionOverlay
+          selection={selection}
+          rows={rows}
+          columns={columns}
+          getRowLayout={getRowLayout}
+          getColumnLayout={getColumnLayout}
+        />
         {rows.map((row) => (
           <SheetCells key={row.id} row={row} columns={columns} />
         ))}
@@ -167,11 +197,21 @@ type BodyProps = {
   columns: AxisLayout[];
   totalWidth: number;
   totalHeight: number;
-  selection: Selection;
+  selection?: Selection;
+  getRowLayout?: (index: number) => ItemLayout | undefined;
+  getColumnLayout?: (index: number) => ItemLayout | undefined;
 };
 
 const SheetBody = memo(
-  ({ rows, columns, totalWidth, totalHeight, selection }: BodyProps) => {
+  ({
+    rows,
+    columns,
+    totalWidth,
+    totalHeight,
+    selection,
+    getRowLayout,
+    getColumnLayout,
+  }: BodyProps) => {
     return (
       <>
         <StatusColumn rows={rows} totalHeight={totalHeight} />
@@ -190,6 +230,8 @@ const SheetBody = memo(
             totalWidth={totalWidth}
             totalHeight={totalHeight}
             selection={selection}
+            getRowLayout={getRowLayout}
+            getColumnLayout={getColumnLayout}
           />
         </div>
       </>
@@ -420,6 +462,8 @@ export const Sheet: FC<Props> = ({
   totalWidth,
   totalHeight,
   selection,
+  getRowLayout,
+  getColumnLayout,
   onChangeColumnWidth,
   renderHeaderCell,
   ref,
@@ -445,6 +489,8 @@ export const Sheet: FC<Props> = ({
           totalWidth={totalWidth}
           totalHeight={totalHeight}
           selection={selection}
+          getRowLayout={getRowLayout}
+          getColumnLayout={getColumnLayout}
         />
       </div>
     </div>

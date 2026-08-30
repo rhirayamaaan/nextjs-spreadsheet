@@ -7,7 +7,6 @@ import {
 } from "@dnd-kit/sortable";
 import { useAtom, useSetAtom } from "jotai";
 import { type FC, useCallback, useMemo, useState } from "react";
-import { Cell } from "../Cell/components";
 import { CellContainer } from "../Cell/containers";
 import { Workbook } from "../components";
 import { SheetTabs } from "../components/SheetTabs";
@@ -47,13 +46,14 @@ export const WorkbookContainer: FC = () => {
     parentRef,
     rowVirtualizer,
     columnVirtualizer,
-    selection,
     columnOrder,
     columnNames,
     sensors,
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
+    getRowLayout,
+    getColumnLayout,
   } = useSheetContainer();
 
   // COMPOSE SHEET PROPS (Composition Layer)
@@ -89,9 +89,7 @@ export const WorkbookContainer: FC = () => {
             key={`${item.key}-${col.id}`}
             row={item.index}
             col={col.index}
-          >
-            {(cellProps) => <Cell {...cellProps} />}
-          </CellContainer>
+          />
         )),
       })),
     [virtualRows, composedColumns],
@@ -171,7 +169,8 @@ export const WorkbookContainer: FC = () => {
                 columns={composedColumns}
                 totalWidth={columnVirtualizer.getTotalSize()}
                 totalHeight={rowVirtualizer.getTotalSize()}
-                selection={selection}
+                getRowLayout={getRowLayout}
+                getColumnLayout={getColumnLayout}
                 onChangeColumnWidth={handleChangeColumnWidth}
                 renderHeaderCell={renderHeaderCell}
               />

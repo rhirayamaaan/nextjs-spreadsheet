@@ -4,6 +4,7 @@ import {
   type ComponentProps,
   type FC,
   type KeyboardEvent,
+  type MouseEvent,
   memo,
   type ReactNode,
   useCallback,
@@ -16,15 +17,18 @@ import {
   cellEditsAtom,
   cellFamily,
   columnOrderAtom,
+  isCellEditingFamily,
   type RowId,
   referencedSheetsDataAtom,
   rowOrderAtom,
   selectionAtom,
   workbookStatusAtom,
 } from "../../stores";
-import type { Cell } from "../components"; // Type-only import
+import { Cell } from "../components";
 
 type CellProps = ComponentProps<typeof Cell>;
+
+const defaultRenderCell = (props: CellProps) => <Cell {...props} />;
 
 type InnerProps = {
   row: number;
@@ -39,8 +43,11 @@ const CellInner: FC<InnerProps> = memo(
     const [value, setValue] = useAtom(
       useMemo(() => cellFamily({ rowId, colId }), [rowId, colId]),
     );
-    const [activeCell, setEditingCell] = useAtom(activeCellAtom);
-    const [workbookStatus, setWorkbookStatus] = useAtom(workbookStatusAtom);
+    const isEditing = useAtomValue(
+      useMemo(() => isCellEditingFamily({ row, col }), [row, col]),
+    );
+    const setEditingCell = useSetAtom(activeCellAtom);
+    const setWorkbookStatus = useSetAtom(workbookStatusAtom);
     const setSelection = useSetAtom(selectionAtom);
 
     const config = useAtomValue(
@@ -80,8 +87,6 @@ const CellInner: FC<InnerProps> = memo(
       });
     }, [isPulldown, config, referencedSheets, cellEdits]);
 
-    const isEditing = activeCell?.row === row && activeCell?.col === col;
-
     const handleDoubleClick = useCallback(() => {
       if (isLookup) return;
       setEditingCell({ row, col });
@@ -118,31 +123,49 @@ const CellInner: FC<InnerProps> = memo(
       setEditingCell(null);
     }, [setEditingCell]);
 
-    const handleSelectionStart = useCallback(() => {
-      setWorkbookStatus("selecting");
-      setSelection({
-        start: { row, col },
-        end: { row, col },
-      });
-    }, [setSelection, setWorkbookStatus, row, col]);
+    const handleSelectionStart = useCallback(
+      (event: MouseEvent<HTMLButtonElement>) => {
+        if (event.button !== 0) return;
 
-    const handleSelectionMove = useMemo(() => {
-      if (workbookStatus !== "selecting") {
-        return undefined;
-      }
+        if (event.shiftKey) {
+          event.preventDefault();
+        }
 
-      return () => {
+        setWorkbookStatus("selecting");
+        setSelection((prev) => {
+          if (event.shiftKey && prev) {
+            return {
+              start: prev.start,
+              end: { row, col },
+            };
+          }
+          return {
+            start: { row, col },
+            end: { row, col },
+          };
+        });
+      },
+      [setSelection, setWorkbookStatus, row, col],
+    );
+
+    const handleSelectionMove = useCallback(
+      (event: MouseEvent<HTMLButtonElement>) => {
+        if (event.buttons !== 1) return;
         setSelection((prev) => {
           if (!prev) {
-            throw new Error("Invalid selection state");
+            return {
+              start: { row, col },
+              end: { row, col },
+            };
           }
           return {
             start: prev.start,
             end: { row, col },
           };
         });
-      };
-    }, [setSelection, row, col, workbookStatus]);
+      },
+      [setSelection, row, col],
+    );
 
     return (
       <>
@@ -172,24 +195,26 @@ CellInner.displayName = "CellInner";
 type Props = {
   row: number;
   col: number;
-  children: (props: CellProps) => ReactNode;
+  children?: (props: CellProps) => ReactNode;
 };
 
-export const CellContainer: FC<Props> = memo(({ row, col, children }) => {
-  const rowOrder = useAtomValue(rowOrderAtom);
-  const columnOrder = useAtomValue(columnOrderAtom);
-  const rowId = rowOrder[row];
-  const colId = columnOrder[col];
+export const CellContainer: FC<Props> = memo(
+  ({ row, col, children = defaultRenderCell }) => {
+    const rowOrder = useAtomValue(rowOrderAtom);
+    const columnOrder = useAtomValue(columnOrderAtom);
+    const rowId = rowOrder[row];
+    const colId = columnOrder[col];
 
-  if (!rowId || !colId) {
-    return null;
-  }
+    if (!rowId || !colId) {
+      return null;
+    }
 
-  return (
-    <CellInner rowId={rowId} colId={colId} row={row} col={col}>
-      {children}
-    </CellInner>
-  );
-});
+    return (
+      <CellInner rowId={rowId} colId={colId} row={row} col={col}>
+        {children}
+      </CellInner>
+    );
+  },
+);
 
 CellContainer.displayName = "CellContainer";

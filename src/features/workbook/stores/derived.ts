@@ -15,7 +15,16 @@ import {
   rowStatusesAtom,
 } from "./edit";
 import type { CellAddress, ColumnId, RowId } from "./types";
-import { activeSheetIdAtom } from "./ui";
+import { activeCellAtom, activeSheetIdAtom } from "./ui";
+
+export const isCellEditingFamily = atomFamily(
+  ({ row, col }: { row: number; col: number }) =>
+    atom((get) => {
+      const active = get(activeCellAtom);
+      return active?.row === row && active?.col === col;
+    }),
+  (a, b) => a.row === b.row && a.col === b.col,
+);
 
 export const rowOrderAtom = atom(
   (get) => {

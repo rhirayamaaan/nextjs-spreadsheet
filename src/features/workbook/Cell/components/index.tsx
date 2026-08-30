@@ -1,6 +1,12 @@
 import { CaretDownIcon } from "@radix-ui/react-icons";
 import clsx from "clsx";
-import type { ChangeEvent, FC, FocusEvent, KeyboardEvent } from "react";
+import type {
+  ChangeEvent,
+  FC,
+  FocusEvent,
+  KeyboardEvent,
+  MouseEvent,
+} from "react";
 import type { PulldownMode } from "../../stores";
 import styles from "./index.module.css";
 import { PulldownEditor } from "./PulldownEditor";
@@ -23,8 +29,8 @@ type Props = {
   onDoubleClick: () => void;
   onBlur: (event: FocusEvent<HTMLInputElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
-  onMouseDown: () => void;
-  onMouseEnter?: () => void;
+  onMouseDown: (event: MouseEvent<HTMLButtonElement>) => void;
+  onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
 export const Cell: FC<Props> = ({

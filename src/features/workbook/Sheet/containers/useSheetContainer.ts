@@ -19,7 +19,6 @@ import {
   pasteRowsAtom,
   reorderColumnsWithFollowersAtom,
   rowOrderAtom,
-  selectionAtom,
   workbookStatusAtom,
 } from "../../stores";
 
@@ -34,8 +33,7 @@ export const useSheetContainer = () => {
   const columnOrder = useAtomValue(columnOrderAtom);
 
   const columnNames = useAtomValue(columnNamesAtom);
-  const [status, setStatus] = useAtom(workbookStatusAtom);
-  const selection = useAtomValue(selectionAtom);
+  const setStatus = useSetAtom(workbookStatusAtom);
 
   const [activeId, setActiveId] = useState<string | number | bigint | null>(
     null,
@@ -114,10 +112,6 @@ export const useSheetContainer = () => {
     [setColumnWidthOverrides],
   );
 
-  const handleStopSelection = useCallback(() => {
-    setStatus((prev) => (prev === "selecting" ? "idle" : prev));
-  }, [setStatus]);
-
   const pasteRows = useSetAtom(pasteRowsAtom);
 
   useEffect(() => {
@@ -151,18 +145,50 @@ export const useSheetContainer = () => {
   }, [pasteRows]);
 
   useEffect(() => {
-    if (status !== "selecting") return;
-    window.addEventListener("mouseup", handleStopSelection);
-    return () => {
-      window.removeEventListener("mouseup", handleStopSelection);
+    const handleMouseUp = () => {
+      setStatus((prev) => (prev === "selecting" ? "idle" : prev));
     };
-  }, [status, handleStopSelection]);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [setStatus]);
+
+  const getRowLayout = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= rowOrder.length) return undefined;
+      const item = rowVirtualizer.measurementsCache[index];
+      if (item) {
+        return { start: item.start, size: item.size };
+      }
+      return { start: index * 35, size: 35 };
+    },
+    [rowVirtualizer, rowOrder.length],
+  );
+
+  const getColumnLayout = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= columnOrder.length) return undefined;
+      const item = columnVirtualizer.measurementsCache[index];
+      if (item) {
+        return { start: item.start, size: item.size };
+      }
+      let start = 0;
+      for (let i = 0; i < index; i++) {
+        const colId = columnOrder[i];
+        start += (colId ? columnWidthOverrides[colId] : undefined) ?? 100;
+      }
+      const colId = columnOrder[index];
+      const size = (colId ? columnWidthOverrides[colId] : undefined) ?? 100;
+      return { start, size };
+    },
+    [columnVirtualizer, columnOrder, columnWidthOverrides],
+  );
 
   return {
     parentRef,
     rowVirtualizer,
     columnVirtualizer,
-    selection,
     columnOrder,
     columnNames,
     activeId,
@@ -170,5 +196,7 @@ export const useSheetContainer = () => {
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
+    getRowLayout,
+    getColumnLayout,
   };
 };
