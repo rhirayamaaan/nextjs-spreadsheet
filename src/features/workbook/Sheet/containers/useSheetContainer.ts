@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   activeSheetIdAtom,
@@ -16,6 +16,7 @@ import {
   columnNamesAtom,
   columnOrderAtom,
   columnWidthOverridesAtom,
+  pasteRowsAtom,
   rowOrderAtom,
   selectionAtom,
   workbookStatusAtom,
@@ -115,6 +116,38 @@ export const useSheetContainer = () => {
   const handleStopSelection = useCallback(() => {
     setStatus((prev) => (prev === "selecting" ? "idle" : prev));
   }, [setStatus]);
+
+  const pasteRows = useSetAtom(pasteRowsAtom);
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const activeElement = document.activeElement;
+      const isInput =
+        activeElement instanceof HTMLElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.isContentEditable);
+
+      if (isInput) return;
+
+      const text = event.clipboardData?.getData("text/plain");
+      if (!text) return;
+
+      const rowsData = text
+        .split(/\r?\n/)
+        .filter((row) => row.length > 0)
+        .map((row) => row.split("\t"));
+
+      if (rowsData.length > 0) {
+        pasteRows(rowsData);
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, [pasteRows]);
 
   useEffect(() => {
     if (status !== "selecting") return;
