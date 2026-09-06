@@ -463,22 +463,37 @@ const SheetHeader: FC<HeaderProps> = ({
     (id: string | number | bigint, width: number) =>
       (event: React.MouseEvent) => {
         event.stopPropagation();
+        event.preventDefault();
         const startX = event.pageX;
         const startWidth = width;
 
+        const resizerElement = event.currentTarget as HTMLElement;
+        const innerElement = resizerElement.closest(
+          `.${styles.sheet__inner}`,
+        ) as HTMLElement | null;
+
+        if (!innerElement) return;
+
+        const resizerRect = resizerElement.getBoundingClientRect();
+        const innerRect = innerElement.getBoundingClientRect();
+
+        const initialLeft =
+          resizerRect.left + resizerRect.width / 2 - innerRect.left;
+
         setResizing({ id, startX, startWidth });
-        setCurrentX(startX);
+        setCurrentX(initialLeft);
 
         const onMouseMove = (e: MouseEvent) => {
-          const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
-          setCurrentX(Math.max(minX, e.pageX));
+          const diff = e.pageX - startX;
+          const newWidth = Math.max(MIN_COLUMN_WIDTH, startWidth + diff);
+          const actualDiff = newWidth - startWidth;
+          setCurrentX(initialLeft + actualDiff);
         };
 
         const onMouseUp = (e: MouseEvent) => {
-          const minX = startX - (startWidth - MIN_COLUMN_WIDTH);
-          const finalX = Math.max(minX, e.pageX);
-          const diff = finalX - startX;
-          onChangeColumnWidth(id, startWidth + diff);
+          const diff = e.pageX - startX;
+          const finalWidth = Math.max(MIN_COLUMN_WIDTH, startWidth + diff);
+          onChangeColumnWidth(id, finalWidth);
           setResizing(null);
 
           window.removeEventListener("mousemove", onMouseMove);

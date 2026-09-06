@@ -32,7 +32,7 @@ export const MOCK_SHEETS = Array.from({ length: 20 }, (_, i) => {
     return {
       id: "sheet-1",
       name: "生産量登録",
-      rowCount: 10000,
+      rowCount: 100000,
       colCount: 11,
     };
   }
