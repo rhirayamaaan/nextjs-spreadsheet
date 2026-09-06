@@ -236,6 +236,11 @@ export const removeColumnBindingAtom = atom(
   },
 );
 
+type ColumnGroup = {
+  id: ColumnId;
+  members: ColumnId[];
+};
+
 export const reorderColumnsWithFollowersAtom = atom(
   null,
   (
@@ -254,46 +259,64 @@ export const reorderColumnsWithFollowersAtom = atom(
     // Lookup columns cannot be moved directly
     if (activeConfig?.type === "lookup") return;
 
-    const activeFollowers: ColumnId[] = [];
-    if (activeConfig?.type === "pulldown") {
-      const pulldownConfig = activeConfig.pulldown;
-      activeFollowers.push(
-        ...pulldownConfig.lookupColumns.map((l) => l.lookupColId),
-      );
-    }
+    const groups: ColumnGroup[] = [];
+    const handledLookupColIds = new Set<ColumnId>();
 
-    const movingGroup = [activeColId, ...activeFollowers];
-    const movingGroupSet = new Set(movingGroup);
+    for (const colId of currentOrder) {
+      if (handledLookupColIds.has(colId)) {
+        continue;
+      }
 
-    const oldIndex = currentOrder.indexOf(activeColId);
-    let overIndex = currentOrder.indexOf(overColId);
-    if (oldIndex === -1 || overIndex === -1) return;
-
-    const overConfig = configs[overColId];
-    if (overConfig?.type === "lookup") {
-      const parentColId = overConfig.lookup.parentColId;
-      const parentConfig = configs[parentColId];
-      if (parentConfig?.type === "pulldown") {
-        const lastFollower =
-          parentConfig.pulldown.lookupColumns[
-            parentConfig.pulldown.lookupColumns.length - 1
-          ];
-        if (lastFollower) {
-          overIndex = currentOrder.indexOf(lastFollower.lookupColId);
+      const config = configs[colId];
+      if (config?.type === "pulldown") {
+        const followers: ColumnId[] = [];
+        for (const lookupDef of config.pulldown.lookupColumns) {
+          if (currentOrder.includes(lookupDef.lookupColId)) {
+            followers.push(lookupDef.lookupColId);
+            handledLookupColIds.add(lookupDef.lookupColId);
+          }
         }
+        groups.push({
+          id: colId,
+          members: [colId, ...followers],
+        });
+      } else if (config?.type === "lookup") {
+        // Fallback for orphaned lookup columns if parent is missing from currentOrder
+        const parentColId = config.lookup.parentColId;
+        if (!currentOrder.includes(parentColId)) {
+          groups.push({
+            id: colId,
+            members: [colId],
+          });
+        }
+      } else {
+        groups.push({
+          id: colId,
+          members: [colId],
+        });
       }
     }
 
-    const remaining = currentOrder.filter((id) => !movingGroupSet.has(id));
+    const activeGroupIndex = groups.findIndex((g) =>
+      g.members.includes(activeColId),
+    );
+    const overGroupIndex = groups.findIndex((g) =>
+      g.members.includes(overColId),
+    );
 
-    let targetIndex = remaining.indexOf(overColId);
-    if (targetIndex === -1) {
-      targetIndex = remaining.length;
-    } else if (oldIndex < overIndex) {
-      targetIndex = targetIndex + 1;
+    if (
+      activeGroupIndex === -1 ||
+      overGroupIndex === -1 ||
+      activeGroupIndex === overGroupIndex
+    ) {
+      return;
     }
 
-    remaining.splice(targetIndex, 0, ...movingGroup);
-    set(columnOrderAtom, remaining);
+    const nextGroups = [...groups];
+    const [movedGroup] = nextGroups.splice(activeGroupIndex, 1);
+    nextGroups.splice(overGroupIndex, 0, movedGroup);
+
+    const newOrder = nextGroups.flatMap((g) => g.members);
+    set(columnOrderAtom, newOrder);
   },
 );

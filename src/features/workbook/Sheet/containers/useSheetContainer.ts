@@ -18,6 +18,7 @@ import {
   columnWidthOverridesAtom,
   pasteRowsAtom,
   reorderColumnsWithFollowersAtom,
+  sortableColumnOrderAtom,
   visibleRowOrderAtom,
   workbookStatusAtom,
 } from "../../stores";
@@ -31,6 +32,7 @@ export const useSheetContainer = () => {
 
   const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
   const columnOrder = useAtomValue(columnOrderAtom);
+  const sortableColumnOrder = useAtomValue(sortableColumnOrderAtom);
 
   const columnNames = useAtomValue(columnNamesAtom);
   const setStatus = useSetAtom(workbookStatusAtom);
@@ -190,6 +192,7 @@ export const useSheetContainer = () => {
     rowVirtualizer,
     columnVirtualizer,
     columnOrder,
+    sortableColumnOrder,
     columnNames,
     activeId,
     sensors,

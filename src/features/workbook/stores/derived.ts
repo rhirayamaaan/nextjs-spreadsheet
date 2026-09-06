@@ -72,6 +72,12 @@ export const columnOrderAtom = atom(
   },
 );
 
+export const sortableColumnOrderAtom = atom((get) => {
+  const currentOrder = get(columnOrderAtom);
+  const activeConfigs = get(activeColumnConfigsAtom);
+  return currentOrder.filter((id) => activeConfigs[id]?.type !== "lookup");
+});
+
 export const columnNamesAtom = atom(
   (get) => {
     const baseNames = get(baseColumnNamesAtom);

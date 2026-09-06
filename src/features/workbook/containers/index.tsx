@@ -56,7 +56,7 @@ export const WorkbookContainer: FC = () => {
     parentRef,
     rowVirtualizer,
     columnVirtualizer,
-    columnOrder,
+    sortableColumnOrder,
     columnNames,
     sensors,
     handleDragStart,
@@ -190,7 +190,7 @@ export const WorkbookContainer: FC = () => {
           }
           sheet={
             <SortableContext
-              items={columnOrder}
+              items={sortableColumnOrder}
               strategy={horizontalListSortingStrategy}
             >
               <Sheet

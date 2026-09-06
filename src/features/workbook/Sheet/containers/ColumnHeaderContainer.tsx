@@ -23,8 +23,8 @@ export type ColumnHeaderPresenterProps = {
     transform?: string;
     transition?: string;
   };
-  attributes: ReturnType<typeof useSortable>["attributes"];
-  listeners: ReturnType<typeof useSortable>["listeners"];
+  attributes?: ReturnType<typeof useSortable>["attributes"];
+  listeners?: ReturnType<typeof useSortable>["listeners"];
   isDragging: boolean;
   isResizing: boolean;
   onMouseDownResizer: (event: React.MouseEvent) => void;
@@ -83,11 +83,11 @@ export const ColumnHeaderContainer: FC<Props> = ({
         config,
         isFiltered,
         hasTotal,
-        setNodeRef,
-        dndStyle,
-        attributes,
-        listeners,
-        isDragging,
+        setNodeRef: isLookup ? () => {} : setNodeRef,
+        dndStyle: isLookup ? {} : dndStyle,
+        attributes: isLookup ? undefined : attributes,
+        listeners: isLookup ? undefined : listeners,
+        isDragging: isLookup ? false : isDragging,
         isResizing,
         onMouseDownResizer: onMouseDownResizer(col.id, col.size),
       })}
