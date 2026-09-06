@@ -2,10 +2,12 @@ import ExcelJS from "exceljs";
 import { useStore } from "jotai";
 import { useCallback, useState } from "react";
 import {
+  activeColumnSummaryValuesAtom,
   activeSheetIdAtom,
   baseCellValuesAtom,
   cellEditsAtom,
   columnOrderAtom,
+  hasActiveColumnTotalsAtom,
   rowOrderAtom,
 } from "../stores";
 
@@ -23,6 +25,8 @@ export const useExportExcel = () => {
       const colOrder = store.get(columnOrderAtom);
       const baseValues = store.get(baseCellValuesAtom);
       const edits = store.get(cellEditsAtom);
+      const hasTotals = store.get(hasActiveColumnTotalsAtom);
+      const summaryValues = store.get(activeColumnSummaryValuesAtom);
 
       const data: string[][] = [];
 
@@ -35,6 +39,14 @@ export const useExportExcel = () => {
           rowData.push(value);
         }
         data.push(rowData);
+      }
+
+      // Append total row if totals are enabled
+      if (hasTotals) {
+        const totalRowData: string[] = colOrder.map(
+          (colId) => summaryValues[colId] ?? "",
+        );
+        data.push(totalRowData);
       }
 
       // Create a new workbook and add a worksheet

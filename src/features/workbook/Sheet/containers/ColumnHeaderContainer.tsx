@@ -5,6 +5,7 @@ import type { FC, ReactNode } from "react";
 import {
   activeColumnConfigsAtom,
   activeColumnFiltersAtom,
+  activeColumnTotalsAtom,
   type ColumnConfig,
   type ColumnId,
   isColumnId,
@@ -16,6 +17,7 @@ export type ColumnHeaderPresenterProps = {
   colId: ColumnId | null;
   config?: ColumnConfig;
   isFiltered: boolean;
+  hasTotal: boolean;
   setNodeRef: (node: HTMLElement | null) => void;
   dndStyle: {
     transform?: string;
@@ -46,11 +48,13 @@ export const ColumnHeaderContainer: FC<Props> = ({
 }) => {
   const configs = useAtomValue(activeColumnConfigsAtom);
   const filters = useAtomValue(activeColumnFiltersAtom);
+  const totals = useAtomValue(activeColumnTotalsAtom);
   const colId = isColumnId(col.id) ? col.id : null;
   const config = colId ? configs[colId] : undefined;
   const isLookup = config?.type === "lookup";
 
   const isFiltered = Boolean(colId && filters[colId]);
+  const hasTotal = Boolean(colId && totals[colId]);
 
   const {
     attributes,
@@ -78,6 +82,7 @@ export const ColumnHeaderContainer: FC<Props> = ({
         colId,
         config,
         isFiltered,
+        hasTotal,
         setNodeRef,
         dndStyle,
         attributes,

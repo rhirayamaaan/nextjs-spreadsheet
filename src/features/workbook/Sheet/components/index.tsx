@@ -31,6 +31,7 @@ export type RowLayout = AxisLayout & {
 const MIN_COLUMN_WIDTH = 30;
 const STATUS_COL_WIDTH = 50;
 const HEADER_HEIGHT = 30;
+const FOOTER_HEIGHT = 30;
 
 export type ItemLayout = {
   start: number;
@@ -261,12 +262,14 @@ export const HeaderCell: FC<
     onRemoveBinding?: (colId: ColumnId) => void;
     onOpenFilterModal?: (colId: ColumnId) => void;
     onClearFilter?: (colId: ColumnId) => void;
+    onToggleTotal?: (colId: ColumnId) => void;
   }
 > = ({
   col,
   colId,
   config,
   isFiltered,
+  hasTotal,
   setNodeRef,
   dndStyle,
   attributes,
@@ -278,6 +281,7 @@ export const HeaderCell: FC<
   onRemoveBinding,
   onOpenFilterModal,
   onClearFilter,
+  onToggleTotal,
 }) => {
   const isLookup = config?.type === "lookup";
 
@@ -315,6 +319,17 @@ export const HeaderCell: FC<
           </Badge>
         )}
 
+        {hasTotal && (
+          <Badge
+            size="1"
+            color="green"
+            variant="soft"
+            style={{ fontSize: "0.6rem", padding: "0 3px", marginRight: 2 }}
+          >
+            合計
+          </Badge>
+        )}
+
         {isFiltered && (
           <IconButton
             size="1"
@@ -339,7 +354,7 @@ export const HeaderCell: FC<
               <IconButton
                 size="1"
                 variant="ghost"
-                color={isFiltered ? "blue" : "gray"}
+                color={isFiltered || hasTotal ? "blue" : "gray"}
                 aria-label="列操作メニュー"
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -349,6 +364,13 @@ export const HeaderCell: FC<
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content size="1">
+              <DropdownMenu.Item
+                onSelect={() => colId && onToggleTotal?.(colId)}
+              >
+                {hasTotal ? "合計行を非表示" : "合計行を表示"}
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator />
+
               {!isLookup && (
                 <>
                   <DropdownMenu.Item
@@ -498,9 +520,58 @@ const SheetHeader: FC<HeaderProps> = ({
   );
 };
 
+type FooterProps = {
+  columns: AxisLayout[];
+  totalWidth: number;
+  renderFooterCell?: (col: AxisLayout) => ReactNode;
+};
+
+export const FooterCell: FC<{ value?: string }> = ({ value }) => {
+  return <div className={styles.sheet__footerCell}>{value}</div>;
+};
+
+const SheetFooter: FC<FooterProps> = ({
+  columns,
+  totalWidth,
+  renderFooterCell,
+}) => {
+  return (
+    <div
+      className={styles.sheet__footer}
+      style={{ height: `${FOOTER_HEIGHT}px` }}
+    >
+      <div
+        className={styles.sheet__footerStatusCorner}
+        style={{ width: `${STATUS_COL_WIDTH}px` }}
+      >
+        <span className={styles.sheet__footerCornerLabel}>合計</span>
+      </div>
+      <div
+        className={styles.sheet__footerColumns}
+        style={{ width: `${totalWidth}px` }}
+      >
+        {columns.map((col) => (
+          <div
+            key={`footer-${col.id}`}
+            className={styles.sheet__footerCellWrapper}
+            style={{
+              width: `${col.size}px`,
+              transform: `translateX(${col.start}px)`,
+            }}
+          >
+            {renderFooterCell ? renderFooterCell(col) : <FooterCell />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 type Props = BodyProps &
   Pick<HeaderProps, "onChangeColumnWidth" | "renderHeaderCell"> & {
     ref: Ref<HTMLDivElement>;
+    hasFooter?: boolean;
+    renderFooterCell?: (col: AxisLayout) => ReactNode;
   };
 
 export const Sheet: FC<Props> = ({
@@ -513,15 +584,19 @@ export const Sheet: FC<Props> = ({
   getColumnLayout,
   onChangeColumnWidth,
   renderHeaderCell,
+  hasFooter,
+  renderFooterCell,
   ref,
 }) => {
+  const footerHeight = hasFooter ? FOOTER_HEIGHT : 0;
+
   return (
     <div ref={ref} className={styles.sheet}>
       <div
         className={styles.sheet__inner}
         style={{
           width: `${totalWidth + STATUS_COL_WIDTH}px`,
-          height: `${totalHeight + HEADER_HEIGHT}px`,
+          height: `${totalHeight + HEADER_HEIGHT + footerHeight}px`,
         }}
       >
         <SheetHeader
@@ -539,6 +614,13 @@ export const Sheet: FC<Props> = ({
           getRowLayout={getRowLayout}
           getColumnLayout={getColumnLayout}
         />
+        {hasFooter && (
+          <SheetFooter
+            columns={columns}
+            totalWidth={totalWidth}
+            renderFooterCell={renderFooterCell}
+          />
+        )}
       </div>
     </div>
   );

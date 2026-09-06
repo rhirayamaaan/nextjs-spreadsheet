@@ -4,5 +4,6 @@ export * from "./binding";
 export * from "./derived";
 export * from "./edit";
 export * from "./filter";
+export * from "./summary";
 export * from "./types";
 export * from "./ui";

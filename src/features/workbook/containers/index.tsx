@@ -5,7 +5,7 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from "@dnd-kit/sortable";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type FC, useCallback, useMemo, useState } from "react";
 import { CellContainer } from "../Cell/containers";
 import { Workbook } from "../components";
@@ -15,16 +15,25 @@ import { PdfPreview } from "../PdfPreview/components";
 import { usePdfPreviewContainer } from "../PdfPreview/containers/usePdfPreviewContainer";
 import { RowStatus } from "../RowStatus/components";
 import { RowStatusContainer } from "../RowStatus/containers";
-import { type AxisLayout, HeaderCell, Sheet } from "../Sheet/components";
+import {
+  type AxisLayout,
+  FooterCell,
+  HeaderCell,
+  Sheet,
+} from "../Sheet/components";
 import { ColumnFilterModal } from "../Sheet/components/ColumnFilterModal";
 import { ColumnSettingModal } from "../Sheet/components/ColumnSettingModal";
 import { ColumnHeaderContainer } from "../Sheet/containers/ColumnHeaderContainer";
 import { useSheetContainer } from "../Sheet/containers/useSheetContainer";
 import {
+  activeColumnSummaryValuesAtom,
   type ColumnId,
   clearColumnFilterAtom,
+  hasActiveColumnTotalsAtom,
+  isColumnId,
   type RowId,
   removeColumnBindingAtom,
+  toggleColumnTotalAtom,
   viewModeAtom,
 } from "../stores";
 import { useExportExcel } from "./useExportExcel";
@@ -107,11 +116,13 @@ export const WorkbookContainer: FC = () => {
 
   const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
   const clearColumnFilter = useSetAtom(clearColumnFilterAtom);
+  const toggleColumnTotal = useSetAtom(toggleColumnTotalAtom);
+  const hasFooter = useAtomValue(hasActiveColumnTotalsAtom);
+  const summaryValues = useAtomValue(activeColumnSummaryValuesAtom);
 
   const renderHeaderCell = useCallback(
     (
       col: AxisLayout,
-
       resizingId: string | number | bigint | null,
       handleMouseDownResizer: (
         id: string | number | bigint,
@@ -131,11 +142,21 @@ export const WorkbookContainer: FC = () => {
             onRemoveBinding={(colId) => removeColumnBinding(colId)}
             onOpenFilterModal={(colId) => setFilterModalColId(colId)}
             onClearFilter={(colId) => clearColumnFilter(colId)}
+            onToggleTotal={(colId) => toggleColumnTotal(colId)}
           />
         )}
       </ColumnHeaderContainer>
     ),
-    [removeColumnBinding, clearColumnFilter],
+    [removeColumnBinding, clearColumnFilter, toggleColumnTotal],
+  );
+
+  const renderFooterCell = useCallback(
+    (col: AxisLayout) => {
+      const colId = isColumnId(col.id) ? col.id : null;
+      const value = colId ? summaryValues[colId] : "";
+      return <FooterCell value={value} />;
+    },
+    [summaryValues],
   );
 
   if (viewMode === "pdf-preview") {
@@ -182,6 +203,8 @@ export const WorkbookContainer: FC = () => {
                 getColumnLayout={getColumnLayout}
                 onChangeColumnWidth={handleChangeColumnWidth}
                 renderHeaderCell={renderHeaderCell}
+                hasFooter={hasFooter}
+                renderFooterCell={renderFooterCell}
               />
             </SortableContext>
           }

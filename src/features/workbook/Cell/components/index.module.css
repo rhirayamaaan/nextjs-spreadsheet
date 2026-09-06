@@ -12,6 +12,7 @@
   text-align: left;
   padding: 0 8px;
   box-sizing: border-box;
+  font-family: inherit;
   font-size: 0.875rem;
   overflow: hidden;
   white-space: nowrap;
