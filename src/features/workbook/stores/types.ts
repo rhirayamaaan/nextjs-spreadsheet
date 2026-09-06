@@ -56,6 +56,10 @@ export type ColumnConfig =
   | { type: "pulldown"; pulldown: PulldownBinding }
   | { type: "lookup"; lookup: LookupBinding };
 
+export type ColumnFilter = {
+  selectedValues: string[];
+};
+
 export type SheetData = {
   id: string;
   name: string;

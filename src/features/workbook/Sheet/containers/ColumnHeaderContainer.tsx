@@ -4,6 +4,7 @@ import { useAtomValue } from "jotai";
 import type { FC, ReactNode } from "react";
 import {
   activeColumnConfigsAtom,
+  activeColumnFiltersAtom,
   type ColumnConfig,
   type ColumnId,
   isColumnId,
@@ -14,6 +15,7 @@ export type ColumnHeaderPresenterProps = {
   col: AxisLayout;
   colId: ColumnId | null;
   config?: ColumnConfig;
+  isFiltered: boolean;
   setNodeRef: (node: HTMLElement | null) => void;
   dndStyle: {
     transform?: string;
@@ -43,9 +45,12 @@ export const ColumnHeaderContainer: FC<Props> = ({
   children,
 }) => {
   const configs = useAtomValue(activeColumnConfigsAtom);
+  const filters = useAtomValue(activeColumnFiltersAtom);
   const colId = isColumnId(col.id) ? col.id : null;
   const config = colId ? configs[colId] : undefined;
   const isLookup = config?.type === "lookup";
+
+  const isFiltered = Boolean(colId && filters[colId]);
 
   const {
     attributes,
@@ -72,6 +77,7 @@ export const ColumnHeaderContainer: FC<Props> = ({
         col,
         colId,
         config,
+        isFiltered,
         setNodeRef,
         dndStyle,
         attributes,

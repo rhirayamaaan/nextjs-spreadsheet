@@ -20,8 +20,8 @@ import {
   isCellEditingFamily,
   type RowId,
   referencedSheetsDataAtom,
-  rowOrderAtom,
   selectionAtom,
+  visibleRowOrderAtom,
   workbookStatusAtom,
 } from "../../stores";
 import { Cell } from "../components";
@@ -195,15 +195,23 @@ CellInner.displayName = "CellInner";
 type Props = {
   row: number;
   col: number;
+  rowId?: RowId;
+  colId?: ColumnId;
   children?: (props: CellProps) => ReactNode;
 };
 
 export const CellContainer: FC<Props> = memo(
-  ({ row, col, children = defaultRenderCell }) => {
-    const rowOrder = useAtomValue(rowOrderAtom);
+  ({
+    row,
+    col,
+    rowId: propRowId,
+    colId: propColId,
+    children = defaultRenderCell,
+  }) => {
+    const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
     const columnOrder = useAtomValue(columnOrderAtom);
-    const rowId = rowOrder[row];
-    const colId = columnOrder[col];
+    const rowId = propRowId ?? visibleRowOrder[row];
+    const colId = propColId ?? columnOrder[col];
 
     if (!rowId || !colId) {
       return null;

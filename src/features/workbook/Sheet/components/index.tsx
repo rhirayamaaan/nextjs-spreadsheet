@@ -1,4 +1,4 @@
-import { DotsVerticalIcon } from "@radix-ui/react-icons";
+import { DotsVerticalIcon, MixerHorizontalIcon } from "@radix-ui/react-icons";
 import { Badge, DropdownMenu, IconButton } from "@radix-ui/themes";
 import clsx from "clsx";
 import { useAtomValue } from "jotai";
@@ -259,11 +259,14 @@ export const HeaderCell: FC<
   ColumnHeaderPresenterProps & {
     onOpenSettingModal?: (colId: ColumnId) => void;
     onRemoveBinding?: (colId: ColumnId) => void;
+    onOpenFilterModal?: (colId: ColumnId) => void;
+    onClearFilter?: (colId: ColumnId) => void;
   }
 > = ({
   col,
   colId,
   config,
+  isFiltered,
   setNodeRef,
   dndStyle,
   attributes,
@@ -273,6 +276,8 @@ export const HeaderCell: FC<
   onMouseDownResizer,
   onOpenSettingModal,
   onRemoveBinding,
+  onOpenFilterModal,
+  onClearFilter,
 }) => {
   const isLookup = config?.type === "lookup";
 
@@ -310,13 +315,31 @@ export const HeaderCell: FC<
           </Badge>
         )}
 
+        {isFiltered && (
+          <IconButton
+            size="1"
+            variant="soft"
+            color="blue"
+            aria-label="フィルター設定"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (colId) onOpenFilterModal?.(colId);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ marginRight: 2, cursor: "pointer" }}
+          >
+            <MixerHorizontalIcon width={12} height={12} />
+          </IconButton>
+        )}
+
         <div className={styles.sheet__headerCellMenuTrigger}>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
               <IconButton
                 size="1"
                 variant="ghost"
-                color="gray"
+                color={isFiltered ? "blue" : "gray"}
                 aria-label="列操作メニュー"
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -326,6 +349,30 @@ export const HeaderCell: FC<
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content size="1">
+              {!isLookup && (
+                <>
+                  <DropdownMenu.Item
+                    onSelect={() => colId && onOpenFilterModal?.(colId)}
+                  >
+                    <MixerHorizontalIcon
+                      width={12}
+                      height={12}
+                      style={{ marginRight: 6 }}
+                    />
+                    フィルターを設定...
+                  </DropdownMenu.Item>
+                  {isFiltered && (
+                    <DropdownMenu.Item
+                      color="red"
+                      onSelect={() => colId && onClearFilter?.(colId)}
+                    >
+                      フィルターを解除
+                    </DropdownMenu.Item>
+                  )}
+                  <DropdownMenu.Separator />
+                </>
+              )}
+
               {config?.type === "pulldown" ? (
                 <>
                   <DropdownMenu.Item

@@ -16,12 +16,13 @@ import { usePdfPreviewContainer } from "../PdfPreview/containers/usePdfPreviewCo
 import { RowStatus } from "../RowStatus/components";
 import { RowStatusContainer } from "../RowStatus/containers";
 import { type AxisLayout, HeaderCell, Sheet } from "../Sheet/components";
+import { ColumnFilterModal } from "../Sheet/components/ColumnFilterModal";
 import { ColumnSettingModal } from "../Sheet/components/ColumnSettingModal";
 import { ColumnHeaderContainer } from "../Sheet/containers/ColumnHeaderContainer";
 import { useSheetContainer } from "../Sheet/containers/useSheetContainer";
-
 import {
   type ColumnId,
+  clearColumnFilterAtom,
   type RowId,
   removeColumnBindingAtom,
   viewModeAtom,
@@ -89,6 +90,8 @@ export const WorkbookContainer: FC = () => {
             key={`${item.key}-${col.id}`}
             row={item.index}
             col={col.index}
+            rowId={item.key as RowId}
+            colId={col.id as ColumnId}
           />
         )),
       })),
@@ -98,8 +101,12 @@ export const WorkbookContainer: FC = () => {
   const [settingModalColId, setSettingModalColId] = useState<ColumnId | null>(
     null,
   );
+  const [filterModalColId, setFilterModalColId] = useState<ColumnId | null>(
+    null,
+  );
 
   const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
+  const clearColumnFilter = useSetAtom(clearColumnFilterAtom);
 
   const renderHeaderCell = useCallback(
     (
@@ -122,11 +129,13 @@ export const WorkbookContainer: FC = () => {
             {...headerProps}
             onOpenSettingModal={(colId) => setSettingModalColId(colId)}
             onRemoveBinding={(colId) => removeColumnBinding(colId)}
+            onOpenFilterModal={(colId) => setFilterModalColId(colId)}
+            onClearFilter={(colId) => clearColumnFilter(colId)}
           />
         )}
       </ColumnHeaderContainer>
     ),
-    [removeColumnBinding],
+    [removeColumnBinding, clearColumnFilter],
   );
 
   if (viewMode === "pdf-preview") {
@@ -185,6 +194,16 @@ export const WorkbookContainer: FC = () => {
           open={true}
           onOpenChange={(open) => {
             if (!open) setSettingModalColId(null);
+          }}
+        />
+      )}
+      {filterModalColId !== null && (
+        <ColumnFilterModal
+          key={filterModalColId}
+          targetColId={filterModalColId}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setFilterModalColId(null);
           }}
         />
       )}

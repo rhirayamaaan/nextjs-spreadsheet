@@ -18,7 +18,7 @@ import {
   columnWidthOverridesAtom,
   pasteRowsAtom,
   reorderColumnsWithFollowersAtom,
-  rowOrderAtom,
+  visibleRowOrderAtom,
   workbookStatusAtom,
 } from "../../stores";
 
@@ -29,7 +29,7 @@ export const useSheetContainer = () => {
     columnWidthOverridesAtom,
   );
 
-  const [rowOrder] = useAtom(rowOrderAtom);
+  const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
   const columnOrder = useAtomValue(columnOrderAtom);
 
   const columnNames = useAtomValue(columnNamesAtom);
@@ -60,11 +60,11 @@ export const useSheetContainer = () => {
   }, [activeSheetId]);
 
   const rowVirtualizer = useVirtualizer({
-    count: rowOrder.length,
+    count: visibleRowOrder.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 35,
     overscan: 10,
-    getItemKey: (index) => rowOrder[index],
+    getItemKey: (index) => visibleRowOrder[index],
   });
 
   const columnVirtualizer = useVirtualizer({
@@ -156,14 +156,14 @@ export const useSheetContainer = () => {
 
   const getRowLayout = useCallback(
     (index: number) => {
-      if (index < 0 || index >= rowOrder.length) return undefined;
+      if (index < 0 || index >= visibleRowOrder.length) return undefined;
       const item = rowVirtualizer.measurementsCache[index];
       if (item) {
         return { start: item.start, size: item.size };
       }
       return { start: index * 35, size: 35 };
     },
-    [rowVirtualizer, rowOrder.length],
+    [rowVirtualizer, visibleRowOrder.length],
   );
 
   const getColumnLayout = useCallback(
