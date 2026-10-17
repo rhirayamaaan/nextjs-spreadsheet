@@ -10,6 +10,7 @@ import { useI18n } from "@/i18n/useI18n";
 import type {
   CellStatus,
   DateTimeFormat,
+  MoveDirection,
   PulldownMode,
   ValidationErrorInfo,
   ValidationErrorKey,
@@ -26,6 +27,7 @@ type Option = {
 
 type Props = {
   value: string;
+  editingInitialValue?: string;
   status?: CellStatus;
   statusMessage?: string;
   errorInfo?: ValidationErrorInfo;
@@ -36,7 +38,7 @@ type Props = {
   datetimeFormat?: DateTimeFormat;
   pulldownMode?: PulldownMode;
   pulldownOptions?: Option[];
-  onCommit?: (val: string) => void;
+  onCommit?: (val: string, move?: MoveDirection) => void;
   onCancel?: () => void;
   onDoubleClick: () => void;
   onMouseDown: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -60,6 +62,7 @@ const validationMessageKeyMap = {
 
 export const Cell: FC<Props> = ({
   value,
+  editingInitialValue,
   status = "none",
   statusMessage,
   errorInfo,
@@ -83,9 +86,12 @@ export const Cell: FC<Props> = ({
     ? t(validationMessageKeyMap[errorInfo.key], errorInfo.params)
     : statusMessage;
 
+  const editorInitialValue = editingInitialValue ?? value;
+
   return (
     <button
       type="button"
+      tabIndex={-1}
       onDoubleClick={handleDoubleClick}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
@@ -103,8 +109,8 @@ export const Cell: FC<Props> = ({
       pulldownOptions &&
       onCommit ? (
         <PulldownEditor
-          key={`${value}`}
-          initialValue={value}
+          key={`${editorInitialValue}`}
+          initialValue={editorInitialValue}
           mode={pulldownMode}
           options={pulldownOptions}
           onCommit={onCommit}
@@ -112,16 +118,16 @@ export const Cell: FC<Props> = ({
         />
       ) : isEditing && isDatetime && datetimeFormat && onCommit ? (
         <DatePickerEditor
-          key={`${value}`}
-          initialValue={value}
+          key={`${editorInitialValue}`}
+          initialValue={editorInitialValue}
           format={datetimeFormat}
           onCommit={onCommit}
           onCancel={onCancel ?? (() => {})}
         />
       ) : isEditing && !isLookup && onCommit ? (
         <CellInputEditor
-          key={`${value}`}
-          initialValue={value}
+          key={`${editorInitialValue}`}
+          initialValue={editorInitialValue}
           onCommit={onCommit}
           onCancel={onCancel ?? (() => {})}
         />

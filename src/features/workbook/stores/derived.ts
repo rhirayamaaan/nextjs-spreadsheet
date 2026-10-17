@@ -33,6 +33,18 @@ export const isCellEditingFamily = atomFamily(
   (a, b) => a.row === b.row && a.col === b.col,
 );
 
+export const cellEditingInitialValueFamily = atomFamily(
+  ({ row, col }: { row: number; col: number }) =>
+    atom((get) => {
+      const active = get(activeCellAtom);
+      if (active?.row === row && active?.col === col) {
+        return active.initialValue;
+      }
+      return undefined;
+    }),
+  (a, b) => a.row === b.row && a.col === b.col,
+);
+
 export const rowOrderAtom = atom(
   (get) => {
     const activeSheetId = get(activeSheetIdAtom);

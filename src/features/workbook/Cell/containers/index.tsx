@@ -13,22 +13,23 @@ import {
   activeColumnConfigFamily,
   baseCellValuesAtom,
   type ColumnId,
+  cellEditingInitialValueFamily,
   cellEditsAtom,
   cellFamily,
   cellStatusFamily,
   columnOrderAtom,
   isCellEditingFamily,
+  type MoveDirection,
+  moveSelectionAtom,
   type RowId,
   referencedSheetsDataAtom,
   selectionAtom,
   visibleRowOrderAtom,
   workbookStatusAtom,
 } from "../../stores";
-import { Cell } from "../components";
+import type { Cell } from "../components";
 
 type CellProps = ComponentProps<typeof Cell>;
-
-const defaultRenderCell = (props: CellProps) => <Cell {...props} />;
 
 type InnerProps = {
   row: number;
@@ -49,7 +50,11 @@ const CellInner: FC<InnerProps> = memo(
     const isEditing = useAtomValue(
       useMemo(() => isCellEditingFamily({ row, col }), [row, col]),
     );
+    const editingInitialValue = useAtomValue(
+      useMemo(() => cellEditingInitialValueFamily({ row, col }), [row, col]),
+    );
     const setEditingCell = useSetAtom(activeCellAtom);
+    const moveSelection = useSetAtom(moveSelectionAtom);
     const setWorkbookStatus = useSetAtom(workbookStatusAtom);
     const setSelection = useSetAtom(selectionAtom);
 
@@ -131,13 +136,16 @@ const CellInner: FC<InnerProps> = memo(
     }, [isLookup, row, col, setEditingCell]);
 
     const handleCommit = useCallback(
-      (newVal: string) => {
+      (newVal: string, move?: MoveDirection) => {
         if (newVal !== value) {
           setValue(newVal);
         }
         setEditingCell(null);
+        if (move) {
+          moveSelection({ ...move, extend: false });
+        }
       },
-      [value, setValue, setEditingCell],
+      [value, setValue, setEditingCell, moveSelection],
     );
 
     const handleCancel = useCallback(() => {
@@ -150,6 +158,10 @@ const CellInner: FC<InnerProps> = memo(
 
         if (event.shiftKey) {
           event.preventDefault();
+        }
+
+        if (!isEditing) {
+          setEditingCell(null);
         }
 
         setWorkbookStatus("selecting");
@@ -166,7 +178,7 @@ const CellInner: FC<InnerProps> = memo(
           };
         });
       },
-      [setSelection, setWorkbookStatus, row, col],
+      [setSelection, setWorkbookStatus, setEditingCell, isEditing, row, col],
     );
 
     const handleSelectionMove = useCallback(
@@ -192,6 +204,7 @@ const CellInner: FC<InnerProps> = memo(
       <>
         {children({
           value,
+          editingInitialValue,
           status: isEditing ? "none" : cellStatusInfo.status,
           statusMessage: isEditing ? undefined : cellStatusInfo.message,
           errorInfo: isEditing ? undefined : cellStatusInfo.errorInfo,
@@ -220,17 +233,11 @@ type Props = {
   col: number;
   rowId?: RowId;
   colId?: ColumnId;
-  children?: (props: CellProps) => ReactNode;
+  children: (props: CellProps) => ReactNode;
 };
 
 export const CellContainer: FC<Props> = memo(
-  ({
-    row,
-    col,
-    rowId: propRowId,
-    colId: propColId,
-    children = defaultRenderCell,
-  }) => {
+  ({ row, col, rowId: propRowId, colId: propColId, children }) => {
     const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
     const columnOrder = useAtomValue(columnOrderAtom);
     const rowId = propRowId ?? visibleRowOrder[row];

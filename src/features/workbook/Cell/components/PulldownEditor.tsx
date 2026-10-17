@@ -3,13 +3,13 @@ import { Box, Flex, Popover, Text, TextField } from "@radix-ui/themes";
 import {
   type ChangeEvent,
   type FC,
+  type FocusEvent,
   type KeyboardEvent,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import type { PulldownMode } from "../../stores";
+import type { MoveDirection, PulldownMode } from "../../stores";
 import styles from "./index.module.css";
 
 type Option = {
@@ -21,7 +21,7 @@ type Props = {
   initialValue: string;
   mode: PulldownMode;
   options: Option[];
-  onCommit: (val: string) => void;
+  onCommit: (val: string, move?: MoveDirection) => void;
   onCancel: () => void;
 };
 
@@ -36,14 +36,13 @@ export const PulldownEditor: FC<Props> = ({
   const [search, setSearch] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const isFinishedRef = useRef(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const commitValue = (val: string) => {
+  const commitValue = (val: string, move?: MoveDirection) => {
     if (isFinishedRef.current) return;
     isFinishedRef.current = true;
-    onCommit(val);
+    onCommit(val, move);
   };
 
   const cancelEdit = () => {
@@ -62,6 +61,28 @@ export const PulldownEditor: FC<Props> = ({
     );
   }, [options, search, mode]);
 
+  const moveHighlight = (delta: 1 | -1) => {
+    if (filteredOptions.length === 0) {
+      setHighlightedIndex(null);
+      return;
+    }
+    const nextIndex =
+      highlightedIndex === null
+        ? 0
+        : Math.max(
+            0,
+            Math.min(filteredOptions.length - 1, highlightedIndex + delta),
+          );
+    setHighlightedIndex(nextIndex);
+    const el = listRef.current?.children[nextIndex] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: "nearest" });
+  };
+
+  const handleCellFocus = (e: FocusEvent<HTMLInputElement>) => {
+    const len = e.currentTarget.value.length;
+    e.currentTarget.setSelectionRange(len, len);
+  };
+
   const handleCellChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
@@ -71,27 +92,37 @@ export const PulldownEditor: FC<Props> = ({
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightedIndex((prev) => {
-        if (filteredOptions.length === 0) return null;
-        if (prev === null) return 0;
-        return prev < filteredOptions.length - 1 ? prev + 1 : prev;
-      });
+      moveHighlight(1);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightedIndex((prev) => {
-        if (filteredOptions.length === 0) return null;
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
+      moveHighlight(-1);
     } else if (e.key === "Enter") {
       e.preventDefault();
+      const move: MoveDirection = {
+        deltaRow: e.shiftKey ? -1 : 1,
+        deltaCol: 0,
+      };
       if (
         highlightedIndex !== null &&
         filteredOptions[highlightedIndex] !== undefined
       ) {
-        commitValue(filteredOptions[highlightedIndex].key);
+        commitValue(filteredOptions[highlightedIndex].key, move);
       } else {
-        commitValue(inputValue);
+        commitValue(inputValue, move);
+      }
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      const move: MoveDirection = {
+        deltaRow: 0,
+        deltaCol: e.shiftKey ? -1 : 1,
+      };
+      if (
+        highlightedIndex !== null &&
+        filteredOptions[highlightedIndex] !== undefined
+      ) {
+        commitValue(filteredOptions[highlightedIndex].key, move);
+      } else {
+        commitValue(inputValue, move);
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -104,40 +135,42 @@ export const PulldownEditor: FC<Props> = ({
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightedIndex((prev) => {
-        if (filteredOptions.length === 0) return null;
-        if (prev === null) return 0;
-        return prev < filteredOptions.length - 1 ? prev + 1 : prev;
-      });
+      moveHighlight(1);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightedIndex((prev) => {
-        if (filteredOptions.length === 0) return null;
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
+      moveHighlight(-1);
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (
         highlightedIndex !== null &&
         filteredOptions[highlightedIndex] !== undefined
       ) {
-        commitValue(filteredOptions[highlightedIndex].key);
+        commitValue(filteredOptions[highlightedIndex].key, {
+          deltaRow: e.shiftKey ? -1 : 1,
+          deltaCol: 0,
+        });
+      }
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      if (
+        highlightedIndex !== null &&
+        filteredOptions[highlightedIndex] !== undefined
+      ) {
+        commitValue(filteredOptions[highlightedIndex].key, {
+          deltaRow: 0,
+          deltaCol: e.shiftKey ? -1 : 1,
+        });
+      } else {
+        commitValue(inputValue, {
+          deltaRow: 0,
+          deltaCol: e.shiftKey ? -1 : 1,
+        });
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
       cancelEdit();
     }
   };
-
-  useEffect(() => {
-    if (highlightedIndex !== null && listRef.current) {
-      const el = listRef.current.children[highlightedIndex] as
-        | HTMLElement
-        | undefined;
-      el?.scrollIntoView({ block: "nearest" });
-    }
-  }, [highlightedIndex]);
 
   return (
     <Popover.Root
@@ -150,11 +183,11 @@ export const PulldownEditor: FC<Props> = ({
     >
       <Popover.Trigger>
         <input
-          ref={inputRef}
           type="text"
           // biome-ignore lint/a11y/noAutofocus: 編集モード切替時に即座に入力可能にするため
           autoFocus
           value={inputValue}
+          onFocus={handleCellFocus}
           onChange={handleCellChange}
           onKeyDown={handleCellKeyDown}
           className={styles.cell__input}

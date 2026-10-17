@@ -24,6 +24,17 @@ export type Selection = {
   end: { row: number; col: number };
 } | null;
 
+export type ActiveCell = {
+  row: number;
+  col: number;
+  initialValue?: string;
+} | null;
+
+export type MoveDirection = {
+  deltaRow: number;
+  deltaCol: number;
+};
+
 export type WorkbookStatus = "idle" | "selecting" | "editing";
 export type RowStatus = "added" | "edited" | "deleted" | "none";
 export type CellStatus = "none" | "edited" | "error";

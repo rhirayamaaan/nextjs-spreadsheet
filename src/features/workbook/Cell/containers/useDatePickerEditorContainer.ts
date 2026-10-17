@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import { Temporal } from "temporal-polyfill-lite";
-import type { DateTimeFormat } from "../../stores/types";
+import type { DateTimeFormat, MoveDirection } from "../../stores/types";
 import {
   DATETIME_END_YEAR,
   DATETIME_HOURS,
@@ -30,7 +30,7 @@ import type {
 export type DatePickerEditorProps = {
   initialValue: string;
   format: DateTimeFormat;
-  onCommit: (val: string) => void;
+  onCommit: (val: string, move?: MoveDirection) => void;
   onCancel: () => void;
 };
 
@@ -92,10 +92,10 @@ export const useDatePickerEditorContainer = ({
   const isTimeMode = isTimeFormat(format);
 
   const commitValue = useCallback(
-    (val: string) => {
+    (val: string, move?: MoveDirection) => {
       if (isFinishedRef.current) return;
       isFinishedRef.current = true;
-      onCommit(val);
+      onCommit(val, move);
     },
     [onCommit],
   );
@@ -143,7 +143,16 @@ export const useDatePickerEditorContainer = ({
 
       if (e.key === "Enter") {
         e.preventDefault();
-        commitValue(inputValue);
+        commitValue(inputValue, {
+          deltaRow: e.shiftKey ? -1 : 1,
+          deltaCol: 0,
+        });
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        commitValue(inputValue, {
+          deltaRow: 0,
+          deltaCol: e.shiftKey ? -1 : 1,
+        });
       } else if (e.key === "Escape") {
         e.preventDefault();
         cancelEdit();

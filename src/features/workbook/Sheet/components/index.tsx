@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useAtomValue } from "jotai";
 import {
   type FC,
+  type KeyboardEvent,
   memo,
   type ReactNode,
   type Ref,
@@ -587,6 +588,7 @@ type Props = BodyProps &
     ref: Ref<HTMLDivElement>;
     hasFooter?: boolean;
     renderFooterCell?: (col: AxisLayout) => ReactNode;
+    onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   };
 
 export const Sheet: FC<Props> = ({
@@ -601,12 +603,19 @@ export const Sheet: FC<Props> = ({
   renderHeaderCell,
   hasFooter,
   renderFooterCell,
+  onKeyDown,
   ref,
 }) => {
   const footerHeight = hasFooter ? FOOTER_HEIGHT : 0;
 
   return (
-    <div ref={ref} className={styles.sheet}>
+    <div
+      ref={ref}
+      role="application"
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      className={styles.sheet}
+    >
       <div
         className={styles.sheet__inner}
         style={{

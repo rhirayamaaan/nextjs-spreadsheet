@@ -8,6 +8,7 @@ import {
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type FC, useCallback, useMemo, useState } from "react";
 import { useI18n } from "@/i18n/useI18n";
+import { Cell } from "../Cell/components";
 import { CellContainer } from "../Cell/containers";
 import { EmptySheet, Workbook } from "../components";
 import { localMessages } from "../components/i18n";
@@ -84,6 +85,7 @@ export const WorkbookContainer: FC = () => {
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
+    handleKeyDown,
     getRowLayout,
     getColumnLayout,
   } = useSheetContainer();
@@ -213,7 +215,9 @@ export const WorkbookContainer: FC = () => {
             col={col.index}
             rowId={item.key as RowId}
             colId={col.id as ColumnId}
-          />
+          >
+            {(cellProps) => <Cell {...cellProps} />}
+          </CellContainer>
         )),
       })),
     [virtualRows, composedColumns],
@@ -324,6 +328,7 @@ export const WorkbookContainer: FC = () => {
                   renderHeaderCell={renderHeaderCell}
                   hasFooter={hasFooter}
                   renderFooterCell={renderFooterCell}
+                  onKeyDown={handleKeyDown}
                 />
               </SortableContext>
             ) : (

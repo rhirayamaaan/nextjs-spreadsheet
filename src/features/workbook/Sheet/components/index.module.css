@@ -5,6 +5,7 @@
   color: var(--gray-12);
   overflow: auto;
   position: relative;
+  outline: none;
 }
 
 .sheet__inner {

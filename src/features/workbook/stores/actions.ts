@@ -3,6 +3,7 @@ import { baseCellValuesAtom, baseRowOrderAtom } from "./base";
 import { activeColumnConfigsAtom, columnConfigsAtom } from "./binding";
 import { columnNamesAtom, columnOrderAtom, rowOrderAtom } from "./derived";
 import { cellCustomStatusesAtom, cellEditsAtom, rowStatusesAtom } from "./edit";
+import { visibleRowOrderAtom } from "./filter";
 import {
   type CellAddress,
   type CellStatusInfo,
@@ -11,6 +12,7 @@ import {
   createRowId,
   type InsertPosition,
   type LookupColumnDefinition,
+  type MoveDirection,
   type PulldownMode,
   type RowId,
   type RowStatus,
@@ -407,4 +409,114 @@ export const commitSheetEditsAtom = atom(null, (get, set) => {
   set(cellEditsAtom, {});
   set(rowStatusesAtom, {});
   set(cellCustomStatusesAtom, {});
+});
+
+export const moveSelectionAtom = atom(
+  null,
+  (
+    get,
+    set,
+    {
+      deltaRow,
+      deltaCol,
+      extend = false,
+    }: MoveDirection & { extend?: boolean },
+  ) => {
+    const visibleRowOrder = get(visibleRowOrderAtom);
+    const columnOrder = get(columnOrderAtom);
+    const rowCount = visibleRowOrder.length;
+    const colCount = columnOrder.length;
+
+    if (rowCount === 0 || colCount === 0) return;
+
+    const prev = get(selectionAtom);
+    if (!prev) {
+      set(selectionAtom, {
+        start: { row: 0, col: 0 },
+        end: { row: 0, col: 0 },
+      });
+      return;
+    }
+
+    if (extend) {
+      const nextEndRow = Math.max(
+        0,
+        Math.min(rowCount - 1, prev.end.row + deltaRow),
+      );
+      const nextEndCol = Math.max(
+        0,
+        Math.min(colCount - 1, prev.end.col + deltaCol),
+      );
+      set(selectionAtom, {
+        start: prev.start,
+        end: { row: nextEndRow, col: nextEndCol },
+      });
+    } else {
+      const nextRow = Math.max(
+        0,
+        Math.min(rowCount - 1, prev.start.row + deltaRow),
+      );
+      const nextCol = Math.max(
+        0,
+        Math.min(colCount - 1, prev.start.col + deltaCol),
+      );
+      set(selectionAtom, {
+        start: { row: nextRow, col: nextCol },
+        end: { row: nextRow, col: nextCol },
+      });
+    }
+  },
+);
+
+export const clearSelectedCellsAtom = atom(null, (get, set) => {
+  const selection = get(selectionAtom);
+  if (!selection) return;
+
+  const visibleRowOrder = get(visibleRowOrderAtom);
+  const columnOrder = get(columnOrderAtom);
+  const configs = get(activeColumnConfigsAtom);
+  const baseValues = get(baseCellValuesAtom);
+  const currentEdits = get(cellEditsAtom);
+  const currentRowStatuses = get(rowStatusesAtom);
+
+  const minRow = Math.min(selection.start.row, selection.end.row);
+  const maxRow = Math.max(selection.start.row, selection.end.row);
+  const minCol = Math.min(selection.start.col, selection.end.col);
+  const maxCol = Math.max(selection.start.col, selection.end.col);
+
+  let hasChanges = false;
+  const nextEdits = { ...currentEdits };
+  const nextRowStatuses = { ...currentRowStatuses };
+
+  for (let r = minRow; r <= maxRow; r++) {
+    const rowId = visibleRowOrder[r];
+    if (!rowId) continue;
+
+    for (let c = minCol; c <= maxCol; c++) {
+      const colId = columnOrder[c];
+      if (!colId) continue;
+
+      const colConfig = configs[colId];
+      if (colConfig && (colConfig.type === "lookup" || colConfig.readOnly)) {
+        continue;
+      }
+
+      const key = `${rowId}-${colId}`;
+      const currentVal =
+        key in currentEdits ? currentEdits[key] : (baseValues[key] ?? "");
+
+      if (currentVal !== "") {
+        nextEdits[key] = "";
+        hasChanges = true;
+        if ((nextRowStatuses[rowId] ?? "none") === "none") {
+          nextRowStatuses[rowId] = "edited";
+        }
+      }
+    }
+  }
+
+  if (hasChanges) {
+    set(cellEditsAtom, nextEdits);
+    set(rowStatusesAtom, nextRowStatuses);
+  }
 });

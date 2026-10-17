@@ -1,8 +1,14 @@
 import { atom } from "jotai";
-import type { ColumnId, Selection, ViewMode, WorkbookStatus } from "./types";
+import type {
+  ActiveCell,
+  ColumnId,
+  Selection,
+  ViewMode,
+  WorkbookStatus,
+} from "./types";
 
 export const workbookStatusAtom = atom<WorkbookStatus>("idle");
-export const activeCellAtom = atom<{ row: number; col: number } | null>(null);
+export const activeCellAtom = atom<ActiveCell>(null);
 export const selectionAtom = atom<Selection>(null);
 
 // --- UI State ---
