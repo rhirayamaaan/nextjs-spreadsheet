@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
-import { validateCellRules } from "../utils/validation";
+import { getParentColumnInfo, validateCellRules } from "../utils/validation";
 import {
   baseCellValuesAtom,
   baseColumnNamesAtom,
@@ -198,13 +198,29 @@ export const cellStatusFamily = atomFamily(
         const pulldownConfig =
           colConfig?.type === "pulldown" ? colConfig.pulldown : undefined;
         const masterSheetData = pulldownConfig
-          ? get(referencedSheetsDataAtom)[pulldownConfig.sourceSheetId]
+          ? get(referencedSheetsDataAtom)[
+              pulldownConfig.relation?.targetSheetId ??
+                pulldownConfig.sourceSheetId
+            ]
           : undefined;
+
+        const colNames = get(columnNamesAtom);
+        const targetColName = colNames[address.colId];
+        const { parentColValue, parentColName } = getParentColumnInfo(
+          pulldownConfig?.relation,
+          address.rowId,
+          edits,
+          get(baseCellValuesAtom),
+          colNames,
+        );
 
         const validationResult = validateCellRules(validations, cellValue, {
           pulldownConfig,
           masterSheetData,
           cellEdits: edits,
+          parentColValue,
+          parentColName,
+          targetColName,
         });
 
         if (!validationResult.valid) {

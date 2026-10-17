@@ -1,15 +1,21 @@
-import { CaretDownIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import {
+  CalendarIcon,
+  CaretDownIcon,
+  ExclamationTriangleIcon,
+} from "@radix-ui/react-icons";
 import { Tooltip } from "@radix-ui/themes";
 import clsx from "clsx";
 import type { FC, MouseEvent } from "react";
 import { useI18n } from "@/i18n/useI18n";
 import type {
   CellStatus,
+  DateTimeFormat,
   PulldownMode,
   ValidationErrorInfo,
   ValidationErrorKey,
 } from "../../stores";
 import { CellInputEditor } from "./CellInputEditor";
+import { DatePickerEditor } from "./DatePickerEditor";
 import styles from "./index.module.css";
 import { PulldownEditor } from "./PulldownEditor";
 
@@ -26,6 +32,8 @@ type Props = {
   isEditing: boolean;
   isLookup?: boolean;
   isPulldown?: boolean;
+  isDatetime?: boolean;
+  datetimeFormat?: DateTimeFormat;
   pulldownMode?: PulldownMode;
   pulldownOptions?: Option[];
   onCommit?: (val: string) => void;
@@ -45,6 +53,8 @@ const validationMessageKeyMap = {
   maxLength: "validationMaxLength",
   minLength: "validationMinLength",
   reference: "validationReference",
+  referenceRelation: "validationReferenceRelation",
+  datetime: "validationDatetime",
   invalid: "validationInvalid",
 } as const satisfies Record<ValidationErrorKey, string>;
 
@@ -56,6 +66,8 @@ export const Cell: FC<Props> = ({
   isEditing,
   isLookup,
   isPulldown,
+  isDatetime,
+  datetimeFormat,
   pulldownMode,
   pulldownOptions,
   onCommit,
@@ -98,6 +110,14 @@ export const Cell: FC<Props> = ({
           onCommit={onCommit}
           onCancel={onCancel ?? (() => {})}
         />
+      ) : isEditing && isDatetime && datetimeFormat && onCommit ? (
+        <DatePickerEditor
+          key={`${value}`}
+          initialValue={value}
+          format={datetimeFormat}
+          onCommit={onCommit}
+          onCancel={onCancel ?? (() => {})}
+        />
       ) : isEditing && !isLookup && onCommit ? (
         <CellInputEditor
           key={`${value}`}
@@ -118,6 +138,11 @@ export const Cell: FC<Props> = ({
           {isPulldown && (
             <span className={styles.cell__pulldownIndicator}>
               <CaretDownIcon width={12} height={12} />
+            </span>
+          )}
+          {isDatetime && (
+            <span className={styles.cell__pulldownIndicator}>
+              <CalendarIcon width={12} height={12} />
             </span>
           )}
         </>

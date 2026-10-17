@@ -27,6 +27,14 @@ export type Selection = {
 export type WorkbookStatus = "idle" | "selecting" | "editing";
 export type RowStatus = "added" | "edited" | "deleted" | "none";
 export type CellStatus = "none" | "edited" | "error";
+export type DateTimeFormat =
+  | "yyyy-MM-dd"
+  | "yyyy-MM-dd HH:mm"
+  | "yyyy-MM-dd hh:mm"
+  | "yyyy-MM"
+  | "yyyy"
+  | "MM";
+
 export type ValidationErrorKey =
   | "required"
   | "number"
@@ -37,6 +45,8 @@ export type ValidationErrorKey =
   | "maxLength"
   | "minLength"
   | "reference"
+  | "referenceRelation"
+  | "datetime"
   | "invalid";
 
 export type ValidationErrorInfo = {
@@ -62,11 +72,22 @@ export type LookupColumnDefinition = {
   sourceColName?: string;
 };
 
+export type ColumnRelation = {
+  parentField: string;
+  targetSheetId?: string;
+  sourceFilterField: string;
+};
+
 export type PulldownBinding = {
   sourceSheetId: string;
   sourceKeyColId: ColumnId;
   lookupColumns: LookupColumnDefinition[];
   mode: PulldownMode;
+  relation?: {
+    parentColId: ColumnId;
+    targetSheetId: string;
+    sourceFilterColId: ColumnId;
+  };
 };
 
 export type LookupBinding = {
@@ -77,6 +98,7 @@ export type LookupBinding = {
 
 export type ColumnConfig =
   | { type: "default"; readOnly?: boolean }
+  | { type: "datetime"; format: DateTimeFormat; readOnly?: boolean }
   | { type: "pulldown"; pulldown: PulldownBinding; readOnly?: boolean }
   | { type: "lookup"; lookup: LookupBinding; readOnly?: boolean };
 
@@ -104,16 +126,19 @@ export type ColumnValidationRule =
   | { type: "numeric" }
   | { type: "maxLength"; length: number }
   | { type: "minLength"; length: number }
-  | { type: "reference" };
+  | { type: "reference" }
+  | { type: "datetime"; format: DateTimeFormat };
 
 export type ColumnTemplateType =
   | { type: "text" }
   | { type: "number"; format?: "currency" | "integer" | "decimal" }
+  | { type: "datetime"; format: DateTimeFormat }
   | {
       type: "pulldown";
       mode: "dropdown" | "combobox";
       sourceTemplateId: string;
       sourceKeyField: string;
+      relation?: ColumnRelation;
       lookupFields: {
         field: string;
         headerName: string;

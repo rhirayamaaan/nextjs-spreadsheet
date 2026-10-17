@@ -39,14 +39,20 @@ export const productionVolumeTemplate: SheetTemplate = {
     {
       field: "year",
       headerName: "年度",
-      type: { type: "text" },
+      type: { type: "datetime", format: "yyyy" },
+      validations: [{ type: "required" }, { type: "datetime", format: "yyyy" }],
+      width: 100,
+      align: "center",
+    },
+    {
+      field: "production_date",
+      headerName: "生産日",
+      type: { type: "datetime", format: "yyyy-MM-dd" },
       validations: [
         { type: "required" },
-        { type: "numeric" },
-        { type: "minLength", length: 4 },
-        { type: "maxLength", length: 4 },
+        { type: "datetime", format: "yyyy-MM-dd" },
       ],
-      width: 100,
+      width: 130,
       align: "center",
     },
     {
@@ -123,6 +129,11 @@ export const productionVolumeTemplate: SheetTemplate = {
         mode: "combobox",
         sourceTemplateId: "cost-department-master",
         sourceKeyField: "code",
+        relation: {
+          parentField: "office_code",
+          targetSheetId: "cost-department-master",
+          sourceFilterField: "office_code",
+        },
         lookupFields: [
           {
             field: "cost_dept_name",
@@ -239,6 +250,14 @@ export const costDepartmentTemplate: SheetTemplate = {
   description: "原価部門および製造課のマスタシート",
   defaultRowCount: 11,
   columns: [
+    {
+      field: "office_code",
+      headerName: "事業所コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }, { type: "alphanumeric" }],
+      width: 140,
+      align: "left",
+    },
     {
       field: "code",
       headerName: "原価部門コード",

@@ -76,17 +76,17 @@ const MOCK_OFFICES_MASTER = [
 ];
 
 const MOCK_COST_DEPTS = [
-  { code: "3000", name: "統括製造課", category: "管理" },
-  { code: "3001", name: "第1製造課", category: "製造" },
-  { code: "3002", name: "第2製造課", category: "製造" },
-  { code: "3003", name: "第3製造課", category: "製造" },
-  { code: "3004", name: "精製加工課", category: "製造" },
-  { code: "3005", name: "充填課", category: "製造" },
-  { code: "3006", name: "包装課", category: "製造" },
-  { code: "3007", name: "品質保証課", category: "補助" },
-  { code: "3008", name: "工務課", category: "補助" },
-  { code: "3009", name: "生産管理課", category: "補助" },
-  { code: "3010", name: "資材課", category: "補助" },
+  { office_code: "13", code: "3000", name: "統括製造課", category: "管理" },
+  { office_code: "13", code: "3001", name: "第1製造課", category: "製造" },
+  { office_code: "13", code: "3010", name: "資材課", category: "補助" },
+  { office_code: "27", code: "3002", name: "第2製造課", category: "製造" },
+  { office_code: "27", code: "3003", name: "第3製造課", category: "製造" },
+  { office_code: "23", code: "3004", name: "精製加工課", category: "製造" },
+  { office_code: "23", code: "3005", name: "充填課", category: "製造" },
+  { office_code: "40", code: "3006", name: "包装課", category: "製造" },
+  { office_code: "40", code: "3007", name: "品質保証課", category: "補助" },
+  { office_code: "01", code: "3008", name: "工務課", category: "補助" },
+  { office_code: "01", code: "3009", name: "生産管理課", category: "補助" },
 ];
 
 /**
@@ -112,8 +112,10 @@ export const fetchMockSheetRecords = (
           (r + Math.floor(r / 3)) % MOCK_OFFICES_MASTER.length
         ] ?? MOCK_OFFICES_MASTER[0];
       const costDept =
-        MOCK_COST_DEPTS[(r + Math.floor(r / 5)) % MOCK_COST_DEPTS.length] ??
+        MOCK_COST_DEPTS.find((c) => c.office_code === office.code) ??
+        MOCK_COST_DEPTS[r % MOCK_COST_DEPTS.length] ??
         MOCK_COST_DEPTS[0];
+      const officeCode = costDept.office_code;
 
       // 原価規格
       const digit5 = 1 + ((r * 7) % 9);
@@ -131,12 +133,18 @@ export const fetchMockSheetRecords = (
       const yieldRatio = 1.05 + (r % 15) * 0.01 + (r % 3) * 0.03;
       const yieldVolume = Math.round((productionVolume * yieldRatio) / 10) * 10;
 
+      // 生産日 (yyyy-MM-dd)
+      const month = String((r % 12) + 1).padStart(2, "0");
+      const day = String((r % 28) + 1).padStart(2, "0");
+      const productionDate = `${year}-${month}-${day}`;
+
       records.push({
         type,
         category,
         year,
+        production_date: productionDate,
         accounting_unit_code: unit.code,
-        office_code: office.code,
+        office_code: officeCode,
         cost_dept_code: costDept.code,
         cost_spec: costSpec,
         production_volume: String(productionVolume),
@@ -162,6 +170,7 @@ export const fetchMockSheetRecords = (
 
   if (sheetId === "cost-department-master") {
     return MOCK_COST_DEPTS.map((c) => ({
+      office_code: c.office_code,
       code: c.code,
       name: c.name,
       category: c.category,

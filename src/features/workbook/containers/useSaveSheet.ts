@@ -8,6 +8,7 @@ import {
   baseCellValuesAtom,
   cellCustomStatusesAtom,
   cellEditsAtom,
+  columnNamesAtom,
   columnOrderAtom,
   commitSheetEditsAtom,
   referencedSheetsDataAtom,
@@ -42,6 +43,7 @@ export const useSaveSheet = ({
     const columns = store.get(columnOrderAtom);
     const columnConfigs = store.get(activeColumnConfigsAtom);
     const columnValidations = store.get(activeColumnValidationsAtom);
+    const columnNames = store.get(columnNamesAtom);
     const referencedSheets = store.get(referencedSheetsDataAtom);
     const cellEdits = store.get(cellEditsAtom);
     const baseValues = store.get(baseCellValuesAtom);
@@ -61,6 +63,7 @@ export const useSaveSheet = ({
       baseValues,
       rowStatuses,
       customStatuses,
+      columnNames,
     });
 
     if (firstError) {

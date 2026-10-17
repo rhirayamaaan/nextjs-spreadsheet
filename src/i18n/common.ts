@@ -16,6 +16,8 @@ export const commonMessages = {
     validationMaxLength: "{length}文字以内で入力してください",
     validationMinLength: "{length}文字以上で入力してください",
     validationReference: "マスタに存在しない値です",
+    validationReferenceRelation: "{parent}に{target}がありません",
+    validationDatetime: "{format}の形式で正しい日付を入力してください",
     validationInvalid: "入力値が不正です",
   },
   en: {
@@ -33,6 +35,8 @@ export const commonMessages = {
     validationMaxLength: "Must be at most {length} characters",
     validationMinLength: "Must be at least {length} characters",
     validationReference: "Value does not exist in master data",
+    validationReferenceRelation: "{target} does not exist in {parent}",
+    validationDatetime: "Please enter a valid date in {format} format",
     validationInvalid: "Invalid value",
   },
 } as const;

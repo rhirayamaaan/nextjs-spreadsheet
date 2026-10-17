@@ -11,6 +11,7 @@ import {
 import {
   activeCellAtom,
   activeColumnConfigFamily,
+  baseCellValuesAtom,
   type ColumnId,
   cellEditsAtom,
   cellFamily,
@@ -57,18 +58,76 @@ const CellInner: FC<InnerProps> = memo(
     );
     const referencedSheets = useAtomValue(referencedSheetsDataAtom);
     const cellEdits = useAtomValue(cellEditsAtom);
+    const baseCellValues = useAtomValue(baseCellValuesAtom);
 
     const isLookup = config.type === "lookup" || Boolean(config.readOnly);
-    const isPulldown = config.type === "pulldown";
-    const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
+    const isConfigPulldown = config.type === "pulldown";
+    const isDatetimeConfig = config.type === "datetime";
+
+    const isDatetimePulldown =
+      isDatetimeConfig && (config.format === "yyyy" || config.format === "MM");
+
+    const isPulldown = isConfigPulldown || isDatetimePulldown;
+    const isDatetimePicker = isDatetimeConfig && !isDatetimePulldown;
+    const datetimeFormat = isDatetimeConfig ? config.format : undefined;
+
+    const pulldownMode = isConfigPulldown
+      ? config.pulldown.mode
+      : isDatetimePulldown
+        ? "dropdown"
+        : undefined;
 
     const pulldownOptions = useMemo(() => {
-      if (!isPulldown) return undefined;
-      const { sourceSheetId, sourceKeyColId, lookupColumns } = config.pulldown;
-      const masterSheet = referencedSheets[sourceSheetId];
+      // datetime かつ yyyy / MM の場合は年月ドロップダウン候補を生成
+      if (isDatetimePulldown && isDatetimeConfig) {
+        if (config.format === "yyyy") {
+          const currentYear = new Date().getFullYear();
+          const years: { key: string; label: string }[] = [];
+          for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+            years.push({ key: String(y), label: `${y}年` });
+          }
+          return years;
+        }
+        if (config.format === "MM") {
+          const months: { key: string; label: string }[] = [];
+          for (let m = 1; m <= 12; m++) {
+            const key = String(m).padStart(2, "0");
+            months.push({ key, label: `${m}月` });
+          }
+          return months;
+        }
+      }
+
+      if (!isConfigPulldown) return undefined;
+      const { sourceSheetId, sourceKeyColId, lookupColumns, relation } =
+        config.pulldown;
+      const targetMasterId = relation?.targetSheetId ?? sourceSheetId;
+      const masterSheet = referencedSheets[targetMasterId];
       if (!masterSheet) return [];
 
-      return masterSheet.rows.map((rId) => {
+      // 親列リレーションがある場合、親セルの選択値でマスタ行をフィルタリング（親未選択時は候補なし）
+      const candidateRows = (() => {
+        if (!relation) return masterSheet.rows;
+
+        const parentKey = `${rowId}-${relation.parentColId}`;
+        const parentVal =
+          parentKey in cellEdits
+            ? cellEdits[parentKey]
+            : (baseCellValues[parentKey] ?? "");
+
+        if (!parentVal) return [];
+
+        return masterSheet.rows.filter((rId) => {
+          const fKey = `${rId}-${relation.sourceFilterColId}`;
+          const fVal =
+            fKey in cellEdits
+              ? cellEdits[fKey]
+              : (masterSheet.values[fKey] ?? "");
+          return fVal === parentVal;
+        });
+      })();
+
+      return candidateRows.map((rId) => {
         const key = `${rId}-${sourceKeyColId}`;
         const keyVal =
           key in cellEdits ? cellEdits[key] : (masterSheet.values[key] ?? "");
@@ -87,7 +146,16 @@ const CellInner: FC<InnerProps> = memo(
           label: labels ? `${keyVal} (${labels})` : keyVal,
         };
       });
-    }, [isPulldown, config, referencedSheets, cellEdits]);
+    }, [
+      isConfigPulldown,
+      isDatetimePulldown,
+      isDatetimeConfig,
+      config,
+      referencedSheets,
+      cellEdits,
+      rowId,
+      baseCellValues,
+    ]);
 
     const handleDoubleClick = useCallback(() => {
       if (isLookup) return;
@@ -162,6 +230,8 @@ const CellInner: FC<InnerProps> = memo(
           isEditing,
           isLookup,
           isPulldown,
+          isDatetime: isDatetimePicker,
+          datetimeFormat,
           pulldownMode,
           pulldownOptions,
           onCommit: handleCommit,

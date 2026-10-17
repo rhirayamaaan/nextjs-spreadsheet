@@ -67,19 +67,38 @@ export const getLookupValue = (
 
   const sourceKeyColId = parentConfig.pulldown.sourceKeyColId;
 
-  // Find the row in masterSheet matching parentValue
+  const relation = parentConfig.pulldown.relation;
+  const grandParentValue = relation
+    ? (cellEdits[`${address.rowId}-${relation.parentColId}`] ??
+      baseCellValues[`${address.rowId}-${relation.parentColId}`] ??
+      "")
+    : undefined;
+
+  // 親キー（事業所等）が未入力・存在しない場合は参照しない
+  if (relation && !grandParentValue) return "";
+
+  // Find the row in masterSheet matching parentValue and relation
   for (const rowId of masterSheet.rows) {
     const key = `${rowId}-${sourceKeyColId}`;
     const rowKeyVal =
       key in cellEdits ? cellEdits[key] : masterSheet.values[key];
-    if (rowKeyVal === parentValue) {
-      const targetKey = `${rowId}-${sourceColId}`;
-      return (
-        (targetKey in cellEdits
-          ? cellEdits[targetKey]
-          : masterSheet.values[targetKey]) ?? ""
-      );
+    if (rowKeyVal !== parentValue) continue;
+
+    if (relation) {
+      const filterKey = `${rowId}-${relation.sourceFilterColId}`;
+      const filterVal =
+        filterKey in cellEdits
+          ? cellEdits[filterKey]
+          : masterSheet.values[filterKey];
+      if (filterVal !== grandParentValue) continue;
     }
+
+    const targetKey = `${rowId}-${sourceColId}`;
+    return (
+      (targetKey in cellEdits
+        ? cellEdits[targetKey]
+        : masterSheet.values[targetKey]) ?? ""
+    );
   }
 
   return "";

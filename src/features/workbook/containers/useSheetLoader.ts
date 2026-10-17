@@ -9,6 +9,7 @@ import {
   baseRowOrderAtom,
   type ColumnConfig,
   type ColumnId,
+  type ColumnRelation,
   type ColumnValidationRule,
   closeSheetAtom,
   columnConfigsAtom,
@@ -19,6 +20,7 @@ import {
   openSheetAtom,
   openSheetIdsAtom,
   openSheetsAtom,
+  type PulldownBinding,
   referencedSheetsDataAtom,
   type SheetData,
   type SheetTemplate,
@@ -27,6 +29,33 @@ import {
   sheetsByCategoryAtom,
   sheetTemplatesAtom,
 } from "../stores";
+
+/**
+ * 列定義のリレーション設定から参照先 ColumnId などを解決する純粋ヘルパー関数
+ */
+const resolveColumnRelation = (
+  relation: ColumnRelation | undefined,
+  defaultTargetSheetId: string,
+  fieldToColId: Record<string, ColumnId>,
+  getFieldToColMap: (
+    templateId: string,
+  ) => Record<string, ColumnId> | undefined,
+): PulldownBinding["relation"] => {
+  if (!relation) return undefined;
+
+  const targetSheetId = relation.targetSheetId ?? defaultTargetSheetId;
+  const parentColId = fieldToColId[relation.parentField];
+  const targetColMap = getFieldToColMap(targetSheetId) ?? {};
+  const sourceFilterColId = targetColMap[relation.sourceFilterField];
+
+  if (!parentColId || !sourceFilterColId) return undefined;
+
+  return {
+    parentColId,
+    targetSheetId,
+    sourceFilterColId,
+  };
+};
 
 /**
  * 雛形（Template）と生データ（Raw Records）からスプレッドシート用データを生成する純粋ヘルパー関数
@@ -100,11 +129,24 @@ export const buildSheetData = (
     const colId = fieldToColId[colDef.field];
     if (!colId) continue;
 
-    if (colDef.type.type === "pulldown") {
-      const { sourceTemplateId, sourceKeyField, lookupFields, mode } =
+    if (colDef.type.type === "datetime") {
+      configs[colId] = {
+        type: "datetime",
+        format: colDef.type.format,
+        readOnly: colDef.readOnly,
+      };
+    } else if (colDef.type.type === "pulldown") {
+      const { sourceTemplateId, sourceKeyField, lookupFields, mode, relation } =
         colDef.type;
       const sourceColMap = getFieldToColMap(sourceTemplateId) ?? {};
       const sourceKeyColId = sourceColMap[sourceKeyField];
+
+      const resolvedRelation = resolveColumnRelation(
+        relation,
+        sourceTemplateId,
+        fieldToColId,
+        getFieldToColMap,
+      );
 
       if (sourceKeyColId) {
         const resolvedLookups = lookupFields
@@ -131,6 +173,7 @@ export const buildSheetData = (
             sourceKeyColId,
             lookupColumns: resolvedLookups,
             mode,
+            relation: resolvedRelation,
           },
         };
       }
@@ -224,6 +267,15 @@ export const useSheetLoader = () => {
             const depId = col.type.sourceTemplateId;
             if (!currentDataMap[depId]) {
               resolveSheet(depId);
+            }
+            if (
+              col.type.type === "pulldown" &&
+              col.type.relation?.targetSheetId
+            ) {
+              const relTargetId = col.type.relation.targetSheetId;
+              if (!currentDataMap[relTargetId]) {
+                resolveSheet(relTargetId);
+              }
             }
           }
         }

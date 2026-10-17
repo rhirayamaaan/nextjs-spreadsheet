@@ -8,7 +8,7 @@ import type {
   SheetData,
   ValidationErrorInfo,
 } from "../stores/types";
-import { validateCellRules } from "../utils/validation";
+import { getParentColumnInfo, validateCellRules } from "../utils/validation";
 
 export type FirstValidationError = {
   rowIndex: number;
@@ -29,6 +29,7 @@ export const findFirstValidationError = ({
   baseValues,
   rowStatuses,
   customStatuses,
+  columnNames,
 }: {
   visibleRows: RowId[];
   columns: ColumnId[];
@@ -39,6 +40,7 @@ export const findFirstValidationError = ({
   baseValues: Record<string, string>;
   rowStatuses: Record<RowId, RowStatus>;
   customStatuses: Record<string, CellStatusInfo>;
+  columnNames?: Record<ColumnId, string>;
 }): FirstValidationError | null => {
   for (let r = 0; r < visibleRows.length; r++) {
     const rowId = visibleRows[r];
@@ -77,13 +79,28 @@ export const findFirstValidationError = ({
       const pulldownConfig =
         colConfig?.type === "pulldown" ? colConfig.pulldown : undefined;
       const masterSheetData = pulldownConfig
-        ? referencedSheets[pulldownConfig.sourceSheetId]
+        ? referencedSheets[
+            pulldownConfig.relation?.targetSheetId ??
+              pulldownConfig.sourceSheetId
+          ]
         : undefined;
+
+      const targetColName = columnNames?.[colId];
+      const { parentColValue, parentColName } = getParentColumnInfo(
+        pulldownConfig?.relation,
+        rowId,
+        cellEdits,
+        baseValues,
+        columnNames,
+      );
 
       const result = validateCellRules(validations, cellValue, {
         pulldownConfig,
         masterSheetData,
         cellEdits,
+        parentColValue,
+        parentColName,
+        targetColName,
       });
 
       if (!result.valid) {
