@@ -6,8 +6,10 @@ export type SheetMenuDrawerProps = {
   categories: SheetCategory[];
   sheetsByCategory: { category: SheetCategory; sheets: SheetTemplate[] }[];
   openSheetIds: string[];
+  favoriteSheetIds: string[];
   activeSheetId: string | null;
   onSelectSheet: (sheetId: string) => void;
+  onToggleFavorite: (sheetId: string) => void;
 };
 
 export type SearchableSheet = SheetTemplate & {
@@ -20,6 +22,8 @@ export type SheetMenuDrawerPresenterProps = {
   categories: SheetCategory[];
   sheetsByCategory: { category: SheetCategory; sheets: SheetTemplate[] }[];
   openSheetIds: string[];
+  favoriteSheetIds: string[];
+  favoriteSheets: SearchableSheet[];
   activeSheetId: string | null;
   searchQuery: string;
   onChangeSearchQuery: (query: string) => void;
@@ -27,6 +31,7 @@ export type SheetMenuDrawerPresenterProps = {
   searchResults: SearchableSheet[];
   totalSheetsCount: number;
   onSelectSheet: (sheetId: string) => void;
+  onToggleFavorite: (sheetId: string) => void;
   onSelectCategory: (categoryId: string) => void;
   onBackToMain: () => void;
 };

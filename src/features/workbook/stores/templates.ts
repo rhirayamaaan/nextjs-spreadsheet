@@ -26,6 +26,9 @@ export const sheetCategoriesAtom = atom<SheetCategory[]>([]);
 // 全シート雛形カタログ
 export const sheetTemplatesAtom = atom<Record<string, SheetTemplate>>({});
 
+// お気に入り登録されているシートID配列
+export const favoriteSheetIdsAtom = atom<string[]>([]);
+
 // メタデータ一括初期化アクション
 export const initWorkbookMetadataAtom = atom(
   null,
@@ -36,12 +39,44 @@ export const initWorkbookMetadataAtom = atom(
       categories: SheetCategory[];
       templates: Record<string, SheetTemplate>;
       initialOpenSheetIds?: string[];
+      favoriteSheetIds?: string[];
     },
   ) => {
     set(sheetCategoriesAtom, payload.categories);
     set(sheetTemplatesAtom, payload.templates);
     if (payload.initialOpenSheetIds && payload.initialOpenSheetIds.length > 0) {
       set(openSheetIdsAtom, payload.initialOpenSheetIds);
+    }
+    const initialFavorites =
+      payload.favoriteSheetIds ??
+      Object.values(payload.templates)
+        .filter((t) => t.isFavorite)
+        .map((t) => t.id);
+    set(favoriteSheetIdsAtom, initialFavorites);
+  },
+);
+
+// シートのお気に入り登録・解除トグルアクション
+export const toggleFavoriteSheetAtom = atom(
+  null,
+  (get, set, sheetId: string) => {
+    const currentFavorites = get(favoriteSheetIdsAtom);
+    const isCurrentlyFavorite = currentFavorites.includes(sheetId);
+    const nextFavorites = isCurrentlyFavorite
+      ? currentFavorites.filter((id) => id !== sheetId)
+      : [...currentFavorites, sheetId];
+    set(favoriteSheetIdsAtom, nextFavorites);
+
+    const templates = get(sheetTemplatesAtom);
+    const targetTemplate = templates[sheetId];
+    if (targetTemplate) {
+      set(sheetTemplatesAtom, {
+        ...templates,
+        [sheetId]: {
+          ...targetTemplate,
+          isFavorite: !isCurrentlyFavorite,
+        },
+      });
     }
   },
 );

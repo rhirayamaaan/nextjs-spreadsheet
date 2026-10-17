@@ -18,6 +18,7 @@ export const productionVolumeTemplate: SheetTemplate = {
   name: "生産量登録",
   category: "planning",
   description: "生産量および上がり数量の実績・計画登録シート",
+  isFavorite: true,
   defaultRowCount: 10000,
   columns: [
     {
@@ -226,6 +227,7 @@ export const accountingUnitTemplate: SheetTemplate = {
   name: "会計単位",
   category: "master",
   description: "会計単位（部署・部門）のマスタシート",
+  isFavorite: false,
   defaultRowCount: 11,
   columns: [
     {
@@ -252,6 +254,7 @@ export const officeTemplate: SheetTemplate = {
   name: "事業所",
   category: "master",
   description: "全国事業所のマスタシート",
+  isFavorite: false,
   defaultRowCount: 47,
   columns: [
     {
@@ -278,6 +281,7 @@ export const costDepartmentTemplate: SheetTemplate = {
   name: "原価部門マスタ",
   category: "master",
   description: "原価部門および製造課のマスタシート",
+  isFavorite: false,
   defaultRowCount: 11,
   columns: [
     {
@@ -322,3 +326,9 @@ export const MOCK_SHEET_TEMPLATES: Record<string, SheetTemplate> = {
 };
 
 export const MOCK_INITIAL_OPEN_SHEET_IDS: string[] = [];
+
+export const MOCK_FAVORITE_SHEET_IDS: string[] = Object.values(
+  MOCK_SHEET_TEMPLATES,
+)
+  .filter((template) => template.isFavorite)
+  .map((template) => template.id);

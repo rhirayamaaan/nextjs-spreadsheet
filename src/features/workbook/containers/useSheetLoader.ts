@@ -17,6 +17,7 @@ import {
   columnValidationsAtom,
   createColumnId,
   createRowId,
+  favoriteSheetIdsAtom,
   openSheetAtom,
   openSheetIdsAtom,
   openSheetsAtom,
@@ -28,6 +29,7 @@ import {
   sheetFieldToColIdMapAtom,
   sheetsByCategoryAtom,
   sheetTemplatesAtom,
+  toggleFavoriteSheetAtom,
 } from "../stores";
 
 /**
@@ -224,6 +226,7 @@ export const useSheetLoader = () => {
   const openSheetIds = useAtomValue(openSheetIdsAtom);
   const openSheets = useAtomValue(openSheetsAtom);
   const sheetsByCategory = useAtomValue(sheetsByCategoryAtom);
+  const favoriteSheetIds = useAtomValue(favoriteSheetIdsAtom);
 
   const setBaseRowOrder = useSetAtom(baseRowOrderAtom);
   const setBaseColumnOrder = useSetAtom(baseColumnOrderAtom);
@@ -235,6 +238,7 @@ export const useSheetLoader = () => {
   const setReferencedSheets = useSetAtom(referencedSheetsDataAtom);
   const setOpenSheet = useSetAtom(openSheetAtom);
   const setCloseSheet = useSetAtom(closeSheetAtom);
+  const setToggleFavoriteSheet = useSetAtom(toggleFavoriteSheetAtom);
 
   const getOrInitSheetData = useCallback(
     (sheetId: string): SheetData | null => {
@@ -383,6 +387,13 @@ export const useSheetLoader = () => {
     [activeSheetId, openSheetIds, loadSheetData, setCloseSheet],
   );
 
+  const handleToggleFavoriteSheet = useCallback(
+    (sheetId: string) => {
+      setToggleFavoriteSheet(sheetId);
+    },
+    [setToggleFavoriteSheet],
+  );
+
   const activeSheet = activeSheetId ? sheetTemplates[activeSheetId] : undefined;
 
   return {
@@ -390,10 +401,12 @@ export const useSheetLoader = () => {
     activeSheetId,
     openSheets,
     openSheetIds,
+    favoriteSheetIds,
     sheetsByCategory,
     handleSelectSheet,
     handleOpenSheet,
     handleCloseSheet,
+    handleToggleFavoriteSheet,
     getOrInitSheetData,
   };
 };

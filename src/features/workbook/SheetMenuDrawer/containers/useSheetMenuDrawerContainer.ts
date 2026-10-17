@@ -3,7 +3,7 @@ import type {
   SearchableSheet,
   SheetMenuDrawerPresenterProps,
   SheetMenuDrawerProps,
-} from "./types";
+} from "../components/types";
 
 export const useSheetMenuDrawerContainer = ({
   open,
@@ -11,15 +11,17 @@ export const useSheetMenuDrawerContainer = ({
   categories,
   sheetsByCategory,
   openSheetIds,
+  favoriteSheetIds,
   activeSheetId,
   onSelectSheet,
+  onToggleFavorite,
 }: SheetMenuDrawerProps): SheetMenuDrawerPresenterProps => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
 
-  // 全シート一覧（検索用）
+  // 全シート一覧（検索・お気に入り解決用）
   const allSheets = useMemo<SearchableSheet[]>(() => {
     return sheetsByCategory.flatMap((group) =>
       group.sheets.map((sheet) => ({
@@ -28,6 +30,14 @@ export const useSheetMenuDrawerContainer = ({
       })),
     );
   }, [sheetsByCategory]);
+
+  // お気に入りシート一覧
+  const favoriteSheets = useMemo<SearchableSheet[]>(() => {
+    const sheetMap = new Map(allSheets.map((s) => [s.id, s]));
+    return favoriteSheetIds
+      .map((id) => sheetMap.get(id))
+      .filter((s): s is SearchableSheet => Boolean(s));
+  }, [allSheets, favoriteSheetIds]);
 
   // 検索フィルタリング結果
   const searchResults = useMemo(() => {
@@ -86,6 +96,8 @@ export const useSheetMenuDrawerContainer = ({
     categories,
     sheetsByCategory,
     openSheetIds,
+    favoriteSheetIds,
+    favoriteSheets,
     activeSheetId,
     searchQuery,
     onChangeSearchQuery: setSearchQuery,
@@ -93,6 +105,7 @@ export const useSheetMenuDrawerContainer = ({
     searchResults,
     totalSheetsCount,
     onSelectSheet: handleSelectSheet,
+    onToggleFavorite,
     onSelectCategory: handleSelectCategory,
     onBackToMain: handleBackToMain,
   };

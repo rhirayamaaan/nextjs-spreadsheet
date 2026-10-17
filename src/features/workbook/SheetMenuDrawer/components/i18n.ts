@@ -2,6 +2,10 @@ export const drawerMessages = {
   ja: {
     sheetMenuTitle: "シートメニュー",
     mainMenu: "メインメニュー",
+    favoritesSection: "よく使う項目",
+    noFavoriteSheets: "シートをお気に入り登録するとここに表示されます",
+    addToFavorites: "{name} をお気に入りに追加",
+    removeFromFavorites: "{name} をお気に入りから解除",
     categoriesSection: "カテゴリー",
     searchResults: "検索結果",
     searchPlaceholder: "シートを検索...",
@@ -18,6 +22,10 @@ export const drawerMessages = {
   en: {
     sheetMenuTitle: "Sheet Menu",
     mainMenu: "Main Menu",
+    favoritesSection: "Frequently Used",
+    noFavoriteSheets: "Favorite sheets will appear here",
+    addToFavorites: "Add {name} to favorites",
+    removeFromFavorites: "Remove {name} from favorites",
     categoriesSection: "Categories",
     searchResults: "Search Results",
     searchPlaceholder: "Search sheets...",

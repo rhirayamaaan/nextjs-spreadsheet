@@ -13,7 +13,6 @@ import { CellContainer } from "../Cell/containers";
 import { EmptySheet, Workbook } from "../components";
 import { localMessages } from "../components/i18n";
 import { LoadingOverlay } from "../components/LoadingOverlay";
-import { SheetMenuDrawer } from "../components/SheetMenuDrawer";
 import { SheetTabs } from "../components/SheetTabs";
 import { Toolbar } from "../components/Toolbar";
 import { PdfPreview } from "../PdfPreview/components";
@@ -30,6 +29,8 @@ import { ColumnFilterModal } from "../Sheet/components/ColumnFilterModal";
 import { ColumnSettingModal } from "../Sheet/components/ColumnSettingModal";
 import { ColumnHeaderContainer } from "../Sheet/containers/ColumnHeaderContainer";
 import { useSheetContainer } from "../Sheet/containers/useSheetContainer";
+import { SheetMenuDrawer } from "../SheetMenuDrawer/components";
+import { useSheetMenuDrawerContainer } from "../SheetMenuDrawer/containers/useSheetMenuDrawerContainer";
 import {
   activeColumnSummaryValuesAtom,
   type ColumnId,
@@ -58,13 +59,27 @@ export const WorkbookContainer: FC = () => {
     activeSheetId,
     openSheets,
     openSheetIds,
+    favoriteSheetIds,
     sheetsByCategory,
     handleSelectSheet,
     handleOpenSheet,
     handleCloseSheet,
+    handleToggleFavoriteSheet,
   } = useSheetLoader();
   const categories = useAtomValue(sheetCategoriesAtom);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const drawerProps = useSheetMenuDrawerContainer({
+    open: isDrawerOpen,
+    onOpenChange: setIsDrawerOpen,
+    categories,
+    sheetsByCategory,
+    openSheetIds,
+    favoriteSheetIds,
+    activeSheetId,
+    onSelectSheet: handleOpenSheet,
+    onToggleFavorite: handleToggleFavoriteSheet,
+  });
 
   const { exportCurrentSheet, isExporting: isExportingExcel } =
     useExportExcel();
@@ -337,15 +352,7 @@ export const WorkbookContainer: FC = () => {
           }
         />
       </DndContext>
-      <SheetMenuDrawer
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        categories={categories}
-        sheetsByCategory={sheetsByCategory}
-        openSheetIds={openSheetIds}
-        activeSheetId={activeSheetId}
-        onSelectSheet={handleOpenSheet}
-      />
+      <SheetMenuDrawer {...drawerProps} />
       {settingModalColId !== null && (
         <ColumnSettingModal
           key={settingModalColId}

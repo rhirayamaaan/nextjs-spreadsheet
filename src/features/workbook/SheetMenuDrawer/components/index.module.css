@@ -1,11 +1,3 @@
-.drawerOverlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 .drawerContent {
   position: fixed;
   top: 0;
@@ -14,24 +6,17 @@
   width: 380px;
   max-width: 90vw;
   height: 100vh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
   background-color: var(--color-panel-solid, #ffffff);
   border-right: 1px solid var(--gray-6);
-  z-index: 1001;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-5);
   animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   overflow: hidden;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 @keyframes slideInLeft {
@@ -43,113 +28,17 @@
   }
 }
 
-.drawerHeader {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--gray-4);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: var(--gray-1);
-}
-
-.searchSection {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--gray-4);
-  background-color: var(--gray-2);
-}
-
-.scrollArea {
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* Amazon風 戻るナビゲーションバー */
-.backNavButton {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 14px 16px;
-  background-color: transparent;
-  border: none;
-  border-bottom: 1px solid var(--gray-4);
+.interactiveRow {
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--gray-12);
-  text-align: left;
   transition: background-color 0.15s ease;
 }
 
-.backNavButton:hover {
+.interactiveRow:hover {
   background-color: var(--gray-3);
 }
 
-.sectionHeader {
-  padding: 16px 16px 8px 16px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--gray-12);
-  letter-spacing: -0.01em;
-}
-
-.subCategoryTitle {
-  padding: 16px 16px 12px 16px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--gray-12);
-}
-
-.menuList {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Amazon風 カテゴリ行アイテム */
-.categoryItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 14px 16px;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 15px;
-  color: var(--gray-12);
-  text-align: left;
-  transition: background-color 0.15s ease;
-}
-
-.categoryItem:hover {
-  background-color: var(--gray-3);
-}
-
-.categoryName {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.chevronIcon {
-  color: var(--gray-9);
-  flex-shrink: 0;
-}
-
-/* Amazon風 シート行アイテム（サブメニュー / 検索結果） */
 .sheetItem {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 12px 16px;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
   transition: background-color 0.15s ease;
-  position: relative;
 }
 
 .sheetItem:hover {
@@ -159,36 +48,4 @@
 .sheetItemActive {
   background-color: var(--accent-3);
   box-shadow: inset 3px 0 0 var(--accent-9);
-}
-
-.sheetItemHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.sheetItemTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-12);
-}
-
-.sheetItemDesc {
-  font-size: 12px;
-  color: var(--gray-10);
-  line-height: 1.4;
-  padding-left: 2px;
-}
-
-.divider {
-  height: 1px;
-  background-color: var(--gray-4);
-  margin: 8px 0;
-}
-
-.emptyState {
-  padding: 40px 16px;
-  text-align: center;
-  color: var(--gray-10);
 }

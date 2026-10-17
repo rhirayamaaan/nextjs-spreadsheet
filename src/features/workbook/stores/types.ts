@@ -185,6 +185,7 @@ export type SheetTemplate = {
   name: string;
   category: string;
   description?: string;
+  isFavorite?: boolean;
   columns: ColumnTemplate[];
   defaultRowCount?: number;
 };
