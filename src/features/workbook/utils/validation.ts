@@ -1,4 +1,3 @@
-import { Temporal } from "temporal-polyfill-lite";
 import { z } from "zod";
 import type {
   ColumnId,
@@ -9,6 +8,7 @@ import type {
   SheetData,
   ValidationErrorInfo,
 } from "../stores/types";
+import { parseDateTimeString } from "./datetime";
 
 /**
  * リレーション定義と行IDから親セルの値・名称を取得するヘルパー関数
@@ -38,40 +38,7 @@ export const isValidDateTime = (
   format: DateTimeFormat,
 ): boolean => {
   if (!val) return true;
-
-  try {
-    switch (format) {
-      case "yyyy-MM-dd": {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
-        Temporal.PlainDate.from(val);
-        return true;
-      }
-      case "yyyy-MM-dd HH:mm":
-      case "yyyy-MM-dd hh:mm": {
-        if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(val)) return false;
-        Temporal.PlainDateTime.from(val.replace(" ", "T"));
-        return true;
-      }
-      case "yyyy-MM": {
-        if (!/^\d{4}-\d{2}$/.test(val)) return false;
-        Temporal.PlainYearMonth.from(val);
-        return true;
-      }
-      case "yyyy": {
-        if (!/^\d{4}$/.test(val)) return false;
-        Temporal.PlainYearMonth.from({ year: Number(val), month: 1 });
-        return true;
-      }
-      case "MM": {
-        if (!/^(0[1-9]|1[0-2])$/.test(val)) return false;
-        return true;
-      }
-      default:
-        return false;
-    }
-  } catch {
-    return false;
-  }
+  return parseDateTimeString(val, format) !== null;
 };
 
 /**

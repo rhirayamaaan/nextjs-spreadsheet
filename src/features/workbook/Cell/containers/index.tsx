@@ -61,44 +61,14 @@ const CellInner: FC<InnerProps> = memo(
     const baseCellValues = useAtomValue(baseCellValuesAtom);
 
     const isLookup = config.type === "lookup" || Boolean(config.readOnly);
-    const isConfigPulldown = config.type === "pulldown";
-    const isDatetimeConfig = config.type === "datetime";
+    const isPulldown = config.type === "pulldown";
+    const isDatetimePicker = config.type === "datetime";
+    const datetimeFormat = isDatetimePicker ? config.format : undefined;
 
-    const isDatetimePulldown =
-      isDatetimeConfig && (config.format === "yyyy" || config.format === "MM");
-
-    const isPulldown = isConfigPulldown || isDatetimePulldown;
-    const isDatetimePicker = isDatetimeConfig && !isDatetimePulldown;
-    const datetimeFormat = isDatetimeConfig ? config.format : undefined;
-
-    const pulldownMode = isConfigPulldown
-      ? config.pulldown.mode
-      : isDatetimePulldown
-        ? "dropdown"
-        : undefined;
+    const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
 
     const pulldownOptions = useMemo(() => {
-      // datetime かつ yyyy / MM の場合は年月ドロップダウン候補を生成
-      if (isDatetimePulldown && isDatetimeConfig) {
-        if (config.format === "yyyy") {
-          const currentYear = new Date().getFullYear();
-          const years: { key: string; label: string }[] = [];
-          for (let y = currentYear - 5; y <= currentYear + 5; y++) {
-            years.push({ key: String(y), label: `${y}年` });
-          }
-          return years;
-        }
-        if (config.format === "MM") {
-          const months: { key: string; label: string }[] = [];
-          for (let m = 1; m <= 12; m++) {
-            const key = String(m).padStart(2, "0");
-            months.push({ key, label: `${m}月` });
-          }
-          return months;
-        }
-      }
-
-      if (!isConfigPulldown) return undefined;
+      if (!isPulldown) return undefined;
       const { sourceSheetId, sourceKeyColId, lookupColumns, relation } =
         config.pulldown;
       const targetMasterId = relation?.targetSheetId ?? sourceSheetId;
@@ -147,9 +117,7 @@ const CellInner: FC<InnerProps> = memo(
         };
       });
     }, [
-      isConfigPulldown,
-      isDatetimePulldown,
-      isDatetimeConfig,
+      isPulldown,
       config,
       referencedSheets,
       cellEdits,

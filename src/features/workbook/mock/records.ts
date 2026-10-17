@@ -133,16 +133,23 @@ export const fetchMockSheetRecords = (
       const yieldRatio = 1.05 + (r % 15) * 0.01 + (r % 3) * 0.03;
       const yieldVolume = Math.round((productionVolume * yieldRatio) / 10) * 10;
 
-      // 生産日 (yyyy-MM-dd)
+      // 生産日・年月・日時
       const month = String((r % 12) + 1).padStart(2, "0");
       const day = String((r % 28) + 1).padStart(2, "0");
+      const hour = String(8 + (r % 10)).padStart(2, "0");
+      const minute = String((r * 15) % 60).padStart(2, "0");
+      const productionYearMonth = `${year}-${month}`;
       const productionDate = `${year}-${month}-${day}`;
+      const productionDatetime = `${productionDate} ${hour}:${minute}`;
 
       records.push({
         type,
         category,
         year,
+        month,
+        production_year_month: productionYearMonth,
         production_date: productionDate,
+        production_datetime: productionDatetime,
         accounting_unit_code: unit.code,
         office_code: officeCode,
         cost_dept_code: costDept.code,

@@ -45,6 +45,25 @@ export const productionVolumeTemplate: SheetTemplate = {
       align: "center",
     },
     {
+      field: "month",
+      headerName: "対象月",
+      type: { type: "datetime", format: "MM" },
+      validations: [{ type: "required" }, { type: "datetime", format: "MM" }],
+      width: 90,
+      align: "center",
+    },
+    {
+      field: "production_year_month",
+      headerName: "生産年月",
+      type: { type: "datetime", format: "yyyy-MM" },
+      validations: [
+        { type: "required" },
+        { type: "datetime", format: "yyyy-MM" },
+      ],
+      width: 110,
+      align: "center",
+    },
+    {
       field: "production_date",
       headerName: "生産日",
       type: { type: "datetime", format: "yyyy-MM-dd" },
@@ -53,6 +72,17 @@ export const productionVolumeTemplate: SheetTemplate = {
         { type: "datetime", format: "yyyy-MM-dd" },
       ],
       width: 130,
+      align: "center",
+    },
+    {
+      field: "production_datetime",
+      headerName: "生産日時",
+      type: { type: "datetime", format: "yyyy-MM-dd HH:mm" },
+      validations: [
+        { type: "required" },
+        { type: "datetime", format: "yyyy-MM-dd HH:mm" },
+      ],
+      width: 165,
       align: "center",
     },
     {
