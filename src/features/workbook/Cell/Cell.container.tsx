@@ -28,6 +28,13 @@ import {
 } from "../stores";
 import type { CellPresenterProps } from "./Cell.presenter";
 
+const blurActiveElement = (currentTarget: EventTarget | null) => {
+  if (typeof document === "undefined") return;
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement) || active === currentTarget) return;
+  active.blur();
+};
+
 type InnerProps = {
   row: number;
   col: number;
@@ -152,28 +159,20 @@ const CellInner: FC<InnerProps> = memo(
     const handleSelectionStart = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
         if (event.button !== 0) return;
+        if (isEditing) return;
 
         if (event.shiftKey) {
           event.preventDefault();
         }
 
-        if (!isEditing) {
-          setEditingCell(null);
-        }
+        blurActiveElement(event.currentTarget);
+        setEditingCell(null);
 
         setWorkbookStatus("selecting");
-        setSelection((prev) => {
-          if (event.shiftKey && prev) {
-            return {
-              start: prev.start,
-              end: { row, col },
-            };
-          }
-          return {
-            start: { row, col },
-            end: { row, col },
-          };
-        });
+        setSelection((prev) => ({
+          start: event.shiftKey && prev ? prev.start : { row, col },
+          end: { row, col },
+        }));
       },
       [setSelection, setWorkbookStatus, setEditingCell, isEditing, row, col],
     );
