@@ -415,6 +415,21 @@ export const DatePickerEditorPresenter: FC<DatePickerEditorPresenterProps> = ({
         onOpenAutoFocus={(e) => {
           e.preventDefault();
         }}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            commitValue(inputValue, {
+              deltaRow: 0,
+              deltaCol: e.shiftKey ? -1 : 1,
+            });
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancelEdit();
+          }
+        }}
         className={clsx(
           styles.datePickerPopover,
           (mode === "year" || mode === "month") &&

@@ -199,6 +199,9 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
         onOpenAutoFocus={(e) => {
           e.preventDefault();
         }}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
         style={{
           width: 280,
           padding: 6,

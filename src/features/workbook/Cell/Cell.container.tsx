@@ -40,11 +40,12 @@ type InnerProps = {
   col: number;
   rowId: RowId;
   colId: ColumnId;
+  onFinishEditing?: () => void;
   children: (props: CellPresenterProps) => ReactNode;
 };
 
 const CellInner: FC<InnerProps> = memo(
-  ({ row, col, rowId, colId, children }) => {
+  ({ row, col, rowId, colId, onFinishEditing, children }) => {
     const [value, setValue] = useAtom(
       useMemo(() => cellFamily({ rowId, colId }), [rowId, colId]),
     );
@@ -148,13 +149,19 @@ const CellInner: FC<InnerProps> = memo(
         if (move) {
           moveSelection({ ...move, extend: false });
         }
+        queueMicrotask(() => {
+          onFinishEditing?.();
+        });
       },
-      [value, setValue, setEditingCell, moveSelection],
+      [value, setValue, setEditingCell, moveSelection, onFinishEditing],
     );
 
     const handleCancel = useCallback(() => {
       setEditingCell(null);
-    }, [setEditingCell]);
+      queueMicrotask(() => {
+        onFinishEditing?.();
+      });
+    }, [setEditingCell, onFinishEditing]);
 
     const handleSelectionStart = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
@@ -173,8 +180,17 @@ const CellInner: FC<InnerProps> = memo(
           start: event.shiftKey && prev ? prev.start : { row, col },
           end: { row, col },
         }));
+        onFinishEditing?.();
       },
-      [setSelection, setWorkbookStatus, setEditingCell, isEditing, row, col],
+      [
+        setSelection,
+        setWorkbookStatus,
+        setEditingCell,
+        isEditing,
+        row,
+        col,
+        onFinishEditing,
+      ],
     );
 
     const handleSelectionMove = useCallback(
@@ -229,11 +245,19 @@ type Props = {
   col: number;
   rowId?: RowId;
   colId?: ColumnId;
+  onFinishEditing?: () => void;
   children: (props: CellPresenterProps) => ReactNode;
 };
 
 export const CellContainer: FC<Props> = memo(
-  ({ row, col, rowId: propRowId, colId: propColId, children }) => {
+  ({
+    row,
+    col,
+    rowId: propRowId,
+    colId: propColId,
+    onFinishEditing,
+    children,
+  }) => {
     const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
     const columnOrder = useAtomValue(columnOrderAtom);
     const rowId = propRowId ?? visibleRowOrder[row];
@@ -244,7 +268,13 @@ export const CellContainer: FC<Props> = memo(
     }
 
     return (
-      <CellInner rowId={rowId} colId={colId} row={row} col={col}>
+      <CellInner
+        rowId={rowId}
+        colId={colId}
+        row={row}
+        col={col}
+        onFinishEditing={onFinishEditing}
+      >
         {children}
       </CellInner>
     );

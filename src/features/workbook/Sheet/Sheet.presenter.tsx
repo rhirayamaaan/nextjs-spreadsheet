@@ -2,6 +2,7 @@ import {
   type FC,
   type KeyboardEvent,
   memo,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type Ref,
   useCallback,
@@ -391,6 +392,7 @@ export type SheetPresenterProps = BodyProps &
     hasFooter?: boolean;
     renderFooterCell?: (col: AxisLayout) => ReactNode;
     onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+    onMouseDown?: (event: ReactMouseEvent<HTMLDivElement>) => void;
   };
 
 export const SheetPresenter: FC<SheetPresenterProps> = ({
@@ -406,6 +408,7 @@ export const SheetPresenter: FC<SheetPresenterProps> = ({
   hasFooter,
   renderFooterCell,
   onKeyDown,
+  onMouseDown,
   ref,
 }) => {
   const footerHeight = hasFooter ? FOOTER_HEIGHT : 0;
@@ -416,6 +419,7 @@ export const SheetPresenter: FC<SheetPresenterProps> = ({
       role="application"
       tabIndex={-1}
       onKeyDown={onKeyDown}
+      onMouseDown={onMouseDown}
       className={styles.sheet}
     >
       <div

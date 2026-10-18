@@ -11,6 +11,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useRef,
@@ -249,6 +250,19 @@ export const useSheetContainer = () => {
     [getRowLayout, getColumnLayout, hasFooter],
   );
 
+  const focusSheet = useCallback(() => {
+    parentRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const handleMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget && event.button === 0) {
+        focusSheet();
+      }
+    },
+    [focusSheet],
+  );
+
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
       if (!selection) return;
@@ -397,7 +411,9 @@ export const useSheetContainer = () => {
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
+    handleMouseDown,
     handleKeyDown,
+    focusSheet,
     getRowLayout,
     getColumnLayout,
   };

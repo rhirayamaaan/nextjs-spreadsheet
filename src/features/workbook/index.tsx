@@ -86,7 +86,9 @@ const WorkbookRoot: FC = () => {
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
+    handleMouseDown,
     handleKeyDown,
+    focusSheet,
     getRowLayout,
     getColumnLayout,
   } = useSheetContainer();
@@ -165,12 +167,13 @@ const WorkbookRoot: FC = () => {
             col={col.index}
             rowId={item.key as RowId}
             colId={col.id as ColumnId}
+            onFinishEditing={focusSheet}
           >
             {(cellProps) => <CellPresenter {...cellProps} />}
           </CellContainer>
         )),
       })),
-    [virtualRows, composedColumns],
+    [virtualRows, composedColumns, focusSheet],
   );
 
   const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
@@ -267,6 +270,7 @@ const WorkbookRoot: FC = () => {
                   hasFooter={hasFooter}
                   renderFooterCell={renderFooterCell}
                   onKeyDown={handleKeyDown}
+                  onMouseDown={handleMouseDown}
                 />
               </SortableContext>
             ) : (
