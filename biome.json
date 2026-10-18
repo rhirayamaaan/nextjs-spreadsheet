@@ -37,5 +37,70 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.presenter.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "jotai": "Presenter must be pure. Do not import jotai directly.",
+                  "jotai-family": "Presenter must be pure. Do not import jotai-family."
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "**/stores",
+                      "**/stores/!(types)*",
+                      "**/stores/index*"
+                    ],
+                    "message": "Presenter must not import stores/atoms directly. Pass state via props."
+                  },
+                  {
+                    "group": ["**/logics/business/**", "**/logics/business"],
+                    "message": "Presenter must not import business logic directly."
+                  },
+                  {
+                    "group": [
+                      "**/*.container",
+                      "**/*.container.ts",
+                      "**/*.container.tsx"
+                    ],
+                    "message": "Presenter must not import container hooks/components directly."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.container.ts", "**/*.container.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "**/logics/presentation/**",
+                      "**/logics/presentation"
+                    ],
+                    "message": "Container must not import presentation logic."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

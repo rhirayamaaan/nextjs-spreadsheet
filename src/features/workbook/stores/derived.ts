@@ -1,6 +1,9 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
-import { getParentColumnInfo, validateCellRules } from "../utils/validation";
+import {
+  getParentColumnInfo,
+  validateCellRules,
+} from "../logics/business/validation";
 import {
   baseCellValuesAtom,
   baseColumnNamesAtom,
