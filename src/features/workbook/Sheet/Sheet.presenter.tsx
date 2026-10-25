@@ -112,6 +112,20 @@ const SheetCells = memo(
 
 SheetCells.displayName = "SheetCells";
 
+const SheetCellsList = memo(
+  ({ rows, columns }: { rows: RowLayout[]; columns: AxisLayout[] }) => {
+    return (
+      <>
+        {rows.map((row) => (
+          <SheetCells key={row.id} row={row} columns={columns} />
+        ))}
+      </>
+    );
+  },
+);
+
+SheetCellsList.displayName = "SheetCellsList";
+
 const SheetRows = memo(
   ({
     rows,
@@ -145,9 +159,7 @@ const SheetRows = memo(
           getRowLayout={getRowLayout}
           getColumnLayout={getColumnLayout}
         />
-        {rows.map((row) => (
-          <SheetCells key={row.id} row={row} columns={columns} />
-        ))}
+        <SheetCellsList rows={rows} columns={columns} />
       </div>
     );
   },

@@ -1,85 +1,23 @@
 import { atom } from "jotai";
-import {
-  baseCellValuesAtom,
-  baseColumnNamesAtom,
-  baseColumnOrderAtom,
-  baseRowOrderAtom,
-  sheetDataMapAtom,
-  sheetFieldToColIdMapAtom,
-} from "./base";
-import { columnConfigsAtom, referencedSheetsDataAtom } from "./binding";
-import {
-  modifiedColumnNamesAtom,
-  modifiedColumnOrdersAtom,
-  modifiedRowOrdersAtom,
-} from "./edit";
-import { columnTotalsAtom } from "./summary";
+import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import type { SheetCategory, SheetTemplate } from "./types";
-import { activeSheetIdAtom } from "./ui";
-import { columnValidationsAtom } from "./validation";
+import {
+  activeSheetIdAtom,
+  favoriteSheetIdsAtom,
+  openSheetIdsAtom,
+} from "./ui";
 
-// --- 雛形管理 Atom 群（Template State Atoms） ---
+export { favoriteSheetIdsAtom, openSheetIdsAtom };
 
-// 全カテゴリ
-export const sheetCategoriesAtom = atom<SheetCategory[]>([]);
+// 全カテゴリ（workbookMetadataQuery から導出）
+export const sheetCategoriesAtom = atom<SheetCategory[]>((get) => {
+  return get(workbookMetadataQuery.sync).categories;
+});
 
-// 全シート雛形カタログ
-export const sheetTemplatesAtom = atom<Record<string, SheetTemplate>>({});
-
-// お気に入り登録されているシートID配列
-export const favoriteSheetIdsAtom = atom<string[]>([]);
-
-// メタデータ一括初期化アクション
-export const initWorkbookMetadataAtom = atom(
-  null,
-  (
-    _get,
-    set,
-    payload: {
-      categories: SheetCategory[];
-      templates: Record<string, SheetTemplate>;
-      initialOpenSheetIds?: string[];
-      favoriteSheetIds?: string[];
-    },
-  ) => {
-    set(sheetCategoriesAtom, payload.categories);
-    set(sheetTemplatesAtom, payload.templates);
-    if (payload.initialOpenSheetIds && payload.initialOpenSheetIds.length > 0) {
-      set(openSheetIdsAtom, payload.initialOpenSheetIds);
-    }
-    const initialFavorites =
-      payload.favoriteSheetIds ??
-      Object.values(payload.templates)
-        .filter((t) => t.isFavorite)
-        .map((t) => t.id);
-    set(favoriteSheetIdsAtom, initialFavorites);
-  },
-);
-
-// シートのお気に入り登録・解除トグルアクション
-export const toggleFavoriteSheetAtom = atom(
-  null,
-  (get, set, sheetId: string) => {
-    const currentFavorites = get(favoriteSheetIdsAtom);
-    const isCurrentlyFavorite = currentFavorites.includes(sheetId);
-    const nextFavorites = isCurrentlyFavorite
-      ? currentFavorites.filter((id) => id !== sheetId)
-      : [...currentFavorites, sheetId];
-    set(favoriteSheetIdsAtom, nextFavorites);
-
-    const templates = get(sheetTemplatesAtom);
-    const targetTemplate = templates[sheetId];
-    if (targetTemplate) {
-      set(sheetTemplatesAtom, {
-        ...templates,
-        [sheetId]: {
-          ...targetTemplate,
-          isFavorite: !isCurrentlyFavorite,
-        },
-      });
-    }
-  },
-);
+// 全シート雛形カタログ（workbookMetadataQuery から導出）
+export const sheetTemplatesAtom = atom<Record<string, SheetTemplate>>((get) => {
+  return get(workbookMetadataQuery.sync).templates;
+});
 
 // 全シート雛形配列
 export const allSheetTemplatesAtom = atom((get) => {
@@ -87,10 +25,11 @@ export const allSheetTemplatesAtom = atom((get) => {
   return Object.values(templates);
 });
 
-// カテゴリ別シート一覧マップ
-export const sheetsByCategoryAtom = atom((get) => {
-  const templates = get(sheetTemplatesAtom);
-  const categories = get(sheetCategoriesAtom);
+// カテゴリ別シート一覧を計算する純粋関数
+export const computeSheetsByCategory = (
+  categories: SheetCategory[],
+  templates: Record<string, SheetTemplate>,
+): { category: SheetCategory; sheets: SheetTemplate[] }[] => {
   const result: { category: SheetCategory; sheets: SheetTemplate[] }[] = [];
 
   for (const cat of categories) {
@@ -113,10 +52,13 @@ export const sheetsByCategoryAtom = atom((get) => {
   }
 
   return result;
-});
+};
 
-// 現在開いている（タブに表示されている）シートID配列
-export const openSheetIdsAtom = atom<string[]>([]);
+// カテゴリ別シート一覧マップ
+export const sheetsByCategoryAtom = atom((get) => {
+  const metadata = get(workbookMetadataQuery.sync);
+  return computeSheetsByCategory(metadata.categories, metadata.templates);
+});
 
 // 現在アクティブなシートの雛形
 export const activeSheetTemplateAtom = atom<SheetTemplate | null>((get) => {
@@ -128,137 +70,106 @@ export const activeSheetTemplateAtom = atom<SheetTemplate | null>((get) => {
 
 // 現在開いているシート雛形一覧（SheetTabs 用）
 export const openSheetsAtom = atom((get) => {
-  const openIds = get(openSheetIdsAtom);
-  const templates = get(sheetTemplatesAtom);
+  const metadata = get(workbookMetadataQuery.sync);
+  const openIds = get(openSheetIdsAtom) ?? metadata.initialOpenSheetIds;
+  const templates = metadata.templates;
   return openIds
     .map((id) => templates[id])
     .filter((t): t is SheetTemplate => Boolean(t));
 });
 
-// --- シート開閉・切り替えアクション（Jotai GC 対応） ---
+// シートのお気に入り登録・解除トグルアクション
+export const toggleFavoriteSheetAtom = atom(
+  null,
+  (
+    get,
+    set,
+    payload: string | { sheetId: string; defaultFavorites?: string[] },
+  ) => {
+    const sheetId = typeof payload === "string" ? payload : payload.sheetId;
+    const defaultFavorites =
+      typeof payload === "string" ? undefined : payload.defaultFavorites;
 
-export const openSheetAtom = atom(null, (get, set, sheetId: string) => {
-  const currentOpenIds = get(openSheetIdsAtom);
-  if (!currentOpenIds.includes(sheetId)) {
-    set(openSheetIdsAtom, [...currentOpenIds, sheetId]);
-  }
-  set(activeSheetIdAtom, sheetId);
-});
+    const metadata = get(workbookMetadataQuery.sync);
+    const currentFavorites =
+      get(favoriteSheetIdsAtom) ??
+      defaultFavorites ??
+      metadata.favoriteSheetIds ??
+      [];
+    const isCurrentlyFavorite = currentFavorites.includes(sheetId);
+    const nextFavorites = isCurrentlyFavorite
+      ? currentFavorites.filter((id) => id !== sheetId)
+      : [...currentFavorites, sheetId];
+    set(favoriteSheetIdsAtom, nextFavorites);
+  },
+);
 
-/**
- * シートを閉じ、関連する Jotai Atom から参照を削除して GC を促す
- */
-export const closeSheetAtom = atom(null, (get, set, sheetId: string) => {
-  // 1. 開いているシートリストから削除
-  const currentOpenIds = get(openSheetIdsAtom);
-  const nextOpenIds = currentOpenIds.filter((id) => id !== sheetId);
-  set(openSheetIdsAtom, nextOpenIds);
+// --- シート開閉・切り替えアクション ---
 
-  // 2. アクティブシートの切り替え
-  const currentActiveId = get(activeSheetIdAtom);
-  if (currentActiveId === sheetId) {
-    const nextActiveId = nextOpenIds[0] ?? null;
-    set(activeSheetIdAtom, nextActiveId);
+export const openSheetAtom = atom(
+  null,
+  (
+    get,
+    set,
+    payload: string | { sheetId: string; defaultOpenIds?: string[] },
+  ) => {
+    const sheetId = typeof payload === "string" ? payload : payload.sheetId;
+    const defaultOpenIds =
+      typeof payload === "string" ? undefined : payload.defaultOpenIds;
 
-    if (nextActiveId) {
-      const sheetDataMap = get(sheetDataMapAtom);
-      const nextData = sheetDataMap[nextActiveId];
-      if (nextData) {
-        set(baseCellValuesAtom, nextData.values);
-        set(baseRowOrderAtom, nextData.rows);
-        set(baseColumnOrderAtom, nextData.cols);
-        set(baseColumnNamesAtom, nextData.colNames);
-      }
+    const metadata = get(workbookMetadataQuery.sync);
+    const currentOpenIds =
+      get(openSheetIdsAtom) ?? defaultOpenIds ?? metadata.initialOpenSheetIds;
+    if (!currentOpenIds.includes(sheetId)) {
+      set(openSheetIdsAtom, [...currentOpenIds, sheetId]);
+    }
+    set(activeSheetIdAtom, sheetId);
+  },
+);
+
+export const closeSheetAtom = atom(
+  null,
+  (
+    get,
+    set,
+    payload: string | { sheetId: string; defaultOpenIds?: string[] },
+  ) => {
+    const sheetId = typeof payload === "string" ? payload : payload.sheetId;
+    const defaultOpenIds =
+      typeof payload === "string" ? undefined : payload.defaultOpenIds;
+
+    const metadata = get(workbookMetadataQuery.sync);
+    const currentOpenIds =
+      get(openSheetIdsAtom) ?? defaultOpenIds ?? metadata.initialOpenSheetIds;
+    const nextOpenIds = currentOpenIds.filter((id) => id !== sheetId);
+    set(openSheetIdsAtom, nextOpenIds);
+
+    const currentActiveId = get(activeSheetIdAtom);
+    if (currentActiveId === sheetId) {
+      const nextActiveId = nextOpenIds[0] ?? null;
+      set(activeSheetIdAtom, nextActiveId);
+    }
+  },
+);
+
+export const toggleSheetAtom = atom(
+  null,
+  (
+    get,
+    set,
+    payload: string | { sheetId: string; defaultOpenIds?: string[] },
+  ) => {
+    const sheetId = typeof payload === "string" ? payload : payload.sheetId;
+    const defaultOpenIds =
+      typeof payload === "string" ? undefined : payload.defaultOpenIds;
+
+    const metadata = get(workbookMetadataQuery.sync);
+    const currentOpenIds =
+      get(openSheetIdsAtom) ?? defaultOpenIds ?? metadata.initialOpenSheetIds;
+    if (currentOpenIds.includes(sheetId)) {
+      set(closeSheetAtom, payload);
     } else {
-      set(baseCellValuesAtom, {});
-      set(baseRowOrderAtom, []);
-      set(baseColumnOrderAtom, []);
-      set(baseColumnNamesAtom, {});
+      set(openSheetAtom, payload);
     }
-  }
-
-  // 3. メモリ解放（他の開いているシートから参照されていない場合のみ解放）
-  const allConfigs = get(columnConfigsAtom);
-  const allTemplates = get(sheetTemplatesAtom);
-  const isReferenced = nextOpenIds.some((openId) => {
-    // 列設定での参照チェック
-    const configs = allConfigs[openId];
-    if (configs) {
-      for (const config of Object.values(configs)) {
-        if (
-          config.type === "pulldown" &&
-          config.pulldown.sourceSheetId === sheetId
-        ) {
-          return true;
-        }
-        if (
-          config.type === "lookup" &&
-          config.lookup.sourceSheetId === sheetId
-        ) {
-          return true;
-        }
-      }
-    }
-    // テンプレート定義での参照チェック
-    const template = allTemplates[openId];
-    if (template) {
-      for (const col of template.columns) {
-        if (
-          (col.type.type === "pulldown" || col.type.type === "lookup") &&
-          col.type.sourceTemplateId === sheetId
-        ) {
-          return true;
-        }
-      }
-    }
-    return false;
-  });
-
-  if (!isReferenced) {
-    const referencedSheets = { ...get(referencedSheetsDataAtom) };
-    delete referencedSheets[sheetId];
-    set(referencedSheetsDataAtom, referencedSheets);
-
-    const sheetDataMap = { ...get(sheetDataMapAtom) };
-    delete sheetDataMap[sheetId];
-    set(sheetDataMapAtom, sheetDataMap);
-
-    const fieldToColMap = { ...get(sheetFieldToColIdMapAtom) };
-    delete fieldToColMap[sheetId];
-    set(sheetFieldToColIdMapAtom, fieldToColMap);
-  }
-
-  const configs = { ...get(columnConfigsAtom) };
-  delete configs[sheetId];
-  set(columnConfigsAtom, configs);
-
-  const totals = { ...get(columnTotalsAtom) };
-  delete totals[sheetId];
-  set(columnTotalsAtom, totals);
-
-  const validations = { ...get(columnValidationsAtom) };
-  delete validations[sheetId];
-  set(columnValidationsAtom, validations);
-
-  // 4. 編集差分状態のクリーンアップ
-  const modRowOrders = { ...get(modifiedRowOrdersAtom) };
-  delete modRowOrders[sheetId];
-  set(modifiedRowOrdersAtom, modRowOrders);
-
-  const modColOrders = { ...get(modifiedColumnOrdersAtom) };
-  delete modColOrders[sheetId];
-  set(modifiedColumnOrdersAtom, modColOrders);
-
-  const modColNames = { ...get(modifiedColumnNamesAtom) };
-  delete modColNames[sheetId];
-  set(modifiedColumnNamesAtom, modColNames);
-});
-
-export const toggleSheetAtom = atom(null, (get, set, sheetId: string) => {
-  const currentOpenIds = get(openSheetIdsAtom);
-  if (currentOpenIds.includes(sheetId)) {
-    set(closeSheetAtom, sheetId);
-  } else {
-    set(openSheetAtom, sheetId);
-  }
-});
+  },
+);

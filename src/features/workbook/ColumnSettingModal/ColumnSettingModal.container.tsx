@@ -33,7 +33,6 @@ export const ColumnSettingModalContainer: FC<
   const columnNames = useAtomValue(columnNamesAtom);
   const columnConfigs = useAtomValue(columnConfigsAtom);
   const referencedSheets = useAtomValue(referencedSheetsDataAtom);
-  const setReferencedSheets = useSetAtom(referencedSheetsDataAtom);
   const applyBinding = useSetAtom(applyColumnBindingAtom);
 
   const existingConfig: ColumnConfig | undefined = activeSheetId
@@ -227,13 +226,6 @@ export const ColumnSettingModalContainer: FC<
   const handleSave = useCallback(() => {
     if (!targetColId || !sourceKeyColId || !sourceSheetId) return;
 
-    if (sourceSheetData) {
-      setReferencedSheets((prev) => ({
-        ...prev,
-        [sourceSheetId]: sourceSheetData,
-      }));
-    }
-
     const selectedLookupItems = lookupColumns
       .filter((c) => c.selected)
       .map((c) => ({
@@ -255,8 +247,6 @@ export const ColumnSettingModalContainer: FC<
     targetColId,
     sourceKeyColId,
     sourceSheetId,
-    sourceSheetData,
-    setReferencedSheets,
     lookupColumns,
     applyBinding,
     keyColName,

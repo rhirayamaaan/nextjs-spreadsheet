@@ -87,6 +87,10 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
     setInputValue(e.target.value);
   };
 
+  const handleCellBlur = (e: FocusEvent<HTMLInputElement>) => {
+    commitValue(e.currentTarget.value);
+  };
+
   const handleCellKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing) return;
 
@@ -189,6 +193,7 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
           value={inputValue}
           onFocus={handleCellFocus}
           onChange={handleCellChange}
+          onBlur={handleCellBlur}
           onKeyDown={handleCellKeyDown}
           className={styles.cell__input}
         />

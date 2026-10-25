@@ -10,10 +10,12 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
+  type ForwardedRef,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
 } from "react";
@@ -40,7 +42,11 @@ const HEADER_HEIGHT = 30;
 const FOOTER_HEIGHT = 30;
 const STATUS_COL_WIDTH = 50;
 
-export const useSheetContainer = () => {
+export type SheetHandle = {
+  scrollToCell: (rowIndex: number, colIndex: number) => void;
+};
+
+export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const activeSheetId = useAtomValue(activeSheetIdAtom);
   const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
@@ -75,12 +81,15 @@ export const useSheetContainer = () => {
     }),
   );
 
-  // Tab switch scroll reset
-  // biome-ignore lint/correctness/useExhaustiveDependencies: activeSheetId is used as a trigger for resetting scroll on tab switch
+  // Tab switch scroll reset: activeSheetId が変化した際にスクロール位置を原点にリセット
+  const prevActiveSheetIdRef = useRef(activeSheetId);
   useEffect(() => {
-    if (parentRef.current) {
-      parentRef.current.scrollTop = 0;
-      parentRef.current.scrollLeft = 0;
+    if (prevActiveSheetIdRef.current !== activeSheetId) {
+      prevActiveSheetIdRef.current = activeSheetId;
+      if (parentRef.current) {
+        parentRef.current.scrollTop = 0;
+        parentRef.current.scrollLeft = 0;
+      }
     }
   }, [activeSheetId]);
 
@@ -101,9 +110,11 @@ export const useSheetContainer = () => {
     getItemKey: (index) => columnOrder[index],
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 列幅のカスタマイズが更新されたら、Virtualizer に再計算を促す
+  // 列幅の上書き設定が更新されたら Virtualizer の計測を再実行
   useEffect(() => {
-    columnVirtualizer.measure();
+    if (columnWidthOverrides) {
+      columnVirtualizer.measure();
+    }
   }, [columnWidthOverrides, columnVirtualizer]);
 
   const reorderColumns = useSetAtom(reorderColumnsWithFollowersAtom);
@@ -209,6 +220,43 @@ export const useSheetContainer = () => {
     },
     [columnVirtualizer, columnOrder, columnWidthOverrides],
   );
+
+  const scrollToCell = useCallback(
+    (rowIndex: number, colIndex: number) => {
+      const container = parentRef.current;
+      if (!container) return;
+
+      const rowLayout = getRowLayout(rowIndex);
+      const colLayout = getColumnLayout(colIndex);
+
+      const cellTop = rowLayout?.start ?? rowIndex * 35;
+      const cellLeft = colLayout?.start ?? 0;
+      const cellWidth = colLayout?.size ?? 100;
+
+      // 該当セルが画面上部（ヘッダー下）に見えるようターゲットY座標を決定
+      const targetTop = Math.max(0, cellTop - 20);
+
+      // 横スクロールの計算
+      let targetLeft = container.scrollLeft;
+      const containerWidth = container.clientWidth;
+      if (
+        cellLeft < container.scrollLeft ||
+        cellLeft + cellWidth > container.scrollLeft + containerWidth - 60
+      ) {
+        targetLeft = Math.max(0, cellLeft - 60);
+      }
+
+      container.scrollTo({
+        top: targetTop,
+        left: targetLeft,
+        behavior: "smooth",
+      });
+    },
+    [getRowLayout, getColumnLayout],
+  );
+
+  // 親から命令的にセルスクロールを実行できるように handle を公開
+  useImperativeHandle(ref, () => ({ scrollToCell }), [scrollToCell]);
 
   const ensureCellVisible = useCallback(
     (targetRow: number, targetCol: number) => {

@@ -1,13 +1,8 @@
 "use client";
 
-import { DndContext, pointerWithin } from "@dnd-kit/core";
-import {
-  horizontalListSortingStrategy,
-  SortableContext,
-} from "@dnd-kit/sortable";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import dynamic from "next/dynamic";
-import { type FC, useCallback, useMemo, useState } from "react";
+import { type FC, Suspense, useCallback, useRef, useState } from "react";
 import { useI18n } from "@/i18n/useI18n";
 import { CellContainer } from "./Cell/Cell.container";
 import { CellPresenter } from "./Cell/Cell.presenter";
@@ -24,24 +19,16 @@ import { RowStatusContainer } from "./RowStatus/RowStatus.container";
 import { RowStatusPresenter } from "./RowStatus/RowStatus.presenter";
 import { ColumnHeaderContainer } from "./Sheet/ColumnHeader.container";
 import { ColumnHeaderPresenter } from "./Sheet/ColumnHeader.presenter";
-import {
-  type AxisLayout,
-  FooterCell,
-  SheetPresenter,
-} from "./Sheet/Sheet.presenter";
-import { useSheetContainer } from "./Sheet/useSheet.container";
+import { SheetContainer, type SheetHandle } from "./Sheet/Sheet.container";
+import { SheetPresenter } from "./Sheet/Sheet.presenter";
 import { SheetMenuDrawerPresenter } from "./SheetMenuDrawer/SheetMenuDrawer.presenter";
 import { useSheetMenuDrawer } from "./SheetMenuDrawer/useSheetMenuDrawer.container";
 import { SheetTabsPresenter } from "./SheetTabs.presenter";
 import {
-  activeColumnSummaryValuesAtom,
-  type ColumnId,
   clearColumnFilterAtom,
-  hasActiveColumnTotalsAtom,
-  isColumnId,
   type RowId,
   removeColumnBindingAtom,
-  sheetCategoriesAtom,
+  selectionAtom,
   toggleColumnTotalAtom,
   viewModeAtom,
 } from "./stores";
@@ -51,57 +38,58 @@ import { ToolbarPresenter } from "./Toolbar/Toolbar.presenter";
 import { useToolbar } from "./Toolbar/useToolbar.container";
 import { useColumnModals } from "./useColumnModals.container";
 import { useSheetLoader } from "./useSheetLoader.container";
-import { useWorkbookMetadataLoader } from "./useWorkbookMetadataLoader.container";
 import { useWorkbookSave } from "./useWorkbookSave.container";
 import { WorkbookPresenter } from "./Workbook.presenter";
+import { WorkbookLoadingPresenter } from "./WorkbookLoading.presenter";
 
 const WorkbookRoot: FC = () => {
-  useWorkbookMetadataLoader();
   const {
     activeSheet,
     activeSheetId,
     openSheets,
     openSheetIds,
     favoriteSheetIds,
+    categories,
+    sheetTemplates,
     sheetsByCategory,
     handleSelectSheet,
     handleOpenSheet,
     handleCloseSheet,
     handleToggleFavoriteSheet,
   } = useSheetLoader();
-  const categories = useAtomValue(sheetCategoriesAtom);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const [viewMode] = useAtom(viewModeAtom);
   const pdfPreviewProps = usePdfPreview();
 
-  const {
-    parentRef,
-    rowVirtualizer,
-    columnVirtualizer,
-    sortableColumnOrder,
-    columnNames,
-    selection,
-    sensors,
-    handleDragStart,
-    handleDragEnd,
-    handleChangeColumnWidth,
-    handleMouseDown,
-    handleKeyDown,
-    focusSheet,
-    getRowLayout,
-    getColumnLayout,
-  } = useSheetContainer();
-
   const { t } = useI18n(localMessages);
   const { toastProps, showToast } = useToast();
 
+  const sheetRef = useRef<SheetHandle>(null);
+  const setSelection = useSetAtom(selectionAtom);
+
+  const handleValidationError = useCallback(
+    (error: { rowIndex: number; colIndex: number }) => {
+      setSelection({
+        start: { row: error.rowIndex, col: error.colIndex },
+        end: { row: error.rowIndex, col: error.colIndex },
+      });
+      sheetRef.current?.scrollToCell(error.rowIndex, error.colIndex);
+      showToast({
+        type: "error",
+        title: t("validationErrorTitle"),
+        message: t("validationErrorMessage"),
+        requiresConfirm: true,
+      });
+    },
+    [setSelection, showToast, t],
+  );
+
   const { handleSave, isSaving } = useWorkbookSave({
-    parentRef,
-    getRowLayout,
-    getColumnLayout,
     showToast,
     t,
+    onValidationError: handleValidationError,
   });
 
   const {
@@ -112,6 +100,10 @@ const WorkbookRoot: FC = () => {
     handleOpenFilterModal,
     handleCloseFilterModal,
   } = useColumnModals();
+
+  const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
+  const clearColumnFilter = useSetAtom(clearColumnFilterAtom);
+  const toggleColumnTotal = useSetAtom(toggleColumnTotalAtom);
 
   const toolbarProps = useToolbar({
     sheetName: activeSheet?.name,
@@ -133,69 +125,44 @@ const WorkbookRoot: FC = () => {
     onToggleFavorite: handleToggleFavoriteSheet,
   });
 
-  const virtualRows = rowVirtualizer.getVirtualItems();
-  const virtualCols = columnVirtualizer.getVirtualItems();
-
-  const composedColumns = useMemo(
-    () =>
-      virtualCols.map((col) => ({
-        id: col.key,
-        index: col.index,
-        start: col.start,
-        size: col.size,
-        label: columnNames[col.key as ColumnId] ?? `列 ${col.index + 1}`,
-      })),
-    [virtualCols, columnNames],
-  );
-
-  const composedRows = useMemo(
-    () =>
-      virtualRows.map((item) => ({
-        id: item.key,
-        index: item.index,
-        start: item.start,
-        size: item.size,
-        status: (
-          <RowStatusContainer rowId={item.key as RowId}>
-            {(statusProps) => <RowStatusPresenter {...statusProps} />}
-          </RowStatusContainer>
-        ),
-        cells: composedColumns.map((col) => (
-          <CellContainer
-            key={`${item.key}-${col.id}`}
-            row={item.index}
-            col={col.index}
-            rowId={item.key as RowId}
-            colId={col.id as ColumnId}
-            onFinishEditing={focusSheet}
-          >
-            {(cellProps) => <CellPresenter {...cellProps} />}
-          </CellContainer>
-        )),
-      })),
-    [virtualRows, composedColumns, focusSheet],
-  );
-
-  const removeColumnBinding = useSetAtom(removeColumnBindingAtom);
-  const clearColumnFilter = useSetAtom(clearColumnFilterAtom);
-  const toggleColumnTotal = useSetAtom(toggleColumnTotalAtom);
-  const hasFooter = useAtomValue(hasActiveColumnTotalsAtom);
-  const summaryValues = useAtomValue(activeColumnSummaryValuesAtom);
-
-  const renderHeaderCell = useCallback(
+  const renderCell = useCallback(
     (
-      col: AxisLayout,
-      resizingId: string | number | bigint | null,
-      handleMouseDownResizer: (
-        id: string | number | bigint,
-        width: number,
-      ) => (event: React.MouseEvent) => void,
+      cellProps: Parameters<
+        React.ComponentProps<typeof SheetContainer>["renderCell"]
+      >[0],
     ) => (
+      <CellContainer
+        key={`${cellProps.rowId}-${cellProps.colId}`}
+        {...cellProps}
+      >
+        {(props) => <CellPresenter {...props} />}
+      </CellContainer>
+    ),
+    [],
+  );
+
+  const renderRowStatus = useCallback(
+    ({ rowId }: { rowId: RowId }) => (
+      <RowStatusContainer rowId={rowId}>
+        {(statusProps) => <RowStatusPresenter {...statusProps} />}
+      </RowStatusContainer>
+    ),
+    [],
+  );
+
+  const renderColumnHeader = useCallback(
+    ({
+      col,
+      resizingId,
+      onMouseDownResizer,
+    }: Parameters<
+      React.ComponentProps<typeof SheetContainer>["renderColumnHeader"]
+    >[0]) => (
       <ColumnHeaderContainer
         key={col.id}
         col={col}
         resizingId={resizingId}
-        onMouseDownResizer={handleMouseDownResizer}
+        onMouseDownResizer={onMouseDownResizer}
       >
         {(headerProps) => (
           <ColumnHeaderPresenter
@@ -218,67 +185,42 @@ const WorkbookRoot: FC = () => {
     ],
   );
 
-  const renderFooterCell = useCallback(
-    (col: AxisLayout) => {
-      const colId = isColumnId(col.id) ? col.id : null;
-      const value = colId ? summaryValues[colId] : "";
-      return <FooterCell value={value} />;
-    },
-    [summaryValues],
-  );
-
   if (viewMode === "pdf-preview") {
     return <PdfPreviewPresenter {...pdfPreviewProps} />;
   }
 
   return (
     <>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={pointerWithin}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <WorkbookPresenter
-          toolbar={<ToolbarPresenter {...toolbarProps} />}
-          tabs={
-            <SheetTabsPresenter
+      <WorkbookPresenter
+        toolbar={<ToolbarPresenter {...toolbarProps} />}
+        tabs={
+          <SheetTabsPresenter
+            activeSheetId={activeSheetId}
+            sheets={openSheets}
+            onSelectSheet={handleSelectSheet}
+            onCloseSheet={handleCloseSheet}
+            onOpenMenu={() => setIsDrawerOpen(true)}
+          />
+        }
+        sheet={
+          activeSheetId && sheetTemplates[activeSheetId] ? (
+            <SheetContainer
+              ref={sheetRef}
+              key={activeSheetId}
               activeSheetId={activeSheetId}
-              sheets={openSheets}
-              onSelectSheet={handleSelectSheet}
-              onCloseSheet={handleCloseSheet}
-              onOpenMenu={() => setIsDrawerOpen(true)}
-            />
-          }
-          sheet={
-            activeSheetId ? (
-              <SortableContext
-                items={sortableColumnOrder}
-                strategy={horizontalListSortingStrategy}
-              >
-                <SheetPresenter
-                  ref={parentRef}
-                  selection={selection}
-                  rows={composedRows}
-                  columns={composedColumns}
-                  totalWidth={columnVirtualizer.getTotalSize()}
-                  totalHeight={rowVirtualizer.getTotalSize()}
-                  getRowLayout={getRowLayout}
-                  getColumnLayout={getColumnLayout}
-                  onChangeColumnWidth={handleChangeColumnWidth}
-                  renderHeaderCell={renderHeaderCell}
-                  hasFooter={hasFooter}
-                  renderFooterCell={renderFooterCell}
-                  onKeyDown={handleKeyDown}
-                  onMouseDown={handleMouseDown}
-                />
-              </SortableContext>
-            ) : (
-              <EmptySheetPresenter onOpenMenu={() => setIsDrawerOpen(true)} />
-            )
-          }
-        />
-      </DndContext>
+              template={sheetTemplates[activeSheetId]}
+              templates={sheetTemplates}
+              renderCell={renderCell}
+              renderRowStatus={renderRowStatus}
+              renderColumnHeader={renderColumnHeader}
+            >
+              {(sheetProps) => <SheetPresenter {...sheetProps} />}
+            </SheetContainer>
+          ) : (
+            <EmptySheetPresenter onOpenMenu={() => setIsDrawerOpen(true)} />
+          )
+        }
+      />
       <SheetMenuDrawerPresenter {...drawerProps} />
       {settingModalColId !== null && (
         <ColumnSettingModalContainer
@@ -310,6 +252,13 @@ const WorkbookRoot: FC = () => {
   );
 };
 
-export const Workbook = dynamic(() => Promise.resolve(WorkbookRoot), {
-  ssr: false,
-});
+const WorkbookRootWithSuspense: FC = () => (
+  <Suspense fallback={<WorkbookLoadingPresenter />}>
+    <WorkbookRoot />
+  </Suspense>
+);
+
+export const Workbook = dynamic(
+  () => Promise.resolve(WorkbookRootWithSuspense),
+  { ssr: false },
+);

@@ -11,6 +11,7 @@ import {
   activeCellAtom,
   activeColumnConfigFamily,
   baseCellValuesAtom,
+  type ColumnConfig,
   type ColumnId,
   cellEditingInitialValueFamily,
   cellEditsAtom,
@@ -33,6 +34,76 @@ const blurActiveElement = (currentTarget: EventTarget | null) => {
   const active = document.activeElement;
   if (!(active instanceof HTMLElement) || active === currentTarget) return;
   active.blur();
+};
+
+type Option = {
+  key: string;
+  label: string;
+};
+
+/**
+ * プルダウン編集時のみ master 参照・セル編集値を購読して選択肢を計算する独立コンポーネント。
+ * 通常表示中のセルが cellEditsAtom / baseCellValuesAtom の更新で無駄に再レンダリングされるのを完全に防ぐ。
+ */
+const PulldownOptionsFetcher: FC<{
+  rowId: RowId;
+  config: ColumnConfig & { type: "pulldown" };
+  children: (options: Option[]) => ReactNode;
+}> = ({ rowId, config, children }) => {
+  const referencedSheets = useAtomValue(referencedSheetsDataAtom);
+  const cellEdits = useAtomValue(cellEditsAtom);
+  const baseCellValues = useAtomValue(baseCellValuesAtom);
+
+  const pulldownOptions = useMemo(() => {
+    const { sourceSheetId, sourceKeyColId, lookupColumns, relation } =
+      config.pulldown;
+    const targetMasterId = relation?.targetSheetId ?? sourceSheetId;
+    const masterSheet = referencedSheets[targetMasterId];
+    if (!masterSheet) return [];
+
+    const candidateRows = (() => {
+      if (!relation) return masterSheet.rows;
+
+      const parentKey = `${rowId}-${relation.parentColId}`;
+      const parentVal =
+        parentKey in cellEdits
+          ? cellEdits[parentKey]
+          : (baseCellValues[parentKey] ?? "");
+
+      if (!parentVal) return [];
+
+      return masterSheet.rows.filter((rId) => {
+        const fKey = `${rId}-${relation.sourceFilterColId}`;
+        const fVal =
+          fKey in cellEdits
+            ? cellEdits[fKey]
+            : (masterSheet.values[fKey] ?? "");
+        return fVal === parentVal;
+      });
+    })();
+
+    return candidateRows.map((rId) => {
+      const key = `${rId}-${sourceKeyColId}`;
+      const keyVal =
+        key in cellEdits ? cellEdits[key] : (masterSheet.values[key] ?? "");
+      const labels = lookupColumns
+        .map((l) => {
+          const lKey = `${rId}-${l.sourceColId}`;
+          return lKey in cellEdits
+            ? cellEdits[lKey]
+            : (masterSheet.values[lKey] ?? "");
+        })
+        .filter(Boolean)
+        .join(" - ");
+
+      return {
+        key: keyVal,
+        label: labels ? `${keyVal} (${labels})` : keyVal,
+      };
+    });
+  }, [config, referencedSheets, cellEdits, rowId, baseCellValues]);
+
+  return <>{children(pulldownOptions)}</>;
 };
 
 type InnerProps = {
@@ -66,74 +137,12 @@ const CellInner: FC<InnerProps> = memo(
     const config = useAtomValue(
       useMemo(() => activeColumnConfigFamily(colId), [colId]),
     );
-    const referencedSheets = useAtomValue(referencedSheetsDataAtom);
-    const cellEdits = useAtomValue(cellEditsAtom);
-    const baseCellValues = useAtomValue(baseCellValuesAtom);
 
     const isLookup = config.type === "lookup" || Boolean(config.readOnly);
     const isPulldown = config.type === "pulldown";
     const isDatetimePicker = config.type === "datetime";
     const datetimeFormat = isDatetimePicker ? config.format : undefined;
-
     const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
-
-    const pulldownOptions = useMemo(() => {
-      if (!isPulldown) return undefined;
-      const { sourceSheetId, sourceKeyColId, lookupColumns, relation } =
-        config.pulldown;
-      const targetMasterId = relation?.targetSheetId ?? sourceSheetId;
-      const masterSheet = referencedSheets[targetMasterId];
-      if (!masterSheet) return [];
-
-      // 親列リレーションがある場合、親セルの選択値でマスタ行をフィルタリング（親未選択時は候補なし）
-      const candidateRows = (() => {
-        if (!relation) return masterSheet.rows;
-
-        const parentKey = `${rowId}-${relation.parentColId}`;
-        const parentVal =
-          parentKey in cellEdits
-            ? cellEdits[parentKey]
-            : (baseCellValues[parentKey] ?? "");
-
-        if (!parentVal) return [];
-
-        return masterSheet.rows.filter((rId) => {
-          const fKey = `${rId}-${relation.sourceFilterColId}`;
-          const fVal =
-            fKey in cellEdits
-              ? cellEdits[fKey]
-              : (masterSheet.values[fKey] ?? "");
-          return fVal === parentVal;
-        });
-      })();
-
-      return candidateRows.map((rId) => {
-        const key = `${rId}-${sourceKeyColId}`;
-        const keyVal =
-          key in cellEdits ? cellEdits[key] : (masterSheet.values[key] ?? "");
-        const labels = lookupColumns
-          .map((l) => {
-            const lKey = `${rId}-${l.sourceColId}`;
-            return lKey in cellEdits
-              ? cellEdits[lKey]
-              : (masterSheet.values[lKey] ?? "");
-          })
-          .filter(Boolean)
-          .join(" - ");
-
-        return {
-          key: keyVal,
-          label: labels ? `${keyVal} (${labels})` : keyVal,
-        };
-      });
-    }, [
-      isPulldown,
-      config,
-      referencedSheets,
-      cellEdits,
-      rowId,
-      baseCellValues,
-    ]);
 
     const handleDoubleClick = useCallback(() => {
       if (isLookup) return;
@@ -212,9 +221,9 @@ const CellInner: FC<InnerProps> = memo(
       [setSelection, row, col],
     );
 
-    return (
-      <>
-        {children({
+    const renderPresenter = useCallback(
+      (options?: Option[]) =>
+        children({
           value,
           editingInitialValue,
           status: isEditing ? "none" : cellStatusInfo.status,
@@ -226,15 +235,41 @@ const CellInner: FC<InnerProps> = memo(
           isDatetime: isDatetimePicker,
           datetimeFormat,
           pulldownMode,
-          pulldownOptions,
+          pulldownOptions: options,
           onCommit: handleCommit,
           onCancel: handleCancel,
           onDoubleClick: handleDoubleClick,
           onMouseDown: handleSelectionStart,
           onMouseEnter: handleSelectionMove,
-        })}
-      </>
+        }),
+      [
+        children,
+        value,
+        editingInitialValue,
+        isEditing,
+        cellStatusInfo,
+        isLookup,
+        isPulldown,
+        isDatetimePicker,
+        datetimeFormat,
+        pulldownMode,
+        handleCommit,
+        handleCancel,
+        handleDoubleClick,
+        handleSelectionStart,
+        handleSelectionMove,
+      ],
     );
+
+    if (isEditing && isPulldown && config.type === "pulldown") {
+      return (
+        <PulldownOptionsFetcher rowId={rowId} config={config}>
+          {renderPresenter}
+        </PulldownOptionsFetcher>
+      );
+    }
+
+    return <>{renderPresenter()}</>;
   },
 );
 

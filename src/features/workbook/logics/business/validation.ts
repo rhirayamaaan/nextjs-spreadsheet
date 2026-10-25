@@ -42,6 +42,50 @@ export const isValidDateTime = (
 };
 
 /**
+ * 高速ルール検証（15万セルを数ミリ秒で判定するため Zod インスタンス生成をバイパス）
+ */
+export const checkRuleValid = (
+  rule: Exclude<ColumnValidationRule, { type: "reference" }>,
+  value: string,
+): boolean => {
+  switch (rule.type) {
+    case "required":
+      return value.trim().length > 0;
+
+    case "number":
+      return (
+        value === "" ||
+        (!Number.isNaN(Number(value)) &&
+          !Number.isNaN(Number.parseFloat(value)))
+      );
+
+    case "string":
+      return true;
+
+    case "alphanumeric":
+      return value === "" || /^[a-zA-Z0-9]+$/.test(value);
+
+    case "alpha":
+      return value === "" || /^[a-zA-Z]+$/.test(value);
+
+    case "numeric":
+      return value === "" || /^[0-9]+$/.test(value);
+
+    case "maxLength":
+      return value.length <= rule.length;
+
+    case "minLength":
+      return value.length >= rule.length;
+
+    case "datetime":
+      return isValidDateTime(value, rule.format);
+
+    default:
+      return true;
+  }
+};
+
+/**
  * 各単一バリデーションルールを Zod スキーマへマッピング
  */
 export const ruleToZodSchema = (
@@ -129,8 +173,13 @@ export const validateReferenceRule = (
   value: string,
   context?: ValidationContext,
 ): ValidationResult => {
-  // 空値または依存データ不足時はスキップ（空値は required 側で検証）
-  if (!value || !context?.pulldownConfig || !context?.masterSheetData) {
+  // 空値、依存データ不足、またはマスタ未ロード時はスキップ（空値は required 側で検証）
+  if (
+    !value ||
+    !context?.pulldownConfig ||
+    !context?.masterSheetData ||
+    context.masterSheetData.rows.length === 0
+  ) {
     return { valid: true };
   }
 
@@ -203,10 +252,8 @@ export const validateCellRules = (
       continue;
     }
 
-    // Zod スキーマによる個別検証
-    const schema = ruleToZodSchema(rule);
-    const result = schema.safeParse(value);
-    if (!result.success) {
+    // 高速ルール検証（Zod インスタンス生成をバイパス）
+    if (!checkRuleValid(rule, value)) {
       return {
         valid: false,
         errorInfo: ruleToValidationErrorInfo(rule),

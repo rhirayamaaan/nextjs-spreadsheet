@@ -4,6 +4,7 @@ import {
   getParentColumnInfo,
   validateCellRules,
 } from "../logics/business/validation";
+import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
 import {
   baseCellValuesAtom,
   baseColumnNamesAtom,
@@ -23,7 +24,13 @@ import {
   modifiedRowOrdersAtom,
   rowStatusesAtom,
 } from "./edit";
-import type { CellAddress, CellStatusInfo, ColumnId, RowId } from "./types";
+import {
+  type CellAddress,
+  type CellStatusInfo,
+  type ColumnId,
+  parseRowIndex,
+  type RowId,
+} from "./types";
 import { activeCellAtom, activeSheetIdAtom } from "./ui";
 import { activeColumnValidationsAtom } from "./validation";
 
@@ -151,6 +158,16 @@ export const cellFamily = atomFamily(
         if (key in edits) {
           return edits[key];
         }
+
+        const activeSheetId = get(activeSheetIdAtom);
+        if (!activeSheetId) return "";
+
+        const rowIndex = parseRowIndex(address.rowId, activeSheetId);
+        if (rowIndex !== null) {
+          const records = get(sheetRecordsQuery.sync(activeSheetId));
+          return records[rowIndex]?.[address.colId] ?? "";
+        }
+
         return get(baseCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
       },
       (get, set, newValue: string) => {
@@ -161,11 +178,41 @@ export const cellFamily = atomFamily(
           return;
         }
 
-        const baseValue = get(baseCellValuesAtom)[key] ?? "";
+        const activeSheetId = get(activeSheetIdAtom);
         const edits = get(cellEditsAtom);
-        const currentValue = edits[key] ?? baseValue;
+        const baseValue = (() => {
+          if (activeSheetId) {
+            const rowIndex = parseRowIndex(address.rowId, activeSheetId);
+            if (rowIndex !== null) {
+              const records = get(sheetRecordsQuery.sync(activeSheetId));
+              return records[rowIndex]?.[address.colId] ?? "";
+            }
+          }
+          return get(baseCellValuesAtom)[key] ?? "";
+        })();
 
+        const currentValue = edits[key] ?? baseValue;
         if (currentValue === newValue) return;
+
+        // 元の値（baseValue）と同じ値に戻された場合は diff から除外
+        if (newValue === baseValue) {
+          const nextEdits = { ...edits };
+          delete nextEdits[key];
+          set(cellEditsAtom, nextEdits);
+
+          const hasOtherEditsInRow = Object.keys(nextEdits).some((k) =>
+            k.startsWith(`${address.rowId}-`),
+          );
+          if (!hasOtherEditsInRow) {
+            const rowStatuses = get(rowStatusesAtom);
+            if (rowStatuses[address.rowId] === "edited") {
+              const nextStatuses = { ...rowStatuses };
+              delete nextStatuses[address.rowId];
+              set(rowStatusesAtom, nextStatuses);
+            }
+          }
+          return;
+        }
 
         set(cellEditsAtom, { ...edits, [key]: newValue }); // 編集時はDiffのみ更新
 

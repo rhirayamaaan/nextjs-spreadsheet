@@ -1,8 +1,13 @@
 import { atom } from "jotai";
-import { baseCellValuesAtom, baseRowOrderAtom } from "./base";
+import { baseCellValuesAtom } from "./base";
 import { activeColumnConfigsAtom, columnConfigsAtom } from "./binding";
 import { columnNamesAtom, columnOrderAtom, rowOrderAtom } from "./derived";
-import { cellCustomStatusesAtom, cellEditsAtom, rowStatusesAtom } from "./edit";
+import {
+  cellCustomStatusesAtom,
+  cellEditsAtom,
+  modifiedRowOrdersAtom,
+  rowStatusesAtom,
+} from "./edit";
 import { visibleRowOrderAtom } from "./filter";
 import {
   type CellAddress,
@@ -379,33 +384,19 @@ export const commitSheetEditsAtom = atom(null, (get, set) => {
   const activeSheetId = get(activeSheetIdAtom);
   if (!activeSheetId) return;
 
-  const currentEdits = get(cellEditsAtom);
-  const currentBaseValues = get(baseCellValuesAtom);
-  const currentRowOrder = get(rowOrderAtom);
   const currentRowStatuses = get(rowStatusesAtom);
+  const currentRowOrder = get(rowOrderAtom);
 
-  // 1. 削除行を除外した新しい rowOrder を作成
+  // 1. 削除行を除外した新しい rowOrder を modifiedRowOrders に記録
   const nextRowOrder = currentRowOrder.filter(
     (id) => currentRowStatuses[id] !== "deleted",
   );
+  set(modifiedRowOrdersAtom, {
+    ...get(modifiedRowOrdersAtom),
+    [activeSheetId]: nextRowOrder,
+  });
 
-  // 2. 編集内容を baseValues にマージ
-  const nextBaseValues = { ...currentBaseValues, ...currentEdits };
-
-  // 3. 削除された行のセル値をクリーンアップ
-  for (const [rowId, status] of Object.entries(currentRowStatuses)) {
-    if (status === "deleted") {
-      for (const key of Object.keys(nextBaseValues)) {
-        if (key.startsWith(`${rowId}-`)) {
-          delete nextBaseValues[key];
-        }
-      }
-    }
-  }
-
-  set(baseCellValuesAtom, nextBaseValues);
-  set(baseRowOrderAtom, nextRowOrder);
-  set(rowOrderAtom, nextRowOrder);
+  // 2. 編集差分をクリア
   set(cellEditsAtom, {});
   set(rowStatusesAtom, {});
   set(cellCustomStatusesAtom, {});

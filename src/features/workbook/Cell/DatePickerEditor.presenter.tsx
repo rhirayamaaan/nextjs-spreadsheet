@@ -9,6 +9,7 @@ import clsx from "clsx";
 import {
   type ChangeEvent,
   type FC,
+  type FocusEvent,
   type KeyboardEvent,
   useCallback,
   useMemo,
@@ -213,6 +214,13 @@ export const DatePickerEditorPresenter: FC<DatePickerEditorPresenterProps> = ({
     [commitValue, cancelEdit, inputValue],
   );
 
+  const handleBlur = useCallback(
+    (e: FocusEvent<HTMLInputElement>) => {
+      commitValue(e.currentTarget.value);
+    },
+    [commitValue],
+  );
+
   const handlePopoverOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
@@ -405,6 +413,7 @@ export const DatePickerEditorPresenter: FC<DatePickerEditorPresenterProps> = ({
           autoFocus
           value={inputValue}
           onChange={handleInputChange}
+          onBlur={handleBlur}
           onKeyDown={handleCellKeyDown}
           className={styles.cell__input}
         />

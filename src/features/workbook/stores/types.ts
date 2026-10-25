@@ -1,13 +1,25 @@
 import { z } from "zod";
 
-export const RowIdSchema = z.uuid().brand<"RowId">();
-export const ColumnIdSchema = z.uuid().brand<"ColumnId">();
+export const RowIdSchema = z.string().min(1).brand<"RowId">();
+export const ColumnIdSchema = z.string().min(1).brand<"ColumnId">();
 
 export type RowId = z.infer<typeof RowIdSchema>;
 export type ColumnId = z.infer<typeof ColumnIdSchema>;
 
 export const createRowId = () => RowIdSchema.parse(crypto.randomUUID());
 export const createColumnId = () => ColumnIdSchema.parse(crypto.randomUUID());
+
+export const createRecordRowId = (sheetId: string, index: number): RowId =>
+  RowIdSchema.parse(`${sheetId}-r${index}`);
+
+export const parseRowIndex = (rowId: RowId, sheetId: string): number | null => {
+  const prefix = `${sheetId}-r`;
+  if (rowId.startsWith(prefix)) {
+    const num = Number.parseInt(rowId.slice(prefix.length), 10);
+    return Number.isNaN(num) ? null : num;
+  }
+  return null;
+};
 
 export const isRowId = (id: unknown): id is RowId =>
   RowIdSchema.safeParse(id).success;

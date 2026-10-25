@@ -39,8 +39,8 @@ export const CellInputEditorPresenter: FC<CellInputEditorPresenterProps> = ({
     setValue(event.target.value);
   };
 
-  const handleBlur = () => {
-    commitValue(value);
+  const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+    commitValue(event.currentTarget.value);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

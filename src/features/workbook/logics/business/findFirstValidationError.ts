@@ -19,6 +19,11 @@ export type FirstValidationError = {
   message?: string;
 };
 
+type MasterIndex = {
+  validKeys: Set<string>;
+  relationValidKeys?: Map<string, Set<string>>; // parentVal -> Set<childVal>
+};
+
 export const findFirstValidationError = ({
   visibleRows,
   columns,
@@ -42,6 +47,48 @@ export const findFirstValidationError = ({
   customStatuses: Record<string, CellStatusInfo>;
   columnNames?: Record<ColumnId, string>;
 }): FirstValidationError | null => {
+  // 1. 各プルダウン列のマスタ検証用 O(1) インデックスを事前生成 (500,000回のループとProxyアクセスを撲滅)
+  const masterIndexes = new Map<ColumnId, MasterIndex>();
+
+  for (const colId of columns) {
+    const colConfig = columnConfigs[colId];
+    if (colConfig?.type !== "pulldown") continue;
+
+    const { sourceSheetId, sourceKeyColId, relation } = colConfig.pulldown;
+    const targetMasterId = relation?.targetSheetId ?? sourceSheetId;
+    const master = referencedSheets[targetMasterId];
+    if (!master || master.rows.length === 0) continue;
+
+    const validKeys = new Set<string>();
+    const relationValidKeys = relation
+      ? new Map<string, Set<string>>()
+      : undefined;
+
+    for (const rId of master.rows) {
+      const key = `${rId}-${sourceKeyColId}`;
+      const val = key in cellEdits ? cellEdits[key] : master.values[key];
+      if (val) {
+        validKeys.add(val);
+        if (relation && relationValidKeys) {
+          const filterKey = `${rId}-${relation.sourceFilterColId}`;
+          const parentVal =
+            filterKey in cellEdits
+              ? cellEdits[filterKey]
+              : (master.values[filterKey] ?? "");
+          let childSet = relationValidKeys.get(parentVal);
+          if (!childSet) {
+            childSet = new Set<string>();
+            relationValidKeys.set(parentVal, childSet);
+          }
+          childSet.add(val);
+        }
+      }
+    }
+
+    masterIndexes.set(colId, { validKeys, relationValidKeys });
+  }
+
+  // 2. 全行・全列のバリデーション評価
   for (let r = 0; r < visibleRows.length; r++) {
     const rowId = visibleRows[r];
     if (!rowId) continue;
@@ -53,7 +100,7 @@ export const findFirstValidationError = ({
       if (!colId) continue;
       const key = `${rowId}-${colId}`;
 
-      // 1. カスタムステータスにエラーがある場合
+      // (1) カスタムステータスにエラーがある場合
       const customStatus = customStatuses[key];
       if (customStatus?.status === "error") {
         return {
@@ -66,43 +113,71 @@ export const findFirstValidationError = ({
         };
       }
 
-      // 2. Lookup 列は読み取り専用のためスキップ
+      // (2) Lookup 列は読み取り専用のためスキップ
       const colConfig = columnConfigs[colId];
       if (colConfig?.type === "lookup") continue;
 
-      // 3. 現在のセル値
+      // (3) 現在のセル値
       const cellValue =
         key in cellEdits ? cellEdits[key] : (baseValues[key] ?? "");
 
-      // 4. バリデーション評価
-      const validations = columnValidations[colId];
-      const pulldownConfig =
-        colConfig?.type === "pulldown" ? colConfig.pulldown : undefined;
-      const masterSheetData = pulldownConfig
-        ? referencedSheets[
-            pulldownConfig.relation?.targetSheetId ??
-              pulldownConfig.sourceSheetId
-          ]
-        : undefined;
+      // (4) プルダウン/マスタ参照の高速 O(1) 検証
+      const masterIdx = masterIndexes.get(colId);
+      if (masterIdx && cellValue) {
+        // マスタ存在チェック
+        if (!masterIdx.validKeys.has(cellValue)) {
+          return {
+            rowIndex: r,
+            colIndex: c,
+            rowId,
+            colId,
+            errorInfo: { key: "reference" },
+          };
+        }
 
-      const targetColName = columnNames?.[colId];
-      const { parentColValue, parentColName } = getParentColumnInfo(
-        pulldownConfig?.relation,
-        rowId,
-        cellEdits,
-        baseValues,
-        columnNames,
-      );
+        // 親キーリレーション検証
+        if (masterIdx.relationValidKeys && colConfig?.type === "pulldown") {
+          const relation = colConfig.pulldown.relation;
+          if (relation) {
+            const { parentColValue, parentColName } = getParentColumnInfo(
+              relation,
+              rowId,
+              cellEdits,
+              baseValues,
+              columnNames,
+            );
+            const validChildren = parentColValue
+              ? masterIdx.relationValidKeys.get(parentColValue)
+              : undefined;
 
-      const result = validateCellRules(validations, cellValue, {
-        pulldownConfig,
-        masterSheetData,
-        cellEdits,
-        parentColValue,
-        parentColName,
-        targetColName,
-      });
+            if (!validChildren || !validChildren.has(cellValue)) {
+              return {
+                rowIndex: r,
+                colIndex: c,
+                rowId,
+                colId,
+                errorInfo: {
+                  key: "referenceRelation",
+                  params: {
+                    parent: parentColName ?? "",
+                    target: columnNames?.[colId] ?? "",
+                  },
+                },
+              };
+            }
+          }
+        }
+      }
 
+      // (5) その他のルール（required, number, datetime 等）の評価
+      // reference ルールは上記 O(1) で解決済みのため除外して評価
+      const allRules = columnValidations[colId];
+      if (!allRules || allRules.length === 0) continue;
+
+      const nonRefRules = allRules.filter((rule) => rule.type !== "reference");
+      if (nonRefRules.length === 0) continue;
+
+      const result = validateCellRules(nonRefRules, cellValue);
       if (!result.valid) {
         return {
           rowIndex: r,

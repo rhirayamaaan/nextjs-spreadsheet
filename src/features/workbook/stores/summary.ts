@@ -1,24 +1,47 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
+import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import { baseCellValuesAtom } from "./base";
 import { activeColumnConfigsAtom, getLookupValue } from "./binding";
 import { cellEditsAtom } from "./edit";
 import { visibleRowOrderAtom } from "./filter";
-import type { ColumnId } from "./types";
+import type { ColumnId, SheetTemplate } from "./types";
 import { activeSheetIdAtom } from "./ui";
 
-// sheetId -> Record<ColumnId, boolean> (合計行出力が有効かどうか)
+// sheetId -> Record<ColumnId, boolean> (ユーザーがトグル操作した合計行出力の差分設定)
 export const columnTotalsAtom = atom<Record<string, Record<ColumnId, boolean>>>(
   {},
 );
 
-// アクティブシートの列ごとの合計設定
+/**
+ * テンプレート定義からデフォルトの合計列マップを生成する純粋関数
+ */
+export const buildBaseTotalsFromTemplate = (
+  template: SheetTemplate,
+): Record<ColumnId, boolean> => {
+  const totals: Record<ColumnId, boolean> = {} as Record<ColumnId, boolean>;
+  for (const col of template.columns) {
+    if (col.hasTotal) {
+      totals[col.field as ColumnId] = true;
+    }
+  }
+  return totals;
+};
+
+// アクティブシートの列ごとの合計設定（テンプレート定義 + ユーザーオーバーライドの合成）
 export const activeColumnTotalsAtom = atom(
   (get) => {
     const activeSheetId = get(activeSheetIdAtom);
     if (!activeSheetId) return {} as Record<ColumnId, boolean>;
-    const totals = get(columnTotalsAtom);
-    return totals[activeSheetId] ?? ({} as Record<ColumnId, boolean>);
+
+    const metadata = get(workbookMetadataQuery.sync);
+    const template = metadata.templates[activeSheetId];
+    const baseTotals = template
+      ? buildBaseTotalsFromTemplate(template)
+      : ({} as Record<ColumnId, boolean>);
+
+    const userTotals = get(columnTotalsAtom)[activeSheetId] ?? {};
+    return { ...baseTotals, ...userTotals };
   },
   (
     get,
