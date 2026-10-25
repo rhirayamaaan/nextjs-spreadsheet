@@ -23,6 +23,7 @@ const MOCK_ACCOUNTING_UNITS = [
   { code: "1008", name: "製造本部" },
   { code: "1009", name: "品質管理部" },
   { code: "1010", name: "購買調達部" },
+  { code: "1011", name: "第１事業部" },
 ];
 
 const MOCK_OFFICES_MASTER = [
@@ -76,6 +77,12 @@ const MOCK_OFFICES_MASTER = [
 ];
 
 const MOCK_COST_DEPTS = [
+  {
+    office_code: "12",
+    code: "3010",
+    name: "プラスチック成型",
+    category: "製造",
+  },
   { office_code: "13", code: "3000", name: "統括製造課", category: "管理" },
   { office_code: "13", code: "3001", name: "第1製造課", category: "製造" },
   { office_code: "13", code: "3010", name: "資材課", category: "補助" },
@@ -89,6 +96,404 @@ const MOCK_COST_DEPTS = [
   { office_code: "01", code: "3009", name: "生産管理課", category: "補助" },
 ];
 
+export const MOCK_UNITS_MASTER = [
+  { code: "PCS", name: "個" },
+  { code: "KG", name: "キログラム" },
+  { code: "L", name: "リットル" },
+  { code: "BOX", name: "箱" },
+];
+
+export const MOCK_COST_CLASSIFICATIONS_MASTER = [
+  { code: "1", name: "材料費" },
+  { code: "3", name: "変動費" },
+  { code: "6", name: "固定費" },
+];
+
+export const MOCK_MAJOR_EXPENSES_MASTER = [
+  { code: "11", name: "原材料費" },
+  { code: "32", name: "水道光熱費" },
+  { code: "33", name: "運搬費" },
+  { code: "35", name: "補助材料費" },
+  { code: "51", name: "労務費" },
+  { code: "63", name: "減価償却費" },
+  { code: "64", name: "修繕費" },
+  { code: "66", name: "消耗品費" },
+  { code: "67", name: "その他経費" },
+  { code: "68", name: "配賦共通費" },
+];
+
+export const MOCK_EXPENSES_MASTER = [
+  { code: "1110", name: "原材料" },
+  { code: "3210", name: "電力費" },
+  { code: "3220", name: "ガス費" },
+  { code: "3230", name: "蒸気費" },
+  { code: "3240", name: "用水費" },
+  { code: "3310", name: "運搬費" },
+  { code: "3510", name: "補助材料費" },
+  { code: "5110", name: "労務費" },
+  { code: "6310", name: "減価償却費" },
+  { code: "6410", name: "機械修繕費" },
+  { code: "6420", name: "金型修繕費" },
+  { code: "6610", name: "消耗品費" },
+  { code: "6710", name: "その他経費" },
+  { code: "6810", name: "配賦共通費" },
+];
+
+const BASE_EXPENSE_ITEMS = [
+  {
+    cost_classification_code: "1",
+    cost_classification_name: "材料費",
+    major_expense_code: "11",
+    major_expense_name: "原材料費",
+    expense_code: "1110",
+    expense_name: "原材料",
+    quantity: "51040859",
+    unit_price: "0.83",
+    amount: "42611623",
+    unit_consumption: "132.071787",
+    cost_per_unit: "110.26",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "32",
+    major_expense_name: "水道光熱費",
+    expense_code: "3210",
+    expense_name: "電力費",
+    quantity: "1000",
+    unit_price: "100",
+    amount: "100000",
+    unit_consumption: "0.002588",
+    cost_per_unit: "0.26",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "32",
+    major_expense_name: "水道光熱費",
+    expense_code: "3220",
+    expense_name: "ガス費",
+    quantity: "100",
+    unit_price: "350",
+    amount: "35000",
+    unit_consumption: "0.000259",
+    cost_per_unit: "0.09",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "32",
+    major_expense_name: "水道光熱費",
+    expense_code: "3230",
+    expense_name: "蒸気費",
+    quantity: "500",
+    unit_price: "50",
+    amount: "25000",
+    unit_consumption: "0.001294",
+    cost_per_unit: "0.06",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "32",
+    major_expense_name: "水道光熱費",
+    expense_code: "3240",
+    expense_name: "用水費",
+    quantity: "3000",
+    unit_price: "10",
+    amount: "30000",
+    unit_consumption: "0.007763",
+    cost_per_unit: "0.08",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "33",
+    major_expense_name: "運搬費",
+    expense_code: "3310",
+    expense_name: "運搬費",
+    quantity: "100",
+    unit_price: "360",
+    amount: "36000",
+    unit_consumption: "0.000259",
+    cost_per_unit: "0.09",
+  },
+  {
+    cost_classification_code: "3",
+    cost_classification_name: "変動費",
+    major_expense_code: "35",
+    major_expense_name: "補助材料費",
+    expense_code: "3510",
+    expense_name: "補助材料費",
+    quantity: "10",
+    unit_price: "1800",
+    amount: "18000",
+    unit_consumption: "0.000026",
+    cost_per_unit: "0.05",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "51",
+    major_expense_name: "労務費",
+    expense_code: "5110",
+    expense_name: "労務費",
+    quantity: "0",
+    unit_price: "0",
+    amount: "39076317",
+    unit_consumption: "0",
+    cost_per_unit: "101.11",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "63",
+    major_expense_name: "減価償却費",
+    expense_code: "6310",
+    expense_name: "減価償却費",
+    quantity: "0",
+    unit_price: "0",
+    amount: "14958000",
+    unit_consumption: "0",
+    cost_per_unit: "38.7",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "64",
+    major_expense_name: "修繕費",
+    expense_code: "6410",
+    expense_name: "機械修繕費",
+    quantity: "10",
+    unit_price: "7677.4",
+    amount: "76774",
+    unit_consumption: "0.000026",
+    cost_per_unit: "0.2",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "64",
+    major_expense_name: "修繕費",
+    expense_code: "6420",
+    expense_name: "金型修繕費",
+    quantity: "0",
+    unit_price: "0",
+    amount: "810000",
+    unit_consumption: "0",
+    cost_per_unit: "2.1",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "66",
+    major_expense_name: "消耗品費",
+    expense_code: "6610",
+    expense_name: "消耗品費",
+    quantity: "10",
+    unit_price: "4472.6",
+    amount: "44726",
+    unit_consumption: "0.000026",
+    cost_per_unit: "0.12",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "67",
+    major_expense_name: "その他経費",
+    expense_code: "6710",
+    expense_name: "その他経費",
+    quantity: "10",
+    unit_price: "9042.4",
+    amount: "90424",
+    unit_consumption: "0.000026",
+    cost_per_unit: "0.23",
+  },
+  {
+    cost_classification_code: "6",
+    cost_classification_name: "固定費",
+    major_expense_code: "68",
+    major_expense_name: "配賦共通費",
+    expense_code: "6810",
+    expense_name: "配賦共通費",
+    quantity: "394519.3123",
+    unit_price: "50.65",
+    amount: "19982830",
+    unit_consumption: "1.020846",
+    cost_per_unit: "51.71",
+  },
+];
+
+const DEPARTMENT_COST_CONFIGS = [
+  // 1. 千葉事業所 (12) - プラスチック成型 (3010) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1011",
+    accounting_unit_name: "第１事業部",
+    office_code: "12",
+    office_name: "千葉事業所",
+    cost_dept_code: "3010",
+    cost_dept_name: "プラスチック成型",
+    production_volume: "386463",
+    unit: "PCS",
+    unit_name: "個",
+    yield_rate: "98",
+    multiplier: 1.0,
+  },
+  // 2. 千葉事業所 (12) - プラスチック成型 (3010) - 2020年04月
+  {
+    year: "2020",
+    from_year_month: "2020-04",
+    to_year_month: "2020-04",
+    accounting_unit_code: "1011",
+    accounting_unit_name: "第１事業部",
+    office_code: "12",
+    office_name: "千葉事業所",
+    cost_dept_code: "3010",
+    cost_dept_name: "プラスチック成型",
+    production_volume: "372000",
+    unit: "PCS",
+    unit_name: "個",
+    yield_rate: "97.5",
+    multiplier: 0.95,
+  },
+  // 3. 東京事業所 (13) - 統括製造課 (3000) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1008",
+    accounting_unit_name: "製造本部",
+    office_code: "13",
+    office_name: "東京事業所",
+    cost_dept_code: "3000",
+    cost_dept_name: "統括製造課",
+    production_volume: "520000",
+    unit: "PCS",
+    unit_name: "個",
+    yield_rate: "98.2",
+    multiplier: 1.25,
+  },
+  // 4. 東京事業所 (13) - 第1製造課 (3001) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1008",
+    accounting_unit_name: "製造本部",
+    office_code: "13",
+    office_name: "東京事業所",
+    cost_dept_code: "3001",
+    cost_dept_name: "第1製造課",
+    production_volume: "480000",
+    unit: "KG",
+    unit_name: "キログラム",
+    yield_rate: "98.0",
+    multiplier: 1.15,
+  },
+  // 5. 大阪事業所 (27) - 第2製造課 (3002) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1008",
+    accounting_unit_name: "製造本部",
+    office_code: "27",
+    office_name: "大阪事業所",
+    cost_dept_code: "3002",
+    cost_dept_name: "第2製造課",
+    production_volume: "430000",
+    unit: "KG",
+    unit_name: "キログラム",
+    yield_rate: "97.8",
+    multiplier: 1.08,
+  },
+  // 6. 愛知事業所 (23) - 充填課 (3005) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1008",
+    accounting_unit_name: "製造本部",
+    office_code: "23",
+    office_name: "愛知事業所",
+    cost_dept_code: "3005",
+    cost_dept_name: "充填課",
+    production_volume: "350000",
+    unit: "L",
+    unit_name: "リットル",
+    yield_rate: "99.0",
+    multiplier: 0.9,
+  },
+  // 7. 福岡事業所 (40) - 包装課 (3006) - 2020年05月
+  {
+    year: "2020",
+    from_year_month: "2020-05",
+    to_year_month: "2020-05",
+    accounting_unit_code: "1008",
+    accounting_unit_name: "製造本部",
+    office_code: "40",
+    office_name: "福岡事業所",
+    cost_dept_code: "3006",
+    cost_dept_name: "包装課",
+    production_volume: "290000",
+    unit: "BOX",
+    unit_name: "箱",
+    yield_rate: "98.5",
+    multiplier: 0.8,
+  },
+];
+
+const MOCK_DEPARTMENT_COST_RECORDS: Record<string, string>[] =
+  DEPARTMENT_COST_CONFIGS.flatMap((cfg) =>
+    BASE_EXPENSE_ITEMS.map((item) => {
+      const isOriginal = cfg.multiplier === 1.0;
+      const quantityNum = Number.parseFloat(item.quantity) || 0;
+      const amountNum = Number.parseFloat(item.amount) || 0;
+      const unitPriceNum = Number.parseFloat(item.unit_price) || 0;
+      const prodVolNum = Number.parseFloat(cfg.production_volume) || 1;
+
+      const adjQty = isOriginal
+        ? item.quantity
+        : String(Math.round(quantityNum * cfg.multiplier * 100) / 100);
+      const adjAmt = isOriginal
+        ? item.amount
+        : String(Math.round(amountNum * cfg.multiplier));
+      const adjCostPerUnit = isOriginal
+        ? item.cost_per_unit
+        : (Math.round(amountNum * cfg.multiplier) / prodVolNum).toFixed(2);
+
+      return {
+        year: cfg.year,
+        from_year_month: cfg.from_year_month,
+        to_year_month: cfg.to_year_month,
+        accounting_unit_code: cfg.accounting_unit_code,
+        accounting_unit_name: cfg.accounting_unit_name,
+        office_code: cfg.office_code,
+        office_name: cfg.office_name,
+        cost_dept_code: cfg.cost_dept_code,
+        cost_dept_name: cfg.cost_dept_name,
+        production_volume: cfg.production_volume,
+        unit: cfg.unit,
+        unit_name: cfg.unit_name,
+        yield_rate: cfg.yield_rate,
+        cost_classification_code: item.cost_classification_code,
+        cost_classification_name: item.cost_classification_name,
+        major_expense_code: item.major_expense_code,
+        major_expense_name: item.major_expense_name,
+        expense_code: item.expense_code,
+        expense_name: item.expense_name,
+        quantity: adjQty,
+        unit_price: isOriginal ? item.unit_price : String(unitPriceNum),
+        amount: adjAmt,
+        unit_consumption: item.unit_consumption,
+        cost_per_unit: adjCostPerUnit,
+      };
+    }),
+  );
+
 /**
  * 疑似 API: バックエンドから返却されるプレーンなレコード配列（生データ）を返す
  */
@@ -96,6 +501,9 @@ export const fetchMockSheetRecords = (
   sheetId: string,
   rowCount = 100,
 ): Record<string, string>[] => {
+  if (sheetId === "department-cost") {
+    return MOCK_DEPARTMENT_COST_RECORDS;
+  }
   if (sheetId === "production-volume") {
     const records: Record<string, string>[] = [];
     for (let r = 0; r < rowCount; r++) {
@@ -181,6 +589,34 @@ export const fetchMockSheetRecords = (
       code: c.code,
       name: c.name,
       category: c.category,
+    }));
+  }
+
+  if (sheetId === "unit-master") {
+    return MOCK_UNITS_MASTER.map((u) => ({
+      code: u.code,
+      name: u.name,
+    }));
+  }
+
+  if (sheetId === "cost-classification-master") {
+    return MOCK_COST_CLASSIFICATIONS_MASTER.map((c) => ({
+      code: c.code,
+      name: c.name,
+    }));
+  }
+
+  if (sheetId === "major-expense-master") {
+    return MOCK_MAJOR_EXPENSES_MASTER.map((m) => ({
+      code: m.code,
+      name: m.name,
+    }));
+  }
+
+  if (sheetId === "expense-master") {
+    return MOCK_EXPENSES_MASTER.map((e) => ({
+      code: e.code,
+      name: e.name,
     }));
   }
 

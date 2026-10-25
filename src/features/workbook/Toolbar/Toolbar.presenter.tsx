@@ -3,6 +3,7 @@ import {
   DownloadIcon,
   FileTextIcon,
   HamburgerMenuIcon,
+  ReaderIcon,
 } from "@radix-ui/react-icons";
 import { Button, Flex, Select, TextField } from "@radix-ui/themes";
 import { type FC, useCallback } from "react";
@@ -17,10 +18,14 @@ export type ToolbarPresenterProps = {
   hasActiveSheet?: boolean;
   onExport: () => void | Promise<void>;
   onPreviewPdf: () => void | Promise<void>;
+  onPreviewReportPdf?: () => void | Promise<void>;
   onSave?: () => void | Promise<void>;
   onOpenMenu?: () => void;
   isExportingExcel?: boolean;
   isExportingPdf?: boolean;
+  isExportingReportPdf?: boolean;
+  isReportPdfDisabled?: boolean;
+  reportPdfDisabledReason?: string;
   isSaving?: boolean;
 };
 
@@ -29,10 +34,14 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
   hasActiveSheet,
   onExport,
   onPreviewPdf,
+  onPreviewReportPdf,
   onSave,
   onOpenMenu,
   isExportingExcel,
   isExportingPdf,
+  isExportingReportPdf,
+  isReportPdfDisabled,
+  reportPdfDisabledReason,
   isSaving,
 }) => {
   const { t } = useI18n(toolbarMessages);
@@ -91,6 +100,20 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
           ? t("generatingPdf", { sheetName: displayName })
           : t("printPreview", { sheetName: displayName })}
       </Button>
+      <Button
+        type="button"
+        onClick={onPreviewReportPdf}
+        disabled={isExportingReportPdf || isReportPdfDisabled}
+        loading={isExportingReportPdf}
+        color="red"
+        variant="solid"
+        title={isReportPdfDisabled ? reportPdfDisabledReason : undefined}
+      >
+        <ReaderIcon />
+        {isExportingReportPdf
+          ? t("generatingReportPdf", { sheetName: displayName })
+          : t("reportPreview", { sheetName: displayName })}
+      </Button>
       <TextField.Root placeholder={t("search")}></TextField.Root>
       <Flex align="center" gap="2" style={{ marginLeft: "auto" }}>
         <Select.Root
@@ -98,7 +121,7 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
           disabled={isPending}
           onValueChange={handleChangeLocale}
         >
-          <Select.Trigger style={{ cursor: "pointer" }} />
+          <Select.Trigger />
           <Select.Content>
             <Select.Item value="ja">日本語</Select.Item>
             <Select.Item value="en">English</Select.Item>
@@ -108,11 +131,13 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
           <Button
             type="button"
             onClick={onSave}
-            disabled={isSaving || !hasActiveSheet}
+            disabled={!hasActiveSheet || isSaving}
+            loading={isSaving}
+            color="blue"
             variant="solid"
           >
             <CheckIcon />
-            {t("save")}
+            {isSaving ? t("saving") : t("save")}
           </Button>
         )}
       </Flex>

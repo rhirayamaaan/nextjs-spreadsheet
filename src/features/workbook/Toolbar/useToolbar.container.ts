@@ -1,3 +1,5 @@
+import { useI18n } from "@/i18n/useI18n";
+import { toolbarMessages } from "./i18n";
 import type { ToolbarPresenterProps } from "./Toolbar.presenter";
 import { useExportExcel } from "./useExportExcel.container";
 import { useExportPdf } from "./useExportPdf.container";
@@ -17,20 +19,43 @@ export const useToolbar = ({
   onSave,
   isSaving,
 }: UseToolbarParams): ToolbarPresenterProps => {
+  const { t } = useI18n(toolbarMessages);
   const { exportCurrentSheet, isExporting: isExportingExcel } =
     useExportExcel();
-  const { previewCurrentSheetPdf, isExporting: isExportingPdf } =
-    useExportPdf();
+  const {
+    previewCurrentSheetPdf,
+    previewCurrentSheetReportPdf,
+    isExportingPdf,
+    isExportingReportPdf,
+    hasReportLayout,
+    isPreconditionSatisfied,
+    unfulfilledFilterLabels,
+    isReportPdfDisabled,
+  } = useExportPdf();
+
+  const reportPdfDisabledReason = !hasReportLayout
+    ? undefined
+    : !isPreconditionSatisfied
+      ? unfulfilledFilterLabels && unfulfilledFilterLabels.length > 0
+        ? t("reportPdfRequiresSpecificFilter", {
+            fields: unfulfilledFilterLabels.join("・"),
+          })
+        : t("reportPdfRequiresFilter")
+      : undefined;
 
   return {
     sheetName,
     hasActiveSheet,
     onExport: exportCurrentSheet,
     onPreviewPdf: previewCurrentSheetPdf,
+    onPreviewReportPdf: previewCurrentSheetReportPdf,
     onSave,
     onOpenMenu,
     isExportingExcel,
     isExportingPdf,
+    isExportingReportPdf,
+    isReportPdfDisabled,
+    reportPdfDisabledReason,
     isSaving,
   };
 };

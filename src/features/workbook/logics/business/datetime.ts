@@ -43,8 +43,12 @@ export const parseDateTimeString = (
         };
       }
       case "yyyy-MM": {
-        if (!/^\d{4}-\d{2}$/.test(val)) return null;
-        const ym = Temporal.PlainYearMonth.from(val);
+        let normalized = val;
+        if (/^\d{6}$/.test(val)) {
+          normalized = `${val.slice(0, 4)}-${val.slice(4, 6)}`;
+        }
+        if (!/^\d{4}-\d{2}$/.test(normalized)) return null;
+        const ym = Temporal.PlainYearMonth.from(normalized);
         return {
           year: ym.year,
           month: ym.month,

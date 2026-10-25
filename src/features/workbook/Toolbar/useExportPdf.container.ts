@@ -1,7 +1,9 @@
-import { useSetAtom, useStore } from "jotai";
+import { useAtom, useSetAtom, useStore } from "jotai";
 import jsPDF from "jspdf";
 import autoTable, { type Styles } from "jspdf-autotable";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { generateReportPdf } from "../PdfPreview/reportPdfGenerator";
+import { reportLayoutQuery } from "../services/reportLayout/reportLayout.query";
 import {
   activeColumnConfigsAtom,
   activeSheetIdAtom,
@@ -11,9 +13,11 @@ import {
   columnOrderAtom,
   columnWidthOverridesAtom,
   getLookupValue,
+  pdfPreviewTypeAtom,
   pdfPreviewUrlAtom,
   rowOrderAtom,
   viewModeAtom,
+  visibleRecordsAtom,
 } from "../stores";
 
 const NOTO_SANS_JP_REGULAR_TTF = "/fonts/NotoSansJP-Regular.ttf";
@@ -23,8 +27,14 @@ const initialColumnStyles: Record<string, Partial<Styles>> = {};
 
 export const useExportPdf = () => {
   const store = useStore();
-  const [isExporting, setIsExporting] = useState(false);
+  const [activeSheetId] = useAtom(activeSheetIdAtom);
+  const [reportLayout] = useAtom(reportLayoutQuery(activeSheetId ?? ""));
+  const [records] = useAtom(visibleRecordsAtom);
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingReportPdf, setIsExportingReportPdf] = useState(false);
   const setPdfPreviewUrl = useSetAtom(pdfPreviewUrlAtom);
+  const setPdfPreviewType = useSetAtom(pdfPreviewTypeAtom);
   const setViewMode = useSetAtom(viewModeAtom);
 
   const fetchFontAsBase64 = useCallback(
@@ -46,8 +56,7 @@ export const useExportPdf = () => {
     [],
   );
 
-  const generatePdf = useCallback(async () => {
-    const activeSheetId = store.get(activeSheetIdAtom);
+  const generateDefaultPdf = useCallback(async () => {
     if (!activeSheetId) return null;
 
     const rowOrder = store.get(rowOrderAtom);
@@ -151,25 +160,96 @@ export const useExportPdf = () => {
     });
 
     return { doc, filename: `${activeSheetId}.pdf` };
-  }, [store, fetchFontAsBase64]);
+  }, [activeSheetId, store, fetchFontAsBase64]);
 
+  // 1. 通常の表PDFプレビュー
   const previewCurrentSheetPdf = useCallback(async () => {
-    setIsExporting(true);
+    setIsExportingPdf(true);
     try {
-      const result = await generatePdf();
+      const result = await generateDefaultPdf();
       if (result) {
         const blob = result.doc.output("blob");
         const url = URL.createObjectURL(blob);
+        setPdfPreviewType("table");
         setPdfPreviewUrl(url);
         setViewMode("pdf-preview");
       }
     } catch (error) {
-      console.error("PDF preview generation failed", error);
-      alert("PDF preview generation failed");
+      console.error("Table PDF preview generation failed", error);
+      alert("Table PDF preview generation failed");
     } finally {
-      setIsExporting(false);
+      setIsExportingPdf(false);
     }
-  }, [generatePdf, setPdfPreviewUrl, setViewMode]);
+  }, [generateDefaultPdf, setPdfPreviewType, setPdfPreviewUrl, setViewMode]);
 
-  return { previewCurrentSheetPdf, isExporting };
+  // 2. 帳票PDFプレビュー
+  const previewCurrentSheetReportPdf = useCallback(async () => {
+    if (!reportLayout || !records || records.length === 0) return;
+    setIsExportingReportPdf(true);
+    try {
+      const result = await generateReportPdf(reportLayout, records, {
+        includeSummary: true,
+        includeDetails: true,
+      });
+      if (result) {
+        const blob = result.doc.output("blob");
+        const url = URL.createObjectURL(blob);
+        setPdfPreviewType("report");
+        setPdfPreviewUrl(url);
+        setViewMode("pdf-preview");
+      }
+    } catch (error) {
+      console.error("Report PDF preview generation failed", error);
+      alert("Report PDF preview generation failed");
+    } finally {
+      setIsExportingReportPdf(false);
+    }
+  }, [reportLayout, records, setPdfPreviewType, setPdfPreviewUrl, setViewMode]);
+
+  const hasReportLayout = Boolean(reportLayout);
+  const columnNames = store.get(columnNamesAtom);
+
+  const { isPreconditionSatisfied, unfulfilledFilterLabels } = useMemo(() => {
+    if (!reportLayout) {
+      return { isPreconditionSatisfied: false, unfulfilledFilterLabels: [] };
+    }
+    if (!records || records.length === 0) {
+      return { isPreconditionSatisfied: false, unfulfilledFilterLabels: [] };
+    }
+
+    const requiredFields = reportLayout.requiredSingleFilters ?? [];
+    if (requiredFields.length === 0) {
+      return { isPreconditionSatisfied: true, unfulfilledFilterLabels: [] };
+    }
+
+    const unfulfilled: string[] = [];
+    for (const field of requiredFields) {
+      const uniqueValues = new Set(
+        records.map((r) => r[field]).filter(Boolean),
+      );
+      if (uniqueValues.size !== 1) {
+        unfulfilled.push(
+          (columnNames as Record<string, string>)[field] || field,
+        );
+      }
+    }
+
+    return {
+      isPreconditionSatisfied: unfulfilled.length === 0,
+      unfulfilledFilterLabels: unfulfilled,
+    };
+  }, [reportLayout, records, columnNames]);
+
+  const isReportPdfDisabled = !hasReportLayout || !isPreconditionSatisfied;
+
+  return {
+    previewCurrentSheetPdf,
+    previewCurrentSheetReportPdf,
+    isExportingPdf,
+    isExportingReportPdf,
+    hasReportLayout,
+    isPreconditionSatisfied,
+    unfulfilledFilterLabels,
+    isReportPdfDisabled,
+  };
 };

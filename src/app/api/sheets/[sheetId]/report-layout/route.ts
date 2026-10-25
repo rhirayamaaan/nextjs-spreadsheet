@@ -1,0 +1,169 @@
+import { NextResponse } from "next/server";
+import type { ReportLayout } from "@/features/workbook/services/reportLayout/reportLayout.types";
+
+export const dynamic = "force-dynamic";
+
+export const departmentCostReportLayout: ReportLayout = {
+  id: "department-cost-report",
+  sheetId: "department-cost",
+  name: "部門原価表",
+  paper: {
+    size: "A4",
+    orientation: "portrait",
+    marginsMm: {
+      top: 10,
+      right: 10,
+      bottom: 10,
+      left: 10,
+    },
+  },
+  requiredSingleFilters: [
+    "accounting_unit_code",
+    "office_code",
+    "cost_dept_code",
+  ],
+  header: {
+    title: "部門原価表",
+    subtitleTemplate:
+      "（ 実績デモ 実績原価計算 {year}年度 {from_month}月〜{to_month}月 ）",
+    metaSections: {
+      left: [
+        { label: "会計単位", field: "accounting_unit_full" },
+        { label: "事業所", field: "office_full" },
+        { label: "原価部門", field: "cost_dept_full" },
+      ],
+      right: [{ label: "金額", text: "円" }],
+      summaryBox: {
+        items: [
+          {
+            label: "生産量",
+            field: "production_volume",
+            format: "decimal4",
+          },
+          {
+            label: "歩留",
+            field: "yield_rate",
+            format: "percentage",
+          },
+        ],
+      },
+    },
+  },
+  table: {
+    columns: [
+      {
+        id: "item_name",
+        headerText: "費用区分\n大費目\n費目",
+        widthRatio: 2.3,
+        align: "left",
+        format: "string",
+      },
+      {
+        id: "quantity",
+        headerText: "数量",
+        widthRatio: 1.3,
+        align: "right",
+        format: "decimal4",
+      },
+      {
+        id: "unit_price",
+        headerText: "単価",
+        widthRatio: 1.0,
+        align: "right",
+        format: "decimal2",
+      },
+      {
+        id: "amount",
+        headerText: "金額",
+        widthRatio: 1.2,
+        align: "right",
+        format: "integer",
+      },
+      {
+        id: "unit_consumption",
+        headerText: "原単位",
+        widthRatio: 1.1,
+        align: "right",
+        format: "decimal6",
+      },
+      {
+        id: "cost_per_unit",
+        headerText: "原単価",
+        widthRatio: 1.0,
+        align: "right",
+        format: "decimal2",
+      },
+    ],
+    groups: [
+      {
+        level: 1,
+        codeField: "cost_classification_code",
+        nameField: "cost_classification_name",
+        subtotal: {
+          enabled: true,
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: template placeholder
+          labelPattern: "${name} 計",
+          aggregations: {
+            quantity: "sum",
+            unit_price: "blank",
+            amount: "sum",
+            unit_consumption: "blank",
+            cost_per_unit: "sum",
+          },
+        },
+      },
+      {
+        level: 2,
+        codeField: "major_expense_code",
+        nameField: "major_expense_name",
+        subtotal: {
+          enabled: true,
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: template placeholder
+          labelPattern: "${name} 計",
+          aggregations: {
+            quantity: "sum",
+            unit_price: "blank",
+            amount: "sum",
+            unit_consumption: "blank",
+            cost_per_unit: "sum",
+          },
+        },
+      },
+    ],
+    detail: {
+      nameField: "expense_name",
+      fields: {
+        quantity: "quantity",
+        unit_price: "unit_price",
+        amount: "amount",
+        unit_consumption: "unit_consumption",
+        cost_per_unit: "cost_per_unit",
+      },
+    },
+  },
+};
+
+const MOCK_REPORT_LAYOUTS: Record<string, ReportLayout> = {
+  "department-cost": departmentCostReportLayout,
+};
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ sheetId: string }> },
+) {
+  const { sheetId } = await params;
+  const layout = MOCK_REPORT_LAYOUTS[sheetId] ?? null;
+
+  if (!layout) {
+    return NextResponse.json(
+      { success: false, sheetId, layout: null },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    sheetId,
+    layout,
+  });
+}

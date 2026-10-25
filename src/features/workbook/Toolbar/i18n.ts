@@ -5,6 +5,11 @@ export const toolbarMessages = {
     exportToExcel: '"{sheetName}" をExcelに出力',
     generatingPdf: '"{sheetName}" のPDFを生成中...',
     printPreview: '"{sheetName}" の印刷プレビュー (PDF)',
+    generatingReportPdf: '"{sheetName}" の帳票PDFを生成中...',
+    reportPreview: '"{sheetName}" の帳票プレビュー (PDF)',
+    reportPdfRequiresFilter: "必須項目をそれぞれ1つに絞り込んでください",
+    reportPdfRequiresSpecificFilter:
+      '"{fields}" をそれぞれ1つに絞り込んでください',
     defaultSheetName: "シート",
     sheetMenu: "シート一覧",
     openSheetMenu: "シートメニューを開く",
@@ -17,6 +22,11 @@ export const toolbarMessages = {
     exportToExcel: 'Export "{sheetName}" to Excel',
     generatingPdf: 'Generating "{sheetName}" PDF...',
     printPreview: 'Print Preview "{sheetName}" (PDF)',
+    generatingReportPdf: 'Generating "{sheetName}" Report PDF...',
+    reportPreview: 'Report Preview "{sheetName}" (PDF)',
+    reportPdfRequiresFilter: "Please filter required fields to a single value",
+    reportPdfRequiresSpecificFilter:
+      'Please filter "{fields}" to a single value',
     defaultSheetName: "Sheet",
     sheetMenu: "Sheets",
     openSheetMenu: "Open sheet menu",

@@ -18,4 +18,5 @@ export const favoriteSheetIdsAtom = atom<string[] | null>(null);
 
 export const viewModeAtom = atom<ViewMode>("editor");
 export const pdfPreviewUrlAtom = atom<string | null>(null);
+export const pdfPreviewTypeAtom = atom<"table" | "report">("table");
 export const columnWidthOverridesAtom = atom<Record<ColumnId, number>>({});

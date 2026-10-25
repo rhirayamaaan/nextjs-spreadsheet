@@ -2,7 +2,7 @@ import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 import { baseCellValuesAtom } from "./base";
 import { activeColumnConfigsAtom, getLookupValue } from "./binding";
-import { rowOrderAtom } from "./derived";
+import { columnOrderAtom, rowOrderAtom } from "./derived";
 import { cellEditsAtom } from "./edit";
 import type { ColumnFilter, ColumnId, RowId } from "./types";
 import { activeSheetIdAtom } from "./ui";
@@ -134,6 +134,36 @@ export const visibleRowOrderAtom = atom<RowId[]>((get) => {
       }
     }
     return true;
+  });
+});
+
+/**
+ * フィルター適用後かつ編集値・ルックアップ解決済みの表示中レコード配列を生成する selector
+ */
+export const visibleRecordsAtom = atom<Record<string, string>[]>((get) => {
+  const visibleRowIds = get(visibleRowOrderAtom);
+  const colOrder = get(columnOrderAtom);
+  const configs = get(activeColumnConfigsAtom);
+  const edits = get(cellEditsAtom);
+  const baseValues = get(baseCellValuesAtom);
+
+  return visibleRowIds.map((rowId) => {
+    const record: Record<string, string> = {};
+    for (const colId of colOrder) {
+      const config = configs[colId];
+      if (config && config.type === "lookup") {
+        record[colId] = getLookupValue(
+          get,
+          { rowId, colId },
+          config.lookup,
+          baseValues,
+        );
+      } else {
+        const key = `${rowId}-${colId}`;
+        record[colId] = key in edits ? edits[key] : (baseValues[key] ?? "");
+      }
+    }
+    return record;
   });
 });
 
