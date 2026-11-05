@@ -1,3 +1,6 @@
+import type { I18nString } from "@/i18n/types";
+import { type Locale, resolveI18nString } from "@/i18n/types";
+
 export interface ReportPaperConfig {
   size: "A4" | "A3" | "B5";
   orientation: "portrait" | "landscape";
@@ -145,3 +148,138 @@ export interface ReportLayout {
   table: ReportTableConfig;
   design?: ReportDesignConfig;
 }
+
+// --- Raw Types (API レスポンスの多言語生データ型) ---
+
+export interface ReportMetaItemRaw {
+  label: I18nString;
+  field?: string;
+  text?: I18nString;
+  format?: string;
+  unit?: I18nString;
+}
+
+export interface ReportHeaderConfigRaw {
+  title: I18nString;
+  subtitleTemplate?: I18nString;
+  metaSections: {
+    left: ReportMetaItemRaw[];
+    right: ReportMetaItemRaw[];
+    summaryBox?: {
+      title?: I18nString;
+      items: ReportMetaItemRaw[];
+    };
+  };
+}
+
+export interface ReportColumnConfigRaw {
+  id: string;
+  headerText: I18nString;
+  widthRatio: number;
+  align: "left" | "right" | "center";
+  format?:
+    | "string"
+    | "integer"
+    | "decimal2"
+    | "decimal4"
+    | "decimal6"
+    | "percentage";
+}
+
+export interface ReportGroupSubtotalConfigRaw {
+  enabled: boolean;
+  labelPattern: I18nString;
+  aggregations: Record<string, "sum" | "blank">;
+}
+
+export interface ReportGroupConfigRaw {
+  level: number;
+  codeField: string;
+  nameField: string;
+  subtotal: ReportGroupSubtotalConfigRaw;
+}
+
+export interface ReportTableConfigRaw {
+  columns: ReportColumnConfigRaw[];
+  groups: ReportGroupConfigRaw[];
+  detail: ReportDetailConfig;
+}
+
+export interface ReportLayoutRaw {
+  id: string;
+  sheetId: string;
+  name: I18nString;
+  paper: ReportPaperConfig;
+  requiredSingleFilters?: string[];
+  header: ReportHeaderConfigRaw;
+  table: ReportTableConfigRaw;
+  design?: ReportDesignConfig;
+}
+
+export const localizeReportLayout = (
+  layout: ReportLayoutRaw | ReportLayout,
+  locale: Locale,
+): ReportLayout => {
+  return {
+    ...layout,
+    name: resolveI18nString(layout.name, locale),
+    header: {
+      ...layout.header,
+      title: resolveI18nString(layout.header.title, locale),
+      subtitleTemplate: layout.header.subtitleTemplate
+        ? resolveI18nString(layout.header.subtitleTemplate, locale)
+        : undefined,
+      metaSections: {
+        left: layout.header.metaSections.left.map((item) => ({
+          ...item,
+          label: resolveI18nString(item.label, locale),
+          text: item.text ? resolveI18nString(item.text, locale) : undefined,
+          unit: item.unit ? resolveI18nString(item.unit, locale) : undefined,
+        })),
+        right: layout.header.metaSections.right.map((item) => ({
+          ...item,
+          label: resolveI18nString(item.label, locale),
+          text: item.text ? resolveI18nString(item.text, locale) : undefined,
+          unit: item.unit ? resolveI18nString(item.unit, locale) : undefined,
+        })),
+        summaryBox: layout.header.metaSections.summaryBox
+          ? {
+              ...layout.header.metaSections.summaryBox,
+              title: layout.header.metaSections.summaryBox.title
+                ? resolveI18nString(
+                    layout.header.metaSections.summaryBox.title,
+                    locale,
+                  )
+                : undefined,
+              items: layout.header.metaSections.summaryBox.items.map(
+                (item) => ({
+                  ...item,
+                  label: resolveI18nString(item.label, locale),
+                  text: item.text
+                    ? resolveI18nString(item.text, locale)
+                    : undefined,
+                  unit: item.unit
+                    ? resolveI18nString(item.unit, locale)
+                    : undefined,
+                }),
+              ),
+            }
+          : undefined,
+      },
+    },
+    table: {
+      ...layout.table,
+      columns: layout.table.columns.map((col) => ({
+        ...col,
+        headerText: resolveI18nString(col.headerText, locale),
+      })),
+      groups: layout.table.groups.map((group) => ({
+        ...group,
+        subtotal: {
+          ...group.subtotal,
+          labelPattern: resolveI18nString(group.subtotal.labelPattern, locale),
+        },
+      })),
+    },
+  };
+};

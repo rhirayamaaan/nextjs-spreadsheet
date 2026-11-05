@@ -4,6 +4,7 @@ export const commonMessages = {
   ja: {
     ok: "OK",
     cancel: "キャンセル",
+    categoryOther: "その他",
 
     // バリデーション共通メッセージ
     validationRequired: "入力必須項目です",
@@ -22,6 +23,7 @@ export const commonMessages = {
   en: {
     ok: "OK",
     cancel: "Cancel",
+    categoryOther: "Other",
 
     // Validation common messages
     validationRequired: "This field is required",

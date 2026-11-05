@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { I18nString } from "@/i18n/types";
 
 export const RowIdSchema = z.string().min(1).brand<"RowId">();
 export const ColumnIdSchema = z.string().min(1).brand<"ColumnId">();
@@ -223,4 +224,65 @@ export type SheetTemplate = {
   columns: ColumnTemplate[];
   defaultRowCount?: number;
   subtotalConfig?: SubtotalConfig;
+};
+
+// --- Raw Types (API レスポンスに含まれる多言語生データ型) ---
+
+export type ColumnTemplateTypeRaw =
+  | { type: "text" }
+  | { type: "number"; format?: "currency" | "integer" | "decimal" }
+  | { type: "datetime"; format: DateTimeFormat }
+  | {
+      type: "pulldown";
+      mode: "dropdown" | "combobox";
+      sourceTemplateId: string;
+      sourceKeyField: string;
+      relation?: ColumnRelation;
+      lookupFields: {
+        field: string;
+        headerName: I18nString;
+        sourceField: string;
+      }[];
+    }
+  | {
+      type: "lookup";
+      parentField: string;
+      sourceTemplateId: string;
+      sourceField: string;
+    };
+
+export type ColumnTemplateRaw = {
+  field: string;
+  headerName: I18nString;
+  type: ColumnTemplateTypeRaw;
+  validations?: ColumnValidationRule[];
+  width?: number;
+  hasTotal?: boolean;
+  readOnly?: boolean;
+  align?: "left" | "center" | "right";
+};
+
+export type SheetCategoryRaw = {
+  id: string;
+  name: I18nString;
+  description?: I18nString;
+};
+
+export type SubtotalConfigRaw = {
+  enabled: boolean;
+  groupByKeys: string[];
+  labelField: string;
+  labelPattern?: I18nString;
+  aggregations: Record<string, SubtotalAggregationType>;
+};
+
+export type SheetTemplateRaw = {
+  id: string;
+  name: I18nString;
+  category: string;
+  description?: I18nString;
+  isFavorite?: boolean;
+  columns: ColumnTemplateRaw[];
+  defaultRowCount?: number;
+  subtotalConfig?: SubtotalConfigRaw;
 };

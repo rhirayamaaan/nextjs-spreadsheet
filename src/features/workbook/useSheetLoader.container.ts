@@ -1,6 +1,8 @@
 import { useAtom, useSetAtom } from "jotai";
 import { useHydrateAtoms } from "jotai/utils";
 import { useCallback, useEffect, useMemo } from "react";
+import { commonMessages } from "@/i18n/common";
+import { useI18n } from "@/i18n/useI18n";
 import {
   activeSheetIdAtom,
   closeSheetAtom,
@@ -88,6 +90,8 @@ export const useSheetLoader = (): UseSheetLoaderReturn => {
     return storedFavoriteSheetIds ?? initialFavoriteSheetIds;
   }, [storedFavoriteSheetIds, initialFavoriteSheetIds]);
 
+  const { t } = useI18n(commonMessages);
+
   // 6. Presenter 向け ViewModel の加工
   const openSheets = useMemo(() => {
     return openSheetIds
@@ -96,8 +100,12 @@ export const useSheetLoader = (): UseSheetLoaderReturn => {
   }, [openSheetIds, sheetTemplates]);
 
   const sheetsByCategory = useMemo(() => {
-    return computeSheetsByCategory(categories, sheetTemplates);
-  }, [categories, sheetTemplates]);
+    return computeSheetsByCategory(
+      categories,
+      sheetTemplates,
+      t("categoryOther"),
+    );
+  }, [categories, sheetTemplates, t]);
 
   const activeSheet = activeSheetId ? sheetTemplates[activeSheetId] : undefined;
 

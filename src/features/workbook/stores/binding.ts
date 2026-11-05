@@ -1,10 +1,11 @@
 import { atom, type Getter } from "jotai";
 import { atomFamily } from "jotai-family";
+import { localeAtom } from "@/i18n/context";
 import { getSheetDependencyIds } from "../logics/business/buildSheetData";
 import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
-import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import { buildSheetData } from "./base";
 import { cellEditsAtom } from "./edit";
+import { sheetTemplatesAtom } from "./templates";
 import type {
   CellAddress,
   ColumnConfig,
@@ -24,21 +25,19 @@ export const columnConfigsAtom = atom<
 export const referencedSheetsDataAtom = atom<Record<string, SheetData>>(
   (get) => {
     const activeSheetId = get(activeSheetIdAtom);
-    const metadata = get(workbookMetadataQuery.sync);
+    const templates = get(sheetTemplatesAtom);
     const result: Record<string, SheetData> = {};
 
     if (!activeSheetId) return result;
 
-    const dependencyIds = getSheetDependencyIds(
-      activeSheetId,
-      metadata.templates,
-    );
+    const dependencyIds = getSheetDependencyIds(activeSheetId, templates);
 
+    const locale = get(localeAtom);
     for (const sheetId of dependencyIds) {
-      const template = metadata.templates[sheetId];
+      const template = templates[sheetId];
       if (!template) continue;
       const records = get(sheetRecordsQuery.sync(sheetId));
-      result[sheetId] = buildSheetData(sheetId, template, records);
+      result[sheetId] = buildSheetData(sheetId, template, records, locale);
     }
 
     return result;
@@ -111,8 +110,8 @@ export const activeColumnConfigsAtom = atom<Record<ColumnId, ColumnConfig>>(
     const activeSheetId = get(activeSheetIdAtom);
     if (!activeSheetId) return EMPTY_CONFIGS;
 
-    const metadata = get(workbookMetadataQuery.sync);
-    const template = metadata.templates[activeSheetId];
+    const templates = get(sheetTemplatesAtom);
+    const template = templates[activeSheetId];
     const baseConfigs = template
       ? buildConfigsFromTemplate(template)
       : EMPTY_CONFIGS;

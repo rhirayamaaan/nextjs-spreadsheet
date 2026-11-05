@@ -1,9 +1,9 @@
 import { apiClient } from "@/lib/query";
-import type { SheetCategory, SheetTemplate } from "../../stores";
+import type { SheetCategoryRaw, SheetTemplateRaw } from "../../stores";
 
 export type WorkbookMetadataResponse = {
-  categories: SheetCategory[];
-  templates: Record<string, SheetTemplate>;
+  categories: SheetCategoryRaw[];
+  templates: Record<string, SheetTemplateRaw>;
   initialOpenSheetIds: string[];
   favoriteSheetIds: string[];
 };

@@ -1,6 +1,14 @@
 import { atom } from "jotai";
+import { commonMessages } from "@/i18n/common";
+import { localeAtom } from "@/i18n/context";
+import { type Locale, resolveI18nString } from "@/i18n/types";
 import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
-import type { SheetCategory, SheetTemplate } from "./types";
+import type {
+  SheetCategory,
+  SheetCategoryRaw,
+  SheetTemplate,
+  SheetTemplateRaw,
+} from "./types";
 import {
   activeSheetIdAtom,
   favoriteSheetIdsAtom,
@@ -9,14 +17,66 @@ import {
 
 export { favoriteSheetIdsAtom, openSheetIdsAtom };
 
-// 全カテゴリ（workbookMetadataQuery から導出）
-export const sheetCategoriesAtom = atom<SheetCategory[]>((get) => {
-  return get(workbookMetadataQuery.sync).categories;
+export const localizeSheetCategory = (
+  category: SheetCategoryRaw,
+  locale: Locale,
+): SheetCategory => ({
+  ...category,
+  name: resolveI18nString(category.name, locale),
+  description: category.description
+    ? resolveI18nString(category.description, locale)
+    : undefined,
 });
 
-// 全シート雛形カタログ（workbookMetadataQuery から導出）
+export const localizeSheetTemplate = (
+  template: SheetTemplateRaw,
+  locale: Locale,
+): SheetTemplate => ({
+  ...template,
+  name: resolveI18nString(template.name, locale),
+  description: template.description
+    ? resolveI18nString(template.description, locale)
+    : undefined,
+  columns: template.columns.map((c) => ({
+    ...c,
+    headerName: resolveI18nString(c.headerName, locale),
+    type:
+      c.type.type === "pulldown"
+        ? {
+            ...c.type,
+            lookupFields: c.type.lookupFields.map((lf) => ({
+              ...lf,
+              headerName: resolveI18nString(lf.headerName, locale),
+            })),
+          }
+        : c.type,
+  })),
+  subtotalConfig: template.subtotalConfig
+    ? {
+        ...template.subtotalConfig,
+        labelPattern: template.subtotalConfig.labelPattern
+          ? resolveI18nString(template.subtotalConfig.labelPattern, locale)
+          : undefined,
+      }
+    : undefined,
+});
+
+// 全カテゴリ（workbookMetadataQuery から導出、現在ロケールでローカライズ解決）
+export const sheetCategoriesAtom = atom<SheetCategory[]>((get) => {
+  const locale = get(localeAtom);
+  const rawCategories = get(workbookMetadataQuery.sync).categories;
+  return rawCategories.map((c) => localizeSheetCategory(c, locale));
+});
+
+// 全シート雛形カタログ（workbookMetadataQuery から導出、現在ロケールでローカライズ解決）
 export const sheetTemplatesAtom = atom<Record<string, SheetTemplate>>((get) => {
-  return get(workbookMetadataQuery.sync).templates;
+  const locale = get(localeAtom);
+  const rawTemplates = get(workbookMetadataQuery.sync).templates;
+  const result: Record<string, SheetTemplate> = {};
+  for (const [id, t] of Object.entries(rawTemplates)) {
+    result[id] = localizeSheetTemplate(t, locale);
+  }
+  return result;
 });
 
 // 全シート雛形配列
@@ -29,6 +89,7 @@ export const allSheetTemplatesAtom = atom((get) => {
 export const computeSheetsByCategory = (
   categories: SheetCategory[],
   templates: Record<string, SheetTemplate>,
+  fallbackCategoryName: string,
 ): { category: SheetCategory; sheets: SheetTemplate[] }[] => {
   const result: { category: SheetCategory; sheets: SheetTemplate[] }[] = [];
 
@@ -46,7 +107,10 @@ export const computeSheetsByCategory = (
   );
   if (uncategorizedSheets.length > 0) {
     result.push({
-      category: { id: "other", name: "その他" },
+      category: {
+        id: "other",
+        name: fallbackCategoryName,
+      },
       sheets: uncategorizedSheets,
     });
   }
@@ -56,8 +120,11 @@ export const computeSheetsByCategory = (
 
 // カテゴリ別シート一覧マップ
 export const sheetsByCategoryAtom = atom((get) => {
-  const metadata = get(workbookMetadataQuery.sync);
-  return computeSheetsByCategory(metadata.categories, metadata.templates);
+  const locale = get(localeAtom);
+  const categories = get(sheetCategoriesAtom);
+  const templates = get(sheetTemplatesAtom);
+  const fallbackCategoryName = commonMessages[locale].categoryOther;
+  return computeSheetsByCategory(categories, templates, fallbackCategoryName);
 });
 
 // 現在アクティブなシートの雛形
@@ -72,7 +139,7 @@ export const activeSheetTemplateAtom = atom<SheetTemplate | null>((get) => {
 export const openSheetsAtom = atom((get) => {
   const metadata = get(workbookMetadataQuery.sync);
   const openIds = get(openSheetIdsAtom) ?? metadata.initialOpenSheetIds;
-  const templates = metadata.templates;
+  const templates = get(sheetTemplatesAtom);
   return openIds
     .map((id) => templates[id])
     .filter((t): t is SheetTemplate => Boolean(t));

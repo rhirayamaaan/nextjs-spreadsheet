@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import type { ReportLayout } from "@/features/workbook/services/reportLayout/reportLayout.types";
+import type { ReportLayoutRaw } from "@/features/workbook/services/reportLayout/reportLayout.types";
 
 export const dynamic = "force-dynamic";
 
-export const departmentCostReportLayout: ReportLayout = {
+export const departmentCostReportLayout: ReportLayoutRaw = {
   id: "department-cost-report",
   sheetId: "department-cost",
-  name: "部門原価表",
+  name: { ja: "部門原価表", en: "Department Cost Report" },
   paper: {
     size: "A4",
     orientation: "portrait",
@@ -23,25 +23,38 @@ export const departmentCostReportLayout: ReportLayout = {
     "cost_dept_code",
   ],
   header: {
-    title: "部門原価表",
-    subtitleTemplate:
-      "（ 実績デモ 実績原価計算 {year}年度 {from_month}月〜{to_month}月 ）",
+    title: { ja: "部門原価表", en: "Department Cost Report" },
+    subtitleTemplate: {
+      ja: "（ 実績デモ 実績原価計算 {year}年度 {from_month}月〜{to_month}月 ）",
+      en: "( Actual Demo Cost Calculation FY{year} {from_month} - {to_month} )",
+    },
     metaSections: {
       left: [
-        { label: "会計単位", field: "accounting_unit_full" },
-        { label: "事業所", field: "office_full" },
-        { label: "原価部門", field: "cost_dept_full" },
+        {
+          label: { ja: "会計単位", en: "Accounting Unit" },
+          field: "accounting_unit_full",
+        },
+        { label: { ja: "事業所", en: "Office" }, field: "office_full" },
+        {
+          label: { ja: "原価部門", en: "Cost Department" },
+          field: "cost_dept_full",
+        },
       ],
-      right: [{ label: "金額", text: "円" }],
+      right: [
+        {
+          label: { ja: "金額", en: "Currency" },
+          text: { ja: "円", en: "JPY" },
+        },
+      ],
       summaryBox: {
         items: [
           {
-            label: "生産量",
+            label: { ja: "生産量", en: "Production Vol" },
             field: "production_volume",
             format: "decimal4",
           },
           {
-            label: "歩留",
+            label: { ja: "歩留", en: "Yield Rate" },
             field: "yield_rate",
             format: "percentage",
           },
@@ -100,42 +113,45 @@ export const departmentCostReportLayout: ReportLayout = {
     columns: [
       {
         id: "item_name",
-        headerText: "費用区分\n大費目\n費目",
+        headerText: {
+          ja: "費用区分\n大費目\n費目",
+          en: "Classification\nMajor Exp\nExpense",
+        },
         widthRatio: 2.3,
         align: "left",
         format: "string",
       },
       {
         id: "quantity",
-        headerText: "数量",
+        headerText: { ja: "数量", en: "Quantity" },
         widthRatio: 1.3,
         align: "right",
         format: "decimal4",
       },
       {
         id: "unit_price",
-        headerText: "単価",
+        headerText: { ja: "単価", en: "Unit Price" },
         widthRatio: 1.0,
         align: "right",
         format: "decimal2",
       },
       {
         id: "amount",
-        headerText: "金額",
+        headerText: { ja: "金額", en: "Amount" },
         widthRatio: 1.2,
         align: "right",
         format: "integer",
       },
       {
         id: "unit_consumption",
-        headerText: "原単位",
+        headerText: { ja: "原単位", en: "Unit Consump" },
         widthRatio: 1.1,
         align: "right",
         format: "decimal6",
       },
       {
         id: "cost_per_unit",
-        headerText: "原単価",
+        headerText: { ja: "原単価", en: "Unit Cost" },
         widthRatio: 1.0,
         align: "right",
         format: "decimal2",
@@ -149,7 +165,7 @@ export const departmentCostReportLayout: ReportLayout = {
         subtotal: {
           enabled: true,
           // biome-ignore lint/suspicious/noTemplateCurlyInString: template placeholder
-          labelPattern: "${name} 計",
+          labelPattern: { ja: "${name} 計", en: "${name} Subtotal" },
           aggregations: {
             quantity: "sum",
             unit_price: "blank",
@@ -166,7 +182,7 @@ export const departmentCostReportLayout: ReportLayout = {
         subtotal: {
           enabled: true,
           // biome-ignore lint/suspicious/noTemplateCurlyInString: template placeholder
-          labelPattern: "${name} 計",
+          labelPattern: { ja: "${name} 計", en: "${name} Subtotal" },
           aggregations: {
             quantity: "sum",
             unit_price: "blank",
@@ -190,7 +206,7 @@ export const departmentCostReportLayout: ReportLayout = {
   },
 };
 
-const MOCK_REPORT_LAYOUTS: Record<string, ReportLayout> = {
+const MOCK_REPORT_LAYOUTS: Record<string, ReportLayoutRaw> = {
   "department-cost": departmentCostReportLayout,
 };
 

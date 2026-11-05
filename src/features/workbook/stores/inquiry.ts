@@ -1,12 +1,12 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
-import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import { baseCellValuesAtom } from "./base";
 import { activeColumnConfigsAtom, getLookupValue } from "./binding";
 import { cellEditsAtom } from "./edit";
 import { visibleRowOrderAtom } from "./filter";
 import { parseCellValueToNumber } from "./summary";
+import { sheetTemplatesAtom } from "./templates";
 import {
   type ColumnId,
   createSubtotalRowId,
@@ -51,8 +51,8 @@ export const inquiryCalculationAtom = atom((get) => {
     };
   }
 
-  const metadata = get(workbookMetadataQuery.sync);
-  const template = metadata.templates[activeSheetId];
+  const templates = get(sheetTemplatesAtom);
+  const template = templates[activeSheetId];
   const subtotalConfig = template?.subtotalConfig;
 
   // 編集モード時、または小計設定が無効の場合はそのまま通常表示行を返す

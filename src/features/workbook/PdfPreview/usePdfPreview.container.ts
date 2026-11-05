@@ -1,6 +1,8 @@
 import { useAtom, useSetAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useCurrentLocale } from "@/i18n/context";
 import { reportLayoutQuery } from "../services/reportLayout/reportLayout.query";
+import { localizeReportLayout } from "../services/reportLayout/reportLayout.types";
 import {
   activeSheetIdAtom,
   pdfPreviewTypeAtom,
@@ -23,10 +25,16 @@ export const usePdfPreview = (): PdfPreviewPresenterProps => {
   const [outputMode, setOutputMode] = useState<ReportOutputMode>("all");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const { locale } = useCurrentLocale();
   const [reportLayout] = useAtom(reportLayoutQuery(activeSheetId ?? ""));
   const [records] = useAtom(visibleRecordsAtom);
 
-  const isReportPreview = pdfPreviewType === "report" && Boolean(reportLayout);
+  const localizedReportLayout = useMemo(() => {
+    return reportLayout ? localizeReportLayout(reportLayout, locale) : null;
+  }, [reportLayout, locale]);
+
+  const isReportPreview =
+    pdfPreviewType === "report" && Boolean(localizedReportLayout);
 
   const handleBack = useCallback(() => {
     if (pdfUrl) {
@@ -47,16 +55,20 @@ export const usePdfPreview = (): PdfPreviewPresenterProps => {
 
   const regeneratePdf = useCallback(
     async (mode: ReportOutputMode) => {
-      if (!reportLayout || !records || records.length === 0) return;
+      if (!localizedReportLayout || !records || records.length === 0) return;
       setIsUpdating(true);
       try {
         const includeSummary = mode === "all" || mode === "summary";
         const includeDetails = mode === "all" || mode === "details";
 
-        const { doc } = await generateReportPdf(reportLayout, records, {
-          includeSummary,
-          includeDetails,
-        });
+        const { doc } = await generateReportPdf(
+          localizedReportLayout,
+          records,
+          {
+            includeSummary,
+            includeDetails,
+          },
+        );
         const blob = doc.output("blob");
         const nextUrl = URL.createObjectURL(blob);
         if (pdfUrl) {
@@ -69,7 +81,7 @@ export const usePdfPreview = (): PdfPreviewPresenterProps => {
         setIsUpdating(false);
       }
     },
-    [reportLayout, records, pdfUrl, setPdfUrl],
+    [localizedReportLayout, records, pdfUrl, setPdfUrl],
   );
 
   const handleOutputModeChange = useCallback(
@@ -81,7 +93,7 @@ export const usePdfPreview = (): PdfPreviewPresenterProps => {
   );
 
   const displayName = isReportPreview
-    ? (reportLayout?.name ?? activeSheetId ?? undefined)
+    ? (localizedReportLayout?.name ?? activeSheetId ?? undefined)
     : (activeSheetId ?? undefined);
 
   return {

@@ -1,10 +1,10 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
-import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import { baseCellValuesAtom } from "./base";
 import { activeColumnConfigsAtom, getLookupValue } from "./binding";
 import { cellEditsAtom } from "./edit";
 import { visibleRowOrderAtom } from "./filter";
+import { sheetTemplatesAtom } from "./templates";
 import type { ColumnId, SheetTemplate } from "./types";
 import { activeSheetIdAtom } from "./ui";
 
@@ -34,8 +34,8 @@ export const activeColumnTotalsAtom = atom(
     const activeSheetId = get(activeSheetIdAtom);
     if (!activeSheetId) return {} as Record<ColumnId, boolean>;
 
-    const metadata = get(workbookMetadataQuery.sync);
-    const template = metadata.templates[activeSheetId];
+    const templates = get(sheetTemplatesAtom);
+    const template = templates[activeSheetId];
     const baseTotals = template
       ? buildBaseTotalsFromTemplate(template)
       : ({} as Record<ColumnId, boolean>);

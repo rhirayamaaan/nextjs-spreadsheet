@@ -1,4 +1,6 @@
 import { atom } from "jotai";
+import { localeAtom } from "@/i18n/context";
+import { type Locale, resolveI18nString } from "@/i18n/types";
 import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
 import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
 import {
@@ -17,6 +19,7 @@ export const buildSheetData = (
   sheetId: string,
   template: SheetTemplate,
   records: Record<string, string>[],
+  locale: Locale = "ja",
 ): SheetData => {
   const rows = Array.from({ length: records.length }, (_, i) =>
     createRecordRowId(sheetId, i),
@@ -24,7 +27,7 @@ export const buildSheetData = (
   const cols = template.columns.map((c) => c.field as ColumnId);
   const colNames: Record<ColumnId, string> = {} as Record<ColumnId, string>;
   for (const c of template.columns) {
-    colNames[c.field as ColumnId] = c.headerName;
+    colNames[c.field as ColumnId] = resolveI18nString(c.headerName, locale);
   }
 
   const values = new Proxy({} as Record<string, string>, {
@@ -55,7 +58,7 @@ export const buildSheetData = (
 
   return {
     id: sheetId,
-    name: template.name,
+    name: resolveI18nString(template.name, locale),
     rows,
     cols,
     colNames,
@@ -96,6 +99,7 @@ export const baseColumnOrderAtom = atom<ColumnId[]>((get) => {
  * アクティブシートの雛形カラム定義に基づいた列名マップをオンデマンド生成
  */
 export const baseColumnNamesAtom = atom<Record<ColumnId, string>>((get) => {
+  const locale = get(localeAtom);
   const activeSheetId = get(activeSheetIdAtom);
   if (!activeSheetId) return {} as Record<ColumnId, string>;
 
@@ -105,7 +109,7 @@ export const baseColumnNamesAtom = atom<Record<ColumnId, string>>((get) => {
 
   const names: Record<ColumnId, string> = {} as Record<ColumnId, string>;
   for (const c of template.columns) {
-    names[c.field as ColumnId] = c.headerName;
+    names[c.field as ColumnId] = resolveI18nString(c.headerName, locale);
   }
   return names;
 });

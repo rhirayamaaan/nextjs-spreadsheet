@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
-import { workbookMetadataQuery } from "../services/workbookMetadata/workbookMetadata.query";
+import { sheetTemplatesAtom } from "./templates";
 import type { ColumnId, ColumnValidationRule, SheetTemplate } from "./types";
 import { activeSheetIdAtom } from "./ui";
 
@@ -33,8 +33,8 @@ export const activeColumnValidationsAtom = atom<
   const activeSheetId = get(activeSheetIdAtom);
   if (!activeSheetId) return EMPTY_VALIDATIONS;
 
-  const metadata = get(workbookMetadataQuery.sync);
-  const template = metadata.templates[activeSheetId];
+  const templates = get(sheetTemplatesAtom);
+  const template = templates[activeSheetId];
   const baseValidations = template
     ? buildBaseValidationsFromTemplate(template)
     : EMPTY_VALIDATIONS;

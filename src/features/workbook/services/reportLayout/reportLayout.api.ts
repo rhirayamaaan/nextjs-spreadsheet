@@ -1,14 +1,14 @@
 import { apiClient } from "@/lib/query";
-import type { ReportLayout } from "./reportLayout.types";
+import type { ReportLayoutRaw } from "./reportLayout.types";
 
 export const fetchReportLayout = async (
   sheetId: string,
-): Promise<ReportLayout | null> => {
+): Promise<ReportLayoutRaw | null> => {
   try {
     const data = await apiClient.get<{
       success: boolean;
       sheetId: string;
-      layout: ReportLayout | null;
+      layout: ReportLayoutRaw | null;
     }>(`/api/sheets/${sheetId}/report-layout`);
     return data.layout;
   } catch (_error) {

@@ -2,8 +2,10 @@ import { useAtom, useSetAtom, useStore } from "jotai";
 import jsPDF from "jspdf";
 import autoTable, { type Styles } from "jspdf-autotable";
 import { useCallback, useMemo, useState } from "react";
+import { useCurrentLocale } from "@/i18n/context";
 import { generateReportPdf } from "../PdfPreview/reportPdfGenerator";
 import { reportLayoutQuery } from "../services/reportLayout/reportLayout.query";
+import { localizeReportLayout } from "../services/reportLayout/reportLayout.types";
 import {
   activeColumnConfigsAtom,
   activeSheetIdAtom,
@@ -27,9 +29,14 @@ const initialColumnStyles: Record<string, Partial<Styles>> = {};
 
 export const useExportPdf = () => {
   const store = useStore();
+  const { locale } = useCurrentLocale();
   const [activeSheetId] = useAtom(activeSheetIdAtom);
   const [reportLayout] = useAtom(reportLayoutQuery(activeSheetId ?? ""));
   const [records] = useAtom(visibleRecordsAtom);
+
+  const localizedReportLayout = useMemo(() => {
+    return reportLayout ? localizeReportLayout(reportLayout, locale) : null;
+  }, [reportLayout, locale]);
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingReportPdf, setIsExportingReportPdf] = useState(false);
@@ -184,10 +191,10 @@ export const useExportPdf = () => {
 
   // 2. 帳票PDFプレビュー
   const previewCurrentSheetReportPdf = useCallback(async () => {
-    if (!reportLayout || !records || records.length === 0) return;
+    if (!localizedReportLayout || !records || records.length === 0) return;
     setIsExportingReportPdf(true);
     try {
-      const result = await generateReportPdf(reportLayout, records, {
+      const result = await generateReportPdf(localizedReportLayout, records, {
         includeSummary: true,
         includeDetails: true,
       });
@@ -204,7 +211,13 @@ export const useExportPdf = () => {
     } finally {
       setIsExportingReportPdf(false);
     }
-  }, [reportLayout, records, setPdfPreviewType, setPdfPreviewUrl, setViewMode]);
+  }, [
+    localizedReportLayout,
+    records,
+    setPdfPreviewType,
+    setPdfPreviewUrl,
+    setViewMode,
+  ]);
 
   const hasReportLayout = Boolean(reportLayout);
   const columnNames = store.get(columnNamesAtom);
