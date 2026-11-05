@@ -12,6 +12,12 @@ export const createColumnId = () => ColumnIdSchema.parse(crypto.randomUUID());
 export const createRecordRowId = (sheetId: string, index: number): RowId =>
   RowIdSchema.parse(`${sheetId}-r${index}`);
 
+export const createSubtotalRowId = (groupId: string): RowId =>
+  RowIdSchema.parse(`subtotal-${groupId}`);
+
+export const isSubtotalRowId = (rowId: RowId): boolean =>
+  rowId.startsWith("subtotal-");
+
 export const parseRowIndex = (rowId: RowId, sheetId: string): number | null => {
   const prefix = `${sheetId}-r`;
   if (rowId.startsWith(prefix)) {
@@ -192,6 +198,22 @@ export type SheetCategory = {
   description?: string;
 };
 
+export type SheetMode = "edit" | "inquiry";
+
+export type SubtotalAggregationType = "sum" | "avg" | "blank";
+
+export type SubtotalConfig = {
+  enabled: boolean;
+  /** グルーピングのキーとなるフィールド一覧（「年度」から「受払区分」まで） */
+  groupByKeys: string[];
+  /** 小計ラベル（例: （計））を表示するカラムのfield */
+  labelField: string;
+  /** 小計行に表示するラベル文字列 (デフォルト: "（計）") */
+  labelPattern?: string;
+  /** 各数値列の集計種別 ("sum" | "blank") */
+  aggregations: Record<string, SubtotalAggregationType>;
+};
+
 export type SheetTemplate = {
   id: string;
   name: string;
@@ -200,4 +222,5 @@ export type SheetTemplate = {
   isFavorite?: boolean;
   columns: ColumnTemplate[];
   defaultRowCount?: number;
+  subtotalConfig?: SubtotalConfig;
 };

@@ -23,18 +23,20 @@ import {
   activeCellAtom,
   activeColumnConfigsAtom,
   activeSheetIdAtom,
+  activeSheetModeAtom,
   type ColumnId,
   clearSelectedCellsAtom,
   columnNamesAtom,
   columnOrderAtom,
   columnWidthOverridesAtom,
+  displayRowOrderAtom,
   hasActiveColumnTotalsAtom,
+  isSubtotalRowId,
   moveSelectionAtom,
   pasteRowsAtom,
   reorderColumnsWithFollowersAtom,
   selectionAtom,
   sortableColumnOrderAtom,
-  visibleRowOrderAtom,
   workbookStatusAtom,
 } from "../stores";
 
@@ -53,7 +55,8 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
     columnWidthOverridesAtom,
   );
 
-  const visibleRowOrder = useAtomValue(visibleRowOrderAtom);
+  const displayRowOrder = useAtomValue(displayRowOrderAtom);
+  const sheetMode = useAtomValue(activeSheetModeAtom);
   const columnOrder = useAtomValue(columnOrderAtom);
   const sortableColumnOrder = useAtomValue(sortableColumnOrderAtom);
 
@@ -94,11 +97,11 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
   }, [activeSheetId]);
 
   const rowVirtualizer = useVirtualizer({
-    count: visibleRowOrder.length,
+    count: displayRowOrder.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 35,
     overscan: 10,
-    getItemKey: (index) => visibleRowOrder[index],
+    getItemKey: (index) => displayRowOrder[index],
   });
 
   const columnVirtualizer = useVirtualizer({
@@ -152,6 +155,8 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
+      if (sheetMode === "inquiry") return;
+
       const activeElement = document.activeElement;
       const isInput =
         activeElement instanceof HTMLElement &&
@@ -178,7 +183,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
     return () => {
       window.removeEventListener("paste", handlePaste);
     };
-  }, [pasteRows]);
+  }, [pasteRows, sheetMode]);
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -192,14 +197,14 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
 
   const getRowLayout = useCallback(
     (index: number) => {
-      if (index < 0 || index >= visibleRowOrder.length) return undefined;
+      if (index < 0 || index >= displayRowOrder.length) return undefined;
       const item = rowVirtualizer.measurementsCache[index];
       if (item) {
         return { start: item.start, size: item.size };
       }
       return { start: index * 35, size: 35 };
     },
-    [rowVirtualizer, visibleRowOrder.length],
+    [rowVirtualizer, displayRowOrder.length],
   );
 
   const getColumnLayout = useCallback(
@@ -327,7 +332,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
           const nextRow = Math.max(
             0,
             Math.min(
-              visibleRowOrder.length - 1,
+              displayRowOrder.length - 1,
               selection.start.row + deltaRow,
             ),
           );
@@ -349,7 +354,10 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
       }
 
       const startEditableCell = (initialValue: string) => {
+        if (sheetMode === "inquiry") return false;
         const { row, col } = selection.start;
+        const rowId = displayRowOrder[row];
+        if (!rowId || isSubtotalRowId(rowId)) return false;
         const colId = columnOrder[col];
         if (!colId) return false;
         const config = activeColumnConfigs[colId];
@@ -377,7 +385,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
         const base = extend ? selection.end : selection.start;
         const nextRow = Math.max(
           0,
-          Math.min(visibleRowOrder.length - 1, base.row + deltaRow),
+          Math.min(displayRowOrder.length - 1, base.row + deltaRow),
         );
         const nextCol = Math.max(
           0,
@@ -414,6 +422,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
           return;
         case "Delete":
         case "Backspace":
+          if (sheetMode === "inquiry") return;
           event.preventDefault();
           clearSelectedCells();
           return;
@@ -436,9 +445,10 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
     [
       activeCell,
       selection,
-      visibleRowOrder.length,
+      displayRowOrder,
       columnOrder,
       activeColumnConfigs,
+      sheetMode,
       setActiveCell,
       moveSelection,
       clearSelectedCells,

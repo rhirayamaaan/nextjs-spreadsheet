@@ -5,17 +5,26 @@ import {
   HamburgerMenuIcon,
   ReaderIcon,
 } from "@radix-ui/react-icons";
-import { Button, Flex, Select, TextField } from "@radix-ui/themes";
+import {
+  Button,
+  Flex,
+  SegmentedControl,
+  Select,
+  TextField,
+} from "@radix-ui/themes";
 import { type FC, useCallback } from "react";
 import { useCurrentLocale } from "@/i18n/context";
 import { useI18n } from "@/i18n/useI18n";
 import { isLocale } from "@/i18n/utils";
+import type { SheetMode } from "../stores/types";
 import { toolbarMessages } from "./i18n";
 import styles from "./Toolbar.module.css";
 
 export type ToolbarPresenterProps = {
   sheetName?: string;
   hasActiveSheet?: boolean;
+  sheetMode?: SheetMode;
+  onModeChange?: (mode: SheetMode) => void;
   onExport: () => void | Promise<void>;
   onPreviewPdf: () => void | Promise<void>;
   onPreviewReportPdf?: () => void | Promise<void>;
@@ -32,6 +41,8 @@ export type ToolbarPresenterProps = {
 export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
   sheetName,
   hasActiveSheet,
+  sheetMode = "edit",
+  onModeChange,
   onExport,
   onPreviewPdf,
   onPreviewReportPdf,
@@ -116,6 +127,20 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
       </Button>
       <TextField.Root placeholder={t("search")}></TextField.Root>
       <Flex align="center" gap="2" style={{ marginLeft: "auto" }}>
+        {onModeChange && (
+          <SegmentedControl.Root
+            value={sheetMode}
+            onValueChange={(val) => onModeChange(val as SheetMode)}
+            size="2"
+          >
+            <SegmentedControl.Item value="edit">
+              {t("modeEdit")}
+            </SegmentedControl.Item>
+            <SegmentedControl.Item value="inquiry">
+              {t("modeInquiry")}
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+        )}
         <Select.Root
           value={locale}
           disabled={isPending}
@@ -127,7 +152,7 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
             <Select.Item value="en">English</Select.Item>
           </Select.Content>
         </Select.Root>
-        {onSave && (
+        {onSave && sheetMode !== "inquiry" && (
           <Button
             type="button"
             onClick={onSave}

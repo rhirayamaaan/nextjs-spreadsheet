@@ -48,6 +48,21 @@
   text-overflow: ellipsis;
 }
 
+.cell__content--center {
+  text-align: center;
+}
+
+.cell--readonly {
+  cursor: default;
+}
+
+.cell--subtotal {
+  background-color: var(--gray-3);
+  color: var(--gray-12);
+  font-weight: 600;
+  cursor: default;
+}
+
 .cell--lookup {
   background-color: var(--gray-3);
   color: var(--gray-11);

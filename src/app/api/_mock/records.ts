@@ -1,3 +1,12 @@
+import {
+  MOCK_ACCOUNT_CATEGORIES,
+  MOCK_COST_STANDARDS,
+  MOCK_RECEIPT_DEPARTMENTS,
+  MOCK_RECEIPT_PAYMENT_CATEGORIES,
+  MOCK_RECEIPT_PAYMENT_ITEMS,
+  MOCK_RECEIPT_PAYMENT_RECORDS,
+} from "./receiptPaymentRecords";
+
 const MOCK_TYPES = ["TYPE-A", "TYPE-B", "TYPE-C", "TYPE-D", "TYPE-E", "TYPE-F"];
 
 const MOCK_CATEGORIES = [
@@ -618,6 +627,30 @@ export const fetchMockSheetRecords = (
       code: e.code,
       name: e.name,
     }));
+  }
+
+  if (sheetId === "account-category-master") {
+    return MOCK_ACCOUNT_CATEGORIES;
+  }
+
+  if (sheetId === "receipt-department-master") {
+    return MOCK_RECEIPT_DEPARTMENTS;
+  }
+
+  if (sheetId === "cost-standard-master") {
+    return MOCK_COST_STANDARDS;
+  }
+
+  if (sheetId === "receipt-payment-category-master") {
+    return MOCK_RECEIPT_PAYMENT_CATEGORIES;
+  }
+
+  if (sheetId === "receipt-payment-item-master") {
+    return MOCK_RECEIPT_PAYMENT_ITEMS;
+  }
+
+  if (sheetId === "receipt-payment-info") {
+    return MOCK_RECEIPT_PAYMENT_RECORDS;
   }
 
   // デフォルトフォールバック（新規シート用）

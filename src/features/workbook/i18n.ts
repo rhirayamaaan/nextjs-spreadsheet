@@ -20,6 +20,7 @@ export const localMessages = {
     saveErrorMessage: "シートの保存中にエラーが発生しました。",
     loadingWorkbook: "スプレッドシートを読み込み中...",
     loadingSheet: "シートデータを読み込み中...",
+    subtotal: "（計）",
   },
   en: {
     exportExcel: "Export to Excel",
@@ -42,5 +43,6 @@ export const localMessages = {
     saveErrorMessage: "An error occurred while saving the sheet.",
     loadingWorkbook: "Loading spreadsheet...",
     loadingSheet: "Loading sheet data...",
+    subtotal: "(Total)",
   },
 } as const;

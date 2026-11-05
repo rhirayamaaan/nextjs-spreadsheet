@@ -7,6 +7,7 @@ import { Tooltip } from "@radix-ui/themes";
 import clsx from "clsx";
 import type { FC, MouseEvent } from "react";
 import { useI18n } from "@/i18n/useI18n";
+import { localMessages } from "../i18n";
 import type {
   CellStatus,
   DateTimeFormat,
@@ -33,6 +34,8 @@ export type CellPresenterProps = {
   errorInfo?: ValidationErrorInfo;
   isEditing: boolean;
   isLookup?: boolean;
+  isReadOnly?: boolean;
+  isSubtotal?: boolean;
   isPulldown?: boolean;
   isDatetime?: boolean;
   datetimeFormat?: DateTimeFormat;
@@ -68,6 +71,8 @@ export const CellPresenter: FC<CellPresenterProps> = ({
   errorInfo,
   isEditing,
   isLookup,
+  isReadOnly,
+  isSubtotal,
   isPulldown,
   isDatetime,
   datetimeFormat,
@@ -79,12 +84,21 @@ export const CellPresenter: FC<CellPresenterProps> = ({
   onMouseDown,
   onMouseEnter,
 }) => {
-  const { t } = useI18n();
-  const handleDoubleClick = isLookup ? undefined : onDoubleClick;
+  const { t } = useI18n(localMessages);
+  const handleDoubleClick =
+    isLookup || isReadOnly || isSubtotal ? undefined : onDoubleClick;
 
   const resolvedErrorMessage = errorInfo
     ? t(validationMessageKeyMap[errorInfo.key], errorInfo.params)
     : statusMessage;
+
+  const isSubtotalLabel =
+    isSubtotal &&
+    (value === "（計）" ||
+      value === "(Total)" ||
+      value === "(Subtotal)" ||
+      value === "subtotal");
+  const displayValue = isSubtotalLabel ? t("subtotal") : value;
 
   const editorInitialValue = editingInitialValue ?? value;
 
@@ -100,7 +114,9 @@ export const CellPresenter: FC<CellPresenterProps> = ({
         status === "edited" && styles["cell--edited"],
         status === "error" && styles["cell--error"],
         isLookup && styles["cell--lookup"],
-        isPulldown && styles["cell--pulldown"],
+        isSubtotal && styles["cell--subtotal"],
+        isReadOnly && !isSubtotal && !isLookup && styles["cell--readonly"],
+        isPulldown && !isReadOnly && !isSubtotal && styles["cell--pulldown"],
       )}
     >
       {isEditing &&
@@ -124,7 +140,7 @@ export const CellPresenter: FC<CellPresenterProps> = ({
           onCommit={onCommit}
           onCancel={onCancel ?? (() => {})}
         />
-      ) : isEditing && !isLookup && onCommit ? (
+      ) : isEditing && !isLookup && !isReadOnly && onCommit ? (
         <CellInputEditorPresenter
           key={`${editorInitialValue}`}
           initialValue={editorInitialValue}
@@ -133,7 +149,14 @@ export const CellPresenter: FC<CellPresenterProps> = ({
         />
       ) : (
         <>
-          <span className={styles.cell__content}>{value}</span>
+          <span
+            className={clsx(
+              styles.cell__content,
+              isSubtotalLabel && styles["cell__content--center"],
+            )}
+          >
+            {displayValue}
+          </span>
           {status === "error" && resolvedErrorMessage && (
             <Tooltip content={resolvedErrorMessage}>
               <span className={styles.cell__errorIndicator}>
@@ -141,12 +164,12 @@ export const CellPresenter: FC<CellPresenterProps> = ({
               </span>
             </Tooltip>
           )}
-          {isPulldown && (
+          {isPulldown && !isReadOnly && !isSubtotal && (
             <span className={styles.cell__pulldownIndicator}>
               <CaretDownIcon width={12} height={12} />
             </span>
           )}
-          {isDatetime && (
+          {isDatetime && !isReadOnly && !isSubtotal && (
             <span className={styles.cell__pulldownIndicator}>
               <CalendarIcon width={12} height={12} />
             </span>

@@ -752,6 +752,537 @@ export const departmentCostTemplate: SheetTemplate = {
   ],
 };
 
+export const accountCategoryTemplate: SheetTemplate = {
+  id: "account-category-master",
+  name: "勘定区分マスタ",
+  category: "master",
+  description: "原材料、部品等の勘定区分マスタ",
+  isFavorite: false,
+  defaultRowCount: 2,
+  columns: [
+    {
+      field: "code",
+      headerName: "勘定区分コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 120,
+      align: "center",
+    },
+    {
+      field: "name",
+      headerName: "勘定区分名称",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 160,
+      align: "left",
+    },
+  ],
+};
+
+export const receiptDepartmentTemplate: SheetTemplate = {
+  id: "receipt-department-master",
+  name: "受払部門マスタ",
+  category: "master",
+  description: "受払部門のマスタシート",
+  isFavorite: false,
+  defaultRowCount: 4,
+  columns: [
+    {
+      field: "code",
+      headerName: "受払部門コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 120,
+      align: "center",
+    },
+    {
+      field: "name",
+      headerName: "受払部門名称",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 180,
+      align: "left",
+    },
+  ],
+};
+
+export const costStandardTemplate: SheetTemplate = {
+  id: "cost-standard-master",
+  name: "原価規格マスタ",
+  category: "master",
+  description: "ペレット、部品等の原価規格マスタシート",
+  isFavorite: false,
+  defaultRowCount: 50,
+  columns: [
+    {
+      field: "code",
+      headerName: "原価規格コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 120,
+      align: "center",
+    },
+    {
+      field: "name",
+      headerName: "原価規格名称",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 180,
+      align: "left",
+    },
+  ],
+};
+
+export const receiptPaymentCategoryTemplate: SheetTemplate = {
+  id: "receipt-payment-category-master",
+  name: "受払区分マスタ",
+  category: "master",
+  description: "前月残高、受入、払出、当月残高等の受払区分マスタ",
+  isFavorite: false,
+  defaultRowCount: 4,
+  columns: [
+    {
+      field: "code",
+      headerName: "受払区分コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 120,
+      align: "center",
+    },
+    {
+      field: "name",
+      headerName: "受払区分名称",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 160,
+      align: "left",
+    },
+  ],
+};
+
+export const receiptPaymentItemTemplate: SheetTemplate = {
+  id: "receipt-payment-item-master",
+  name: "受払項目マスタ",
+  category: "master",
+  description: "購入、仕掛品へ払出等の受払項目マスタ",
+  isFavorite: false,
+  defaultRowCount: 10,
+  columns: [
+    {
+      field: "code",
+      headerName: "受払項目コード",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 120,
+      align: "center",
+    },
+    {
+      field: "name",
+      headerName: "受払項目名称",
+      type: { type: "text" },
+      validations: [{ type: "required" }],
+      width: 180,
+      align: "left",
+    },
+  ],
+};
+
+export const receiptPaymentTemplate: SheetTemplate = {
+  id: "receipt-payment-info",
+  name: "受払情報",
+  category: "planning",
+  description: "原材料・部品等の受払実績および小計照会シート",
+  isFavorite: true,
+  defaultRowCount: 140,
+  subtotalConfig: {
+    enabled: true,
+    groupByKeys: [
+      "year",
+      "year_month",
+      "accounting_unit_code",
+      "office_code",
+      "account_category_code",
+      "department_code",
+      "cost_standard_code",
+      "receipt_payment_category_code",
+    ],
+    labelField: "receipt_payment_item_name",
+    labelPattern: "（計）",
+    aggregations: {
+      quantity: "sum",
+      moving_average_cost_amount: "sum",
+      amount: "sum",
+      variable_cost_amount: "sum",
+    },
+  },
+  columns: [
+    {
+      field: "year",
+      headerName: "年度",
+      type: { type: "datetime", format: "yyyy" },
+      validations: [{ type: "required" }, { type: "datetime", format: "yyyy" }],
+      width: 80,
+      align: "center",
+    },
+    {
+      field: "year_month",
+      headerName: "年月",
+      type: { type: "datetime", format: "yyyy-MM" },
+      validations: [
+        { type: "required" },
+        { type: "datetime", format: "yyyy-MM" },
+      ],
+      width: 90,
+      align: "center",
+    },
+    {
+      field: "accounting_unit_code",
+      headerName: "会計単位",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "accounting-unit-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "accounting_unit_name",
+            headerName: "会計単位名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 85,
+      align: "center",
+    },
+    {
+      field: "accounting_unit_name",
+      headerName: "会計単位名",
+      type: {
+        type: "lookup",
+        parentField: "accounting_unit_code",
+        sourceTemplateId: "accounting-unit-master",
+        sourceField: "name",
+      },
+      width: 120,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "office_code",
+      headerName: "事業所",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "office-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "office_name",
+            headerName: "事業所名称",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 75,
+      align: "center",
+    },
+    {
+      field: "office_name",
+      headerName: "事業所名称",
+      type: {
+        type: "lookup",
+        parentField: "office_code",
+        sourceTemplateId: "office-master",
+        sourceField: "name",
+      },
+      width: 110,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "account_category_code",
+      headerName: "勘定区分",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "account-category-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "account_category_name",
+            headerName: "勘定区分名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 80,
+      align: "center",
+    },
+    {
+      field: "account_category_name",
+      headerName: "勘定区分名",
+      type: {
+        type: "lookup",
+        parentField: "account_category_code",
+        sourceTemplateId: "account-category-master",
+        sourceField: "name",
+      },
+      width: 100,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "department_code",
+      headerName: "受払部門",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "receipt-department-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "department_name",
+            headerName: "受払部門名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 90,
+      align: "center",
+    },
+    {
+      field: "department_name",
+      headerName: "受払部門名",
+      type: {
+        type: "lookup",
+        parentField: "department_code",
+        sourceTemplateId: "receipt-department-master",
+        sourceField: "name",
+      },
+      width: 130,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "cost_standard_code",
+      headerName: "原価規格",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "cost-standard-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "cost_standard_name",
+            headerName: "原価規格名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 90,
+      align: "center",
+    },
+    {
+      field: "cost_standard_name",
+      headerName: "原価規格名",
+      type: {
+        type: "lookup",
+        parentField: "cost_standard_code",
+        sourceTemplateId: "cost-standard-master",
+        sourceField: "name",
+      },
+      width: 130,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "receipt_payment_category_code",
+      headerName: "受払区分",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "receipt-payment-category-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "receipt_payment_category_name",
+            headerName: "受払区分名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 80,
+      align: "center",
+    },
+    {
+      field: "receipt_payment_category_name",
+      headerName: "受払区分名",
+      type: {
+        type: "lookup",
+        parentField: "receipt_payment_category_code",
+        sourceTemplateId: "receipt-payment-category-master",
+        sourceField: "name",
+      },
+      width: 95,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "receipt_payment_item_code",
+      headerName: "受払項目",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "receipt-payment-item-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "receipt_payment_item_name",
+            headerName: "受払項目名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 85,
+      align: "center",
+    },
+    {
+      field: "receipt_payment_item_name",
+      headerName: "受払項目名",
+      type: {
+        type: "lookup",
+        parentField: "receipt_payment_item_code",
+        sourceTemplateId: "receipt-payment-item-master",
+        sourceField: "name",
+      },
+      width: 120,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "quantity",
+      headerName: "数量",
+      type: { type: "number", format: "decimal" },
+      width: 130,
+      align: "right",
+    },
+    {
+      field: "unit_code",
+      headerName: "単位",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "unit-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "unit_name",
+            headerName: "単位名",
+            sourceField: "name",
+          },
+        ],
+      },
+      validations: [{ type: "required" }, { type: "reference" }],
+      width: 65,
+      align: "center",
+    },
+    {
+      field: "unit_name",
+      headerName: "単位名",
+      type: {
+        type: "lookup",
+        parentField: "unit_code",
+        sourceTemplateId: "unit-master",
+        sourceField: "name",
+      },
+      width: 85,
+      readOnly: true,
+      align: "left",
+    },
+    {
+      field: "moving_average_cost",
+      headerName: "移動平均原価",
+      type: { type: "number", format: "decimal" },
+      width: 110,
+      align: "right",
+    },
+    {
+      field: "unit_price",
+      headerName: "単価",
+      type: { type: "number", format: "decimal" },
+      width: 90,
+      align: "right",
+    },
+    {
+      field: "moving_average_cost_amount",
+      headerName: "移動平均原価金額",
+      type: { type: "number", format: "integer" },
+      width: 140,
+      align: "right",
+    },
+    {
+      field: "amount",
+      headerName: "金額",
+      type: { type: "number", format: "integer" },
+      width: 120,
+      align: "right",
+    },
+    {
+      field: "variable_cost_unit_price",
+      headerName: "変動費単価",
+      type: { type: "number", format: "decimal" },
+      width: 100,
+      align: "right",
+    },
+    {
+      field: "variable_cost_amount",
+      headerName: "変動費金額",
+      type: { type: "number", format: "integer" },
+      width: 120,
+      align: "right",
+    },
+    {
+      field: "counterpart_accounting_unit_code",
+      headerName: "相手会計単位",
+      type: {
+        type: "pulldown",
+        mode: "combobox",
+        sourceTemplateId: "accounting-unit-master",
+        sourceKeyField: "code",
+        lookupFields: [
+          {
+            field: "counterpart_accounting_unit_name",
+            headerName: "相手会計単位名",
+            sourceField: "name",
+          },
+        ],
+      },
+      width: 100,
+      align: "center",
+    },
+    {
+      field: "counterpart_accounting_unit_name",
+      headerName: "相手会計単位名",
+      type: {
+        type: "lookup",
+        parentField: "counterpart_accounting_unit_code",
+        sourceTemplateId: "accounting-unit-master",
+        sourceField: "name",
+      },
+      width: 120,
+      readOnly: true,
+      align: "left",
+    },
+  ],
+};
+
 export const MOCK_SHEET_TEMPLATES: Record<string, SheetTemplate> = {
   [productionVolumeTemplate.id]: productionVolumeTemplate,
   [accountingUnitTemplate.id]: accountingUnitTemplate,
@@ -762,9 +1293,16 @@ export const MOCK_SHEET_TEMPLATES: Record<string, SheetTemplate> = {
   [majorExpenseTemplate.id]: majorExpenseTemplate,
   [expenseTemplate.id]: expenseTemplate,
   [departmentCostTemplate.id]: departmentCostTemplate,
+  [accountCategoryTemplate.id]: accountCategoryTemplate,
+  [receiptDepartmentTemplate.id]: receiptDepartmentTemplate,
+  [costStandardTemplate.id]: costStandardTemplate,
+  [receiptPaymentCategoryTemplate.id]: receiptPaymentCategoryTemplate,
+  [receiptPaymentItemTemplate.id]: receiptPaymentItemTemplate,
+  [receiptPaymentTemplate.id]: receiptPaymentTemplate,
 };
 
 export const MOCK_INITIAL_OPEN_SHEET_IDS: string[] = [
+  receiptPaymentTemplate.id,
   departmentCostTemplate.id,
 ];
 

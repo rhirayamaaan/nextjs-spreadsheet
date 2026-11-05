@@ -10,6 +10,7 @@ import {
 import {
   activeCellAtom,
   activeColumnConfigFamily,
+  activeSheetModeAtom,
   baseCellValuesAtom,
   type ColumnConfig,
   type ColumnId,
@@ -19,6 +20,7 @@ import {
   cellStatusFamily,
   columnOrderAtom,
   isCellEditingFamily,
+  isSubtotalRowId,
   type MoveDirection,
   moveSelectionAtom,
   type RowId,
@@ -137,17 +139,21 @@ const CellInner: FC<InnerProps> = memo(
     const config = useAtomValue(
       useMemo(() => activeColumnConfigFamily(colId), [colId]),
     );
+    const sheetMode = useAtomValue(activeSheetModeAtom);
 
-    const isLookup = config.type === "lookup" || Boolean(config.readOnly);
+    const isSubtotal = isSubtotalRowId(rowId);
+    const isLookup = config.type === "lookup";
+    const isReadOnly =
+      Boolean(config.readOnly) || sheetMode === "inquiry" || isSubtotal;
     const isPulldown = config.type === "pulldown";
     const isDatetimePicker = config.type === "datetime";
     const datetimeFormat = isDatetimePicker ? config.format : undefined;
     const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
 
     const handleDoubleClick = useCallback(() => {
-      if (isLookup) return;
+      if (isLookup || isReadOnly || isSubtotal) return;
       setEditingCell({ row, col });
-    }, [isLookup, row, col, setEditingCell]);
+    }, [isLookup, isReadOnly, isSubtotal, row, col, setEditingCell]);
 
     const handleCommit = useCallback(
       (newVal: string, move?: MoveDirection) => {
@@ -231,6 +237,8 @@ const CellInner: FC<InnerProps> = memo(
           errorInfo: isEditing ? undefined : cellStatusInfo.errorInfo,
           isEditing,
           isLookup,
+          isReadOnly,
+          isSubtotal,
           isPulldown,
           isDatetime: isDatetimePicker,
           datetimeFormat,
@@ -249,6 +257,8 @@ const CellInner: FC<InnerProps> = memo(
         isEditing,
         cellStatusInfo,
         isLookup,
+        isReadOnly,
+        isSubtotal,
         isPulldown,
         isDatetimePicker,
         datetimeFormat,

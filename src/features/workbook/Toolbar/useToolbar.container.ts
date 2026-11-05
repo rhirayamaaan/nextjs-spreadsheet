@@ -1,4 +1,6 @@
+import { useAtom } from "jotai";
 import { useI18n } from "@/i18n/useI18n";
+import { activeSheetModeAtom } from "../stores";
 import { toolbarMessages } from "./i18n";
 import type { ToolbarPresenterProps } from "./Toolbar.presenter";
 import { useExportExcel } from "./useExportExcel.container";
@@ -20,6 +22,7 @@ export const useToolbar = ({
   isSaving,
 }: UseToolbarParams): ToolbarPresenterProps => {
   const { t } = useI18n(toolbarMessages);
+  const [sheetMode, setSheetMode] = useAtom(activeSheetModeAtom);
   const { exportCurrentSheet, isExporting: isExportingExcel } =
     useExportExcel();
   const {
@@ -46,6 +49,8 @@ export const useToolbar = ({
   return {
     sheetName,
     hasActiveSheet,
+    sheetMode,
+    onModeChange: setSheetMode,
     onExport: exportCurrentSheet,
     onPreviewPdf: previewCurrentSheetPdf,
     onPreviewReportPdf: previewCurrentSheetReportPdf,

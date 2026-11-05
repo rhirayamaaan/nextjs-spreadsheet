@@ -67,19 +67,37 @@ const RowActionMenu: FC<{
 export type RowStatusPresenterProps = {
   status: RowStatusType;
   popoverId?: string;
+  isSubtotal?: boolean;
+  isReadOnly?: boolean;
   onInsertRow: (position: InsertPosition) => void;
   onDeleteRow: () => void;
 };
 
 export const RowStatusPresenter: FC<RowStatusPresenterProps> = ({
   status,
+  isSubtotal,
+  isReadOnly,
   onInsertRow,
   onDeleteRow,
 }) => {
+  if (isSubtotal) {
+    return (
+      <Flex
+        align="center"
+        justify="center"
+        width="100%"
+        height="100%"
+        style={{ backgroundColor: "var(--gray-3)" }}
+      />
+    );
+  }
+
   return (
     <Flex align="center" width="100%" height="100%">
       <RowStatusMarker status={status} />
-      <RowActionMenu onInsertRow={onInsertRow} onDeleteRow={onDeleteRow} />
+      {!isReadOnly && (
+        <RowActionMenu onInsertRow={onInsertRow} onDeleteRow={onDeleteRow} />
+      )}
     </Flex>
   );
 };

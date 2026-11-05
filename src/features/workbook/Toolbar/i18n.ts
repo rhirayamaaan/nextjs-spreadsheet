@@ -15,6 +15,8 @@ export const toolbarMessages = {
     openSheetMenu: "シートメニューを開く",
     save: "保存",
     saving: "保存中...",
+    modeEdit: "編集",
+    modeInquiry: "照会",
   },
   en: {
     exportExcel: "Export to Excel",
@@ -32,5 +34,7 @@ export const toolbarMessages = {
     openSheetMenu: "Open sheet menu",
     save: "Save",
     saving: "Saving...",
+    modeEdit: "Edit",
+    modeInquiry: "Inquiry",
   },
 } as const;

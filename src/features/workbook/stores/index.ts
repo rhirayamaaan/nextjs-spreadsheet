@@ -4,6 +4,7 @@ export * from "./binding";
 export * from "./derived";
 export * from "./edit";
 export * from "./filter";
+export * from "./inquiry";
 export * from "./summary";
 export * from "./templates";
 export * from "./types";

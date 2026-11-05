@@ -24,10 +24,12 @@ import {
   modifiedRowOrdersAtom,
   rowStatusesAtom,
 } from "./edit";
+import { subtotalCellValueFamily } from "./inquiry";
 import {
   type CellAddress,
   type CellStatusInfo,
   type ColumnId,
+  isSubtotalRowId,
   parseRowIndex,
   type RowId,
 } from "./types";
@@ -142,6 +144,11 @@ export const cellFamily = atomFamily(
 
     return atom(
       (get) => {
+        // 小計行セルの場合は subtotalCellValueFamily から値を取得
+        if (isSubtotalRowId(address.rowId)) {
+          return get(subtotalCellValueFamily(address));
+        }
+
         // If column is a lookup column, resolve dynamically from master sheet
         const configs = get(activeColumnConfigsAtom);
         const colConfig = configs[address.colId];
@@ -171,6 +178,11 @@ export const cellFamily = atomFamily(
         return get(baseCellValuesAtom)[key] ?? ""; // 未編集なら初期データから取得
       },
       (get, set, newValue: string) => {
+        // 小計行は編集不可
+        if (isSubtotalRowId(address.rowId)) {
+          return;
+        }
+
         // Lookup or readOnly column is read-only
         const configs = get(activeColumnConfigsAtom);
         const colConfig = configs[address.colId];
@@ -237,6 +249,11 @@ export const cellStatusFamily = atomFamily(
 
     return atom(
       (get): CellStatusInfo => {
+        // 小計行はバリデーション検証不要（ステータスなし）
+        if (isSubtotalRowId(address.rowId)) {
+          return { status: "none" };
+        }
+
         // 1. バリデーションエラーや明示的なカスタムステータスを優先
         const customStatuses = get(cellCustomStatusesAtom);
         if (customStatuses[key] && customStatuses[key].status !== "none") {
