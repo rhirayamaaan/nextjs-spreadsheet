@@ -77,6 +77,7 @@ export type ValidationErrorKey =
   | "reference"
   | "referenceRelation"
   | "datetime"
+  | "unique"
   | "invalid";
 
 export type ValidationErrorInfo = {
@@ -157,7 +158,8 @@ export type ColumnValidationRule =
   | { type: "maxLength"; length: number }
   | { type: "minLength"; length: number }
   | { type: "reference" }
-  | { type: "datetime"; format: DateTimeFormat };
+  | { type: "datetime"; format: DateTimeFormat }
+  | { type: "unique" };
 
 export type ColumnTemplateType =
   | { type: "text" }

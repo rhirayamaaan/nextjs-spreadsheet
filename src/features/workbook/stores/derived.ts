@@ -243,6 +243,58 @@ export const cellFamily = atomFamily(
   (a, b) => a.rowId === b.rowId && a.colId === b.colId,
 );
 
+const EMPTY_SET = new Set<string>();
+
+const areSetsEqual = (a: Set<string>, b: Set<string>): boolean => {
+  if (a.size !== b.size) return false;
+  for (const item of a) {
+    if (!b.has(item)) return false;
+  }
+  return true;
+};
+
+const columnDuplicatesCache = new Map<ColumnId, Set<string>>();
+
+export const columnDuplicateValuesFamily = atomFamily(
+  (colId: ColumnId) =>
+    atom((get) => {
+      const validations = get(activeColumnValidationsAtom)[colId];
+      if (!validations?.some((r) => r.type === "unique")) {
+        return EMPTY_SET;
+      }
+
+      const rowOrder = get(rowOrderAtom);
+      const edits = get(cellEditsAtom);
+      const baseValues = get(baseCellValuesAtom);
+      const rowStatuses = get(rowStatusesAtom);
+
+      const seen = new Set<string>();
+      const duplicates = new Set<string>();
+
+      for (const rowId of rowOrder) {
+        if (isSubtotalRowId(rowId) || rowStatuses[rowId] === "deleted")
+          continue;
+        const key = `${rowId}-${colId}`;
+        const val = key in edits ? edits[key] : (baseValues[key] ?? "");
+        if (val.trim() === "") continue;
+
+        if (seen.has(val)) {
+          duplicates.add(val);
+        } else {
+          seen.add(val);
+        }
+      }
+
+      const prev = columnDuplicatesCache.get(colId);
+      if (prev && areSetsEqual(prev, duplicates)) {
+        return prev;
+      }
+      columnDuplicatesCache.set(colId, duplicates);
+      return duplicates;
+    }),
+  (a, b) => a === b,
+);
+
 export const cellStatusFamily = atomFamily(
   (address: CellAddress) => {
     const key = `${address.rowId}-${address.colId}` as const;
@@ -293,6 +345,11 @@ export const cellStatusFamily = atomFamily(
           colNames,
         );
 
+        const hasUniqueRule = validations?.some((r) => r.type === "unique");
+        const duplicateValues = hasUniqueRule
+          ? get(columnDuplicateValuesFamily(address.colId))
+          : undefined;
+
         const validationResult = validateCellRules(validations, cellValue, {
           pulldownConfig,
           masterSheetData,
@@ -300,6 +357,7 @@ export const cellStatusFamily = atomFamily(
           parentColValue,
           parentColName,
           targetColName,
+          duplicateValues,
         });
 
         if (!validationResult.valid) {

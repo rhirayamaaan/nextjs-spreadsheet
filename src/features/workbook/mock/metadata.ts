@@ -261,7 +261,11 @@ export const officeTemplate: SheetTemplate = {
       field: "code",
       headerName: "事業所コード",
       type: { type: "text" },
-      validations: [{ type: "required" }, { type: "alphanumeric" }],
+      validations: [
+        { type: "required" },
+        { type: "alphanumeric" },
+        { type: "unique" },
+      ],
       width: 140,
       align: "left",
     },

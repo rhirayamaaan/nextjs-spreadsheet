@@ -45,7 +45,7 @@ export const isValidDateTime = (
  * 高速ルール検証（15万セルを数ミリ秒で判定するため Zod インスタンス生成をバイパス）
  */
 export const checkRuleValid = (
-  rule: Exclude<ColumnValidationRule, { type: "reference" }>,
+  rule: Exclude<ColumnValidationRule, { type: "reference" | "unique" }>,
   value: string,
 ): boolean => {
   switch (rule.type) {
@@ -89,7 +89,7 @@ export const checkRuleValid = (
  * 各単一バリデーションルールを Zod スキーマへマッピング
  */
 export const ruleToZodSchema = (
-  rule: Exclude<ColumnValidationRule, { type: "reference" }>,
+  rule: Exclude<ColumnValidationRule, { type: "reference" | "unique" }>,
 ): z.ZodType<string> => {
   switch (rule.type) {
     case "required":
@@ -159,6 +159,7 @@ export type ValidationContext = {
   parentColValue?: string;
   parentColName?: string;
   targetColName?: string;
+  duplicateValues?: Set<string>;
 };
 
 export type ValidationResult = {
@@ -248,6 +249,16 @@ export const validateCellRules = (
       const refResult = validateReferenceRule(value, context);
       if (!refResult.valid) {
         return refResult;
+      }
+      continue;
+    }
+
+    if (rule.type === "unique") {
+      if (value.trim() !== "" && context?.duplicateValues?.has(value)) {
+        return {
+          valid: false,
+          errorInfo: { key: "unique" },
+        };
       }
       continue;
     }

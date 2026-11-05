@@ -399,7 +399,11 @@ export const officeTemplate: SheetTemplateRaw = {
       field: "code",
       headerName: { ja: "事業所コード", en: "Office Code" },
       type: { type: "text" },
-      validations: [{ type: "required" }, { type: "alphanumeric" }],
+      validations: [
+        { type: "required" },
+        { type: "alphanumeric" },
+        { type: "unique" },
+      ],
       width: 140,
       align: "left",
     },

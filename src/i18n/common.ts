@@ -18,6 +18,7 @@ export const commonMessages = {
     validationReference: "マスタに存在しない値です",
     validationReferenceRelation: "{parent}に{target}がありません",
     validationDatetime: "{format}の形式で正しい日付を入力してください",
+    validationUnique: "値が重複しています",
     validationInvalid: "入力値が不正です",
   },
   en: {
@@ -37,6 +38,7 @@ export const commonMessages = {
     validationReference: "Value does not exist in master data",
     validationReferenceRelation: "{target} does not exist in {parent}",
     validationDatetime: "Please enter a valid date in {format} format",
+    validationUnique: "Value must be unique",
     validationInvalid: "Invalid value",
   },
 } as const;

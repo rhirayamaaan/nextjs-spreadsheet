@@ -1,12 +1,13 @@
-import type {
-  CellStatusInfo,
-  ColumnConfig,
-  ColumnId,
-  ColumnValidationRule,
-  RowId,
-  RowStatus,
-  SheetData,
-  ValidationErrorInfo,
+import {
+  type CellStatusInfo,
+  type ColumnConfig,
+  type ColumnId,
+  type ColumnValidationRule,
+  isSubtotalRowId,
+  type RowId,
+  type RowStatus,
+  type SheetData,
+  type ValidationErrorInfo,
 } from "../../stores/types";
 import { getParentColumnInfo, validateCellRules } from "./validation";
 
@@ -88,7 +89,30 @@ export const findFirstValidationError = ({
     masterIndexes.set(colId, { validKeys, relationValidKeys });
   }
 
-  // 2. 全行・全列のバリデーション評価
+  // 2. 各列の unique バリデーション用重複値インデックスを事前生成 (O(N))
+  const columnDuplicates = new Map<ColumnId, Set<string>>();
+  for (const colId of columns) {
+    const rules = columnValidations[colId];
+    if (!rules?.some((r) => r.type === "unique")) continue;
+
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const rId of visibleRows) {
+      if (isSubtotalRowId(rId) || rowStatuses[rId] === "deleted") continue;
+      const key = `${rId}-${colId}`;
+      const val = key in cellEdits ? cellEdits[key] : (baseValues[key] ?? "");
+      if (val.trim() === "") continue;
+
+      if (seen.has(val)) {
+        duplicates.add(val);
+      } else {
+        seen.add(val);
+      }
+    }
+    columnDuplicates.set(colId, duplicates);
+  }
+
+  // 3. 全行・全列のバリデーション評価
   for (let r = 0; r < visibleRows.length; r++) {
     const rowId = visibleRows[r];
     if (!rowId) continue;
@@ -177,7 +201,9 @@ export const findFirstValidationError = ({
       const nonRefRules = allRules.filter((rule) => rule.type !== "reference");
       if (nonRefRules.length === 0) continue;
 
-      const result = validateCellRules(nonRefRules, cellValue);
+      const result = validateCellRules(nonRefRules, cellValue, {
+        duplicateValues: columnDuplicates.get(colId),
+      });
       if (!result.valid) {
         return {
           rowIndex: r,

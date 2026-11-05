@@ -60,6 +60,7 @@ const validationMessageKeyMap = {
   reference: "validationReference",
   referenceRelation: "validationReferenceRelation",
   datetime: "validationDatetime",
+  unique: "validationUnique",
   invalid: "validationInvalid",
 } as const satisfies Record<ValidationErrorKey, string>;
 
