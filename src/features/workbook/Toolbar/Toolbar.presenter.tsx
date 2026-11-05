@@ -5,13 +5,7 @@ import {
   HamburgerMenuIcon,
   ReaderIcon,
 } from "@radix-ui/react-icons";
-import {
-  Button,
-  Flex,
-  SegmentedControl,
-  Select,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, Flex, SegmentedControl, Select } from "@radix-ui/themes";
 import { type FC, useCallback } from "react";
 import { useCurrentLocale } from "@/i18n/context";
 import { useI18n } from "@/i18n/useI18n";
@@ -125,7 +119,6 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
           ? t("generatingReportPdf", { sheetName: displayName })
           : t("reportPreview", { sheetName: displayName })}
       </Button>
-      <TextField.Root placeholder={t("search")}></TextField.Root>
       <Flex align="center" gap="2" style={{ marginLeft: "auto" }}>
         {onModeChange && (
           <SegmentedControl.Root
