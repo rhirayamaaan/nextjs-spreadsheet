@@ -1,6 +1,6 @@
 export const localMessages = {
   ja: {
-    backToEditor: "← エディタに戻る",
+    backToEditor: "エディタに戻る",
     printPreview: "印刷プレビュー (PDF)",
     downloadPdf: "PDFをダウンロード",
     pdfPreviewIframeTitle: "PDFプレビュー",
@@ -10,7 +10,7 @@ export const localMessages = {
     updatingPreview: "更新中...",
   },
   en: {
-    backToEditor: "← Back to Editor",
+    backToEditor: "Back to Editor",
     printPreview: "Print Preview (PDF)",
     downloadPdf: "Download PDF",
     pdfPreviewIframeTitle: "PDF Preview",

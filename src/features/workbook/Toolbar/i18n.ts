@@ -17,6 +17,8 @@ export const toolbarMessages = {
     saving: "保存中...",
     modeEdit: "編集",
     modeInquiry: "照会",
+    fieldDelimiter: "・",
+    defaultColumnName: "列 {index}",
   },
   en: {
     exportExcel: "Export to Excel",
@@ -36,5 +38,7 @@ export const toolbarMessages = {
     saving: "Saving...",
     modeEdit: "Edit",
     modeInquiry: "Inquiry",
+    fieldDelimiter: ", ",
+    defaultColumnName: "Column {index}",
   },
 } as const;

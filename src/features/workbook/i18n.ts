@@ -21,6 +21,8 @@ export const localMessages = {
     loadingWorkbook: "スプレッドシートを読み込み中...",
     loadingSheet: "シートデータを読み込み中...",
     subtotal: "（計）",
+    searchCodeOrName: "コード・名称で検索...",
+    noMatchingData: "一致するデータがありません",
   },
   en: {
     exportExcel: "Export to Excel",
@@ -44,5 +46,7 @@ export const localMessages = {
     loadingWorkbook: "Loading spreadsheet...",
     loadingSheet: "Loading sheet data...",
     subtotal: "(Total)",
+    searchCodeOrName: "Search by code or name...",
+    noMatchingData: "No matching data found",
   },
 } as const;

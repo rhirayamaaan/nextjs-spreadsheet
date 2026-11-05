@@ -1,6 +1,8 @@
 import { Box, Flex, RadioGroup, Text } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { PulldownMode } from "../stores/types";
+import { columnSettingMessages } from "./i18n";
 
 export type ModeSelectorPresenterProps = {
   mode: PulldownMode;
@@ -15,6 +17,8 @@ export const ModeSelectorPresenter: FC<ModeSelectorPresenterProps> = ({
   mode,
   onChangeMode,
 }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Box>
       <Text
@@ -24,7 +28,7 @@ export const ModeSelectorPresenter: FC<ModeSelectorPresenterProps> = ({
         mb="1"
         style={{ display: "block" }}
       >
-        セルの選択UIタイプ
+        {t("uiTypeLabel")}
       </Text>
       <RadioGroup.Root
         value={mode}
@@ -38,13 +42,13 @@ export const ModeSelectorPresenter: FC<ModeSelectorPresenterProps> = ({
           <Flex align="center" gap="2">
             <RadioGroup.Item value="dropdown" id="mode-dropdown" />
             <Text as="label" size="2" htmlFor="mode-dropdown">
-              ドロップダウン（一覧から選択）
+              {t("modeDropdown")}
             </Text>
           </Flex>
           <Flex align="center" gap="2">
             <RadioGroup.Item value="combobox" id="mode-combobox" />
             <Text as="label" size="2" htmlFor="mode-combobox">
-              コンボボックス（検索入力付き）
+              {t("modeCombobox")}
             </Text>
           </Flex>
         </Flex>

@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { useStore } from "jotai";
 import { useCallback, useState } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import {
   activeColumnConfigsAtom,
   activeColumnSummaryValuesAtom,
@@ -13,9 +14,11 @@ import {
   hasActiveColumnTotalsAtom,
   rowOrderAtom,
 } from "../stores";
+import { toolbarMessages } from "./i18n";
 
 export const useExportExcel = () => {
   const store = useStore();
+  const { t } = useI18n(toolbarMessages);
   const [isExporting, setIsExporting] = useState(false);
 
   const exportCurrentSheet = useCallback(async () => {
@@ -46,7 +49,8 @@ export const useExportExcel = () => {
 
       // ヘッダー行を追加（列名の表示）
       const headerRow: string[] = exportColOrder.map(
-        (colId, i) => columnNames[colId] || `列 ${i + 1}`,
+        (colId, i) =>
+          columnNames[colId] || t("defaultColumnName", { index: i + 1 }),
       );
       data.push(headerRow);
 
@@ -104,7 +108,7 @@ export const useExportExcel = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [store]);
+  }, [store, t]);
 
   return { exportCurrentSheet, isExporting };
 };

@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { drawerMessages, getCategoryLabel } from "./i18n";
 import type {
   SearchableSheet,
   SheetMenuDrawerPresenterProps,
@@ -16,6 +18,7 @@ export const useSheetMenuDrawer = ({
   onSelectSheet,
   onToggleFavorite,
 }: SheetMenuDrawerProps): SheetMenuDrawerPresenterProps => {
+  const { t } = useI18n(drawerMessages);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -26,10 +29,14 @@ export const useSheetMenuDrawer = ({
     return sheetsByCategory.flatMap((group) =>
       group.sheets.map((sheet) => ({
         ...sheet,
-        categoryName: group.category.name,
+        categoryName: getCategoryLabel(
+          group.category.id,
+          group.category.name,
+          t,
+        ),
       })),
     );
-  }, [sheetsByCategory]);
+  }, [sheetsByCategory, t]);
 
   // お気に入りシート一覧
   const favoriteSheets = useMemo<SearchableSheet[]>(() => {

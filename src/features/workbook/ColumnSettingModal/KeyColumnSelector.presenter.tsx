@@ -1,7 +1,9 @@
 import { Box, Flex, Select, Text, TextField } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { ColumnId } from "../stores/types";
 import type { CandidateColumn } from "./ColumnSettingModal.presenter";
+import { columnSettingMessages } from "./i18n";
 
 export type KeyColumnSelectorPresenterProps = {
   candidateColumns: CandidateColumn[];
@@ -20,6 +22,8 @@ export const KeyColumnSelectorPresenter: FC<
   keyColName,
   onChangeKeyColName,
 }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Box>
       <Text
@@ -29,7 +33,7 @@ export const KeyColumnSelectorPresenter: FC<
         mb="1"
         style={{ display: "block" }}
       >
-        キー列（プルダウンで選択する値の列）
+        {t("keyColLabel")}
       </Text>
       <Flex gap="2">
         <Box style={{ flex: 1 }}>
@@ -55,7 +59,7 @@ export const KeyColumnSelectorPresenter: FC<
         <Box style={{ width: 140 }}>
           <TextField.Root
             size="2"
-            placeholder="列の表示名"
+            placeholder={t("keyColPlaceholder")}
             value={keyColName}
             onChange={(e) => onChangeKeyColName(e.target.value)}
           />

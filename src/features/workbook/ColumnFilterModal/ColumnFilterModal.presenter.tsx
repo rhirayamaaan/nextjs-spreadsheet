@@ -11,7 +11,9 @@ import {
 } from "@radix-ui/themes";
 import type { FC } from "react";
 import { useMemo } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { ColumnId } from "../stores/types";
+import { filterModalMessages } from "./i18n";
 
 export type FilterOption = {
   value: string;
@@ -60,6 +62,8 @@ export const ColumnFilterModalPresenter: FC<
   onCancel,
   isFilterActive,
 }) => {
+  const { t } = useI18n(filterModalMessages);
+
   const filteredOptions = useMemo(() => {
     if (!searchQuery.trim()) return options;
     const q = searchQuery.toLowerCase();
@@ -75,15 +79,15 @@ export const ColumnFilterModalPresenter: FC<
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 420, padding: 20 }}>
         <Dialog.Title size="4" mb="1">
-          フィルター: {columnName || "列"}
+          {t("title", { name: columnName || t("defaultColumnName") })}
         </Dialog.Title>
         <Dialog.Description size="2" mb="3" color="gray">
-          表示する値を選択してください
+          {t("description")}
         </Dialog.Description>
 
         <Flex direction="column" gap="3">
           <TextField.Root
-            placeholder="値を検索..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => onChangeSearchQuery(e.target.value)}
             size="2"
@@ -95,7 +99,10 @@ export const ColumnFilterModalPresenter: FC<
 
           <Flex justify="between" align="center">
             <Text size="1" color="gray">
-              {selectedValues.length} / {options.length} 選択中
+              {t("selectedCount", {
+                selected: selectedValues.length,
+                total: options.length,
+              })}
             </Text>
             <Flex gap="2">
               <Button
@@ -105,7 +112,7 @@ export const ColumnFilterModalPresenter: FC<
                 onClick={onSelectAll}
                 disabled={allFilteredSelected}
               >
-                すべて選択
+                {t("selectAll")}
               </Button>
               <Button
                 type="button"
@@ -114,7 +121,7 @@ export const ColumnFilterModalPresenter: FC<
                 onClick={onDeselectAll}
                 disabled={selectedValues.length === 0}
               >
-                すべて解除
+                {t("deselectAll")}
               </Button>
             </Flex>
           </Flex>
@@ -141,7 +148,7 @@ export const ColumnFilterModalPresenter: FC<
                     padding: "16px 0",
                   }}
                 >
-                  該当する値がありません
+                  {t("noMatchingValues")}
                 </Text>
               ) : (
                 <Flex direction="column" gap="2">
@@ -167,7 +174,7 @@ export const ColumnFilterModalPresenter: FC<
                         />
                         {isBlank ? (
                           <Text color="gray" style={{ fontStyle: "italic" }}>
-                            (空白)
+                            {t("blankValue")}
                           </Text>
                         ) : (
                           <Flex
@@ -205,7 +212,7 @@ export const ColumnFilterModalPresenter: FC<
               size="2"
               onClick={onClearFilter}
             >
-              フィルター解除
+              {t("clearFilter")}
             </Button>
           ) : (
             <Box />
@@ -218,7 +225,7 @@ export const ColumnFilterModalPresenter: FC<
               size="2"
               onClick={onCancel}
             >
-              キャンセル
+              {t("cancel")}
             </Button>
             <Button
               type="button"
@@ -227,7 +234,7 @@ export const ColumnFilterModalPresenter: FC<
               size="2"
               onClick={onApply}
             >
-              適用
+              {t("apply")}
             </Button>
           </Flex>
         </Flex>

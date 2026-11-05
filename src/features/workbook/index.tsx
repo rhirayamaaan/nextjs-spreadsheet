@@ -78,12 +78,12 @@ const WorkbookRoot: FC = () => {
       sheetRef.current?.scrollToCell(error.rowIndex, error.colIndex);
       showToast({
         type: "error",
-        title: t("validationErrorTitle"),
-        message: t("validationErrorMessage"),
+        titleKey: "validationErrorTitle",
+        messageKey: "validationErrorMessage",
         requiresConfirm: true,
       });
     },
-    [setSelection, showToast, t],
+    [setSelection, showToast],
   );
 
   const { handleSave, isSaving } = useWorkbookSave({

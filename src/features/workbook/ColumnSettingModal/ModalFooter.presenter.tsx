@@ -1,5 +1,7 @@
 import { Button, Flex } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { columnSettingMessages } from "./i18n";
 
 export type ModalFooterPresenterProps = {
   onSave: () => void;
@@ -12,13 +14,15 @@ export const ModalFooterPresenter: FC<ModalFooterPresenterProps> = ({
   onCancel,
   disableSave = false,
 }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Flex gap="3" justify="end" mt="4">
       <Button variant="soft" color="gray" onClick={onCancel}>
-        キャンセル
+        {t("cancel")}
       </Button>
       <Button disabled={disableSave} onClick={onSave}>
-        設定を保存
+        {t("save")}
       </Button>
     </Flex>
   );

@@ -8,7 +8,9 @@ import {
   useCallback,
   useState,
 } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { Selection } from "../stores/types";
+import { sheetMessages } from "./i18n";
 import styles from "./Sheet.module.css";
 
 export type AxisLayout = {
@@ -366,6 +368,8 @@ const SheetFooter: FC<FooterProps> = ({
   totalWidth,
   renderFooterCell,
 }) => {
+  const { t } = useI18n(sheetMessages);
+
   return (
     <div
       className={styles.sheet__footer}
@@ -375,7 +379,9 @@ const SheetFooter: FC<FooterProps> = ({
         className={styles.sheet__footerStatusCorner}
         style={{ width: `${STATUS_COL_WIDTH}px` }}
       >
-        <span className={styles.sheet__footerCornerLabel}>合計</span>
+        <span className={styles.sheet__footerCornerLabel}>
+          {t("totalFooterLabel")}
+        </span>
       </div>
       <div
         className={styles.sheet__footerColumns}

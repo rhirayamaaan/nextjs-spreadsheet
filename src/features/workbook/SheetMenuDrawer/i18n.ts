@@ -40,3 +40,14 @@ export const drawerMessages = {
     closeDrawer: "Close",
   },
 } as const;
+
+export const getCategoryLabel = (
+  categoryId: string,
+  fallbackName: string,
+  t: (key: "categoryMaster" | "categoryPlanning" | "categoryOther") => string,
+): string => {
+  if (categoryId === "master") return t("categoryMaster");
+  if (categoryId === "planning") return t("categoryPlanning");
+  if (categoryId === "other") return t("categoryOther");
+  return fallbackName;
+};

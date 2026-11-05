@@ -1,6 +1,8 @@
 import { Cross2Icon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Button, TabNav, Tooltip } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { sheetTabsMessages } from "./SheetTabs.i18n";
 import styles from "./SheetTabs.module.css";
 
 export type SheetTabsPresenterProps = {
@@ -18,10 +20,12 @@ export const SheetTabsPresenter: FC<SheetTabsPresenterProps> = ({
   onCloseSheet,
   onOpenMenu,
 }) => {
+  const { t } = useI18n(sheetTabsMessages);
+
   return (
     <div className={styles.sheetTabsContainer}>
       {onOpenMenu && (
-        <Tooltip content="すべてのシート / メニュー">
+        <Tooltip content={t("allSheetsMenu")}>
           <Button
             type="button"
             variant="ghost"
@@ -29,7 +33,7 @@ export const SheetTabsPresenter: FC<SheetTabsPresenterProps> = ({
             color="gray"
             className={styles.menuButton}
             onClick={onOpenMenu}
-            aria-label="すべてのシートメニューを開く"
+            aria-label={t("openAllSheetsMenu")}
           >
             <HamburgerMenuIcon width="16" height="16" />
           </Button>
@@ -53,7 +57,7 @@ export const SheetTabsPresenter: FC<SheetTabsPresenterProps> = ({
                     e.preventDefault();
                     onCloseSheet(sheet.id);
                   }}
-                  aria-label={`${sheet.name} を閉じる`}
+                  aria-label={t("closeSheet", { name: sheet.name })}
                 >
                   <Cross2Icon width="12" height="12" />
                 </button>

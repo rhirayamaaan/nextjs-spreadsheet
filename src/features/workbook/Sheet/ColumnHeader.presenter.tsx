@@ -2,7 +2,9 @@ import { DotsVerticalIcon, MixerHorizontalIcon } from "@radix-ui/react-icons";
 import { Badge, DropdownMenu, IconButton } from "@radix-ui/themes";
 import clsx from "clsx";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { ColumnConfig, ColumnId } from "../stores/types";
+import { sheetMessages } from "./i18n";
 import styles from "./Sheet.module.css";
 import type { AxisLayout } from "./Sheet.presenter";
 
@@ -50,6 +52,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
   onClearFilter,
   onToggleTotal,
 }) => {
+  const { t } = useI18n(sheetMessages);
   const isLookup = config?.type === "lookup";
 
   return (
@@ -82,7 +85,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
             variant="soft"
             style={{ fontSize: "0.6rem", padding: "0 3px", marginRight: 2 }}
           >
-            参照
+            {t("lookupBadge")}
           </Badge>
         )}
 
@@ -93,7 +96,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
             variant="soft"
             style={{ fontSize: "0.6rem", padding: "0 3px", marginRight: 2 }}
           >
-            合計
+            {t("totalBadge")}
           </Badge>
         )}
 
@@ -102,7 +105,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
             size="1"
             variant="soft"
             color="blue"
-            aria-label="フィルター設定"
+            aria-label={t("filterSettingsAria")}
             onClick={(e) => {
               e.stopPropagation();
               if (colId) onOpenFilterModal?.(colId);
@@ -122,7 +125,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
                 size="1"
                 variant="ghost"
                 color={isFiltered || hasTotal ? "blue" : "gray"}
-                aria-label="列操作メニュー"
+                aria-label={t("columnMenuAria")}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
               >
@@ -134,7 +137,7 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
               <DropdownMenu.Item
                 onSelect={() => colId && onToggleTotal?.(colId)}
               >
-                {hasTotal ? "合計行を非表示" : "合計行を表示"}
+                {hasTotal ? t("hideTotalRow") : t("showTotalRow")}
               </DropdownMenu.Item>
               <DropdownMenu.Separator />
 
@@ -148,14 +151,14 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
                       height={12}
                       style={{ marginRight: 6 }}
                     />
-                    フィルターを設定...
+                    {t("setFilter")}
                   </DropdownMenu.Item>
                   {isFiltered && (
                     <DropdownMenu.Item
                       color="red"
                       onSelect={() => colId && onClearFilter?.(colId)}
                     >
-                      フィルターを解除
+                      {t("clearFilter")}
                     </DropdownMenu.Item>
                   )}
                   <DropdownMenu.Separator />
@@ -167,14 +170,14 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
                   <DropdownMenu.Item
                     onSelect={() => colId && onOpenSettingModal?.(colId)}
                   >
-                    プルダウン設定を編集
+                    {t("editPulldown")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
                   <DropdownMenu.Item
                     color="red"
                     onSelect={() => colId && onRemoveBinding?.(colId)}
                   >
-                    プルダウン設定を解除
+                    {t("removePulldown")}
                   </DropdownMenu.Item>
                 </>
               ) : config?.type === "lookup" ? (
@@ -183,13 +186,13 @@ export const ColumnHeaderPresenter: FC<ColumnHeaderPresenterProps> = ({
                     onOpenSettingModal?.(config.lookup.parentColId)
                   }
                 >
-                  親列の設定を編集
+                  {t("editParentColumn")}
                 </DropdownMenu.Item>
               ) : (
                 <DropdownMenu.Item
                   onSelect={() => colId && onOpenSettingModal?.(colId)}
                 >
-                  プルダウン設定を追加...
+                  {t("addPulldown")}
                 </DropdownMenu.Item>
               )}
             </DropdownMenu.Content>

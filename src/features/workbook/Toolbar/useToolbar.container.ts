@@ -41,7 +41,7 @@ export const useToolbar = ({
     : !isPreconditionSatisfied
       ? unfulfilledFilterLabels && unfulfilledFilterLabels.length > 0
         ? t("reportPdfRequiresSpecificFilter", {
-            fields: unfulfilledFilterLabels.join("・"),
+            fields: unfulfilledFilterLabels.join(t("fieldDelimiter")),
           })
         : t("reportPdfRequiresFilter")
       : undefined;

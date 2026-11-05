@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import {
   activeColumnConfigFamily,
   activeColumnFilterFamily,
@@ -22,6 +23,7 @@ import type {
   ColumnFilterModalPresenterProps,
   FilterOption,
 } from "./ColumnFilterModal.presenter";
+import { filterModalMessages } from "./i18n";
 
 export type ColumnFilterModalContainerProps = {
   open: boolean;
@@ -33,6 +35,7 @@ export type ColumnFilterModalContainerProps = {
 export const ColumnFilterModalContainer: FC<
   ColumnFilterModalContainerProps
 > = ({ open, onOpenChange, targetColId, children }) => {
+  const { t } = useI18n(filterModalMessages);
   const columnNames = useAtomValue(columnNamesAtom);
   const columnName = columnNames[targetColId] ?? "";
 
@@ -83,7 +86,8 @@ export const ColumnFilterModalContainer: FC<
         const lookup = labelMap.get(val);
         return {
           value: val,
-          label: val === "" ? "(空白)" : lookup ? `${val} (${lookup})` : val,
+          label:
+            val === "" ? t("blankValue") : lookup ? `${val} (${lookup})` : val,
           detail: lookup,
         };
       });
@@ -91,9 +95,9 @@ export const ColumnFilterModalContainer: FC<
 
     return uniqueValues.map((val) => ({
       value: val,
-      label: val === "" ? "(空白)" : val,
+      label: val === "" ? t("blankValue") : val,
     }));
-  }, [config, referencedSheets, cellEdits, uniqueValues]);
+  }, [config, referencedSheets, cellEdits, uniqueValues, t]);
 
   // Local selection state inside the modal
   const [selectedValues, setSelectedValues] = useState<string[]>(() => {

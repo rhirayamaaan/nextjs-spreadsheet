@@ -1,5 +1,6 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { type FC, type ReactNode, useCallback, useMemo, useState } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import {
   activeSheetIdAtom,
   allSheetTemplatesAtom,
@@ -17,6 +18,7 @@ import type {
   ColumnSettingModalPresenterProps,
   LookupColumnItem,
 } from "./ColumnSettingModal.presenter";
+import { columnSettingMessages } from "./i18n";
 
 export type ColumnSettingModalContainerProps = {
   open: boolean;
@@ -28,6 +30,7 @@ export type ColumnSettingModalContainerProps = {
 export const ColumnSettingModalContainer: FC<
   ColumnSettingModalContainerProps
 > = ({ open, onOpenChange, targetColId, children }) => {
+  const { t } = useI18n(columnSettingMessages);
   const activeSheetId = useAtomValue(activeSheetIdAtom);
   const allTemplates = useAtomValue(allSheetTemplatesAtom);
   const columnNames = useAtomValue(columnNamesAtom);
@@ -72,9 +75,11 @@ export const ColumnSettingModalContainer: FC<
     if (!sourceSheetData) return [];
     return sourceSheetData.cols.map((colId: ColumnId, index: number) => ({
       id: colId,
-      name: sourceSheetData.colNames[colId] ?? `列 ${index + 1}`,
+      name:
+        sourceSheetData.colNames[colId] ??
+        t("defaultColumnName", { index: index + 1 }),
     }));
-  }, [sourceSheetData]);
+  }, [sourceSheetData, t]);
 
   // Initial source key column
   const [sourceKeyColId, setSourceKeyColId] = useState<ColumnId | "">(() => {
@@ -120,7 +125,9 @@ export const ColumnSettingModalContainer: FC<
         if (colId) {
           initialLookups[colId] = {
             selected: true,
-            headerName: initialSheet.colNames[colId] ?? `列 ${i + 1}`,
+            headerName:
+              initialSheet.colNames[colId] ??
+              t("defaultColumnName", { index: i + 1 }),
           };
         }
       }
@@ -161,7 +168,9 @@ export const ColumnSettingModalContainer: FC<
           if (colId) {
             newLookups[colId] = {
               selected: true,
-              headerName: sheetData.colNames[colId] ?? `列 ${i + 1}`,
+              headerName:
+                sheetData.colNames[colId] ??
+                t("defaultColumnName", { index: i + 1 }),
             };
           }
         }
@@ -171,7 +180,7 @@ export const ColumnSettingModalContainer: FC<
         setSelectedLookupCols({});
       }
     },
-    [referencedSheets],
+    [referencedSheets, t],
   );
 
   const handleKeyColChange = useCallback((newKeyColId: ColumnId) => {

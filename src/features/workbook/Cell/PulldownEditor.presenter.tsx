@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { localMessages } from "../i18n";
 import type { MoveDirection, PulldownMode } from "../stores/types";
 import styles from "./Cell.module.css";
 
@@ -32,6 +34,7 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
   onCommit,
   onCancel,
 }) => {
+  const { t } = useI18n(localMessages);
   const [inputValue, setInputValue] = useState(initialValue);
   const [search, setSearch] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
@@ -218,7 +221,7 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
             <TextField.Root
               ref={searchInputRef}
               size="1"
-              placeholder="コード・名称で検索..."
+              placeholder={t("searchCodeOrName")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -247,7 +250,7 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
           {filteredOptions.length === 0 ? (
             <Box p="3" style={{ textAlign: "center" }}>
               <Text size="1" color="gray">
-                一致するデータがありません
+                {t("noMatchingData")}
               </Text>
             </Box>
           ) : (

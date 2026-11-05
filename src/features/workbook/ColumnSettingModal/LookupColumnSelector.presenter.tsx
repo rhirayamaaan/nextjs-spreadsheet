@@ -8,8 +8,10 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { ColumnId } from "../stores/types";
 import type { LookupColumnItem } from "./ColumnSettingModal.presenter";
+import { columnSettingMessages } from "./i18n";
 
 export type LookupColumnSelectorPresenterProps = {
   lookupColumns: LookupColumnItem[];
@@ -20,23 +22,25 @@ export type LookupColumnSelectorPresenterProps = {
 export const LookupColumnSelectorPresenter: FC<
   LookupColumnSelectorPresenterProps
 > = ({ lookupColumns, onToggleLookupCol, onChangeLookupColName }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Box>
       <Flex justify="between" align="center" mb="1">
         <Text as="label" size="2" weight="bold">
-          自動追加する参照列（複数選択可）
+          {t("lookupColsLabel")}
         </Text>
         <Badge size="1" color="gray" variant="surface">
-          編集不可（動的参照）
+          {t("lookupReadOnlyBadge")}
         </Badge>
       </Flex>
       <Text size="1" color="gray" mb="2" style={{ display: "block" }}>
-        キー列の隣に自動追加され、選択されたキーに対応するマスターデータが自動表示されます。
+        {t("lookupDescription")}
       </Text>
 
       {lookupColumns.length === 0 ? (
         <Text size="2" color="gray">
-          キー列以外の候補列がありません
+          {t("noCandidateColumns")}
         </Text>
       ) : (
         <Card
@@ -76,7 +80,7 @@ export const LookupColumnSelectorPresenter: FC<
                   <Box style={{ width: 140 }}>
                     <TextField.Root
                       size="1"
-                      placeholder="ヘッダー表示名"
+                      placeholder={t("headerNamePlaceholder")}
                       value={col.headerName}
                       onChange={(e) =>
                         onChangeLookupColName(col.colId, e.target.value)

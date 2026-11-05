@@ -28,7 +28,7 @@ import type { ToastMessage } from "./Toast/Toast.presenter";
 export type UseWorkbookSaveOptions = {
   showToast: (message: ToastMessage) => void;
   // biome-ignore lint/suspicious/noExplicitAny: i18n のキー型との柔軟な互換性のため
-  t: (key: any, params?: any) => string;
+  t?: (key: any, params?: any) => string;
   onValidationError?: (error: FirstValidationError) => void;
 };
 
@@ -39,7 +39,6 @@ export type UseWorkbookSaveReturn = {
 
 export const useWorkbookSave = ({
   showToast,
-  t,
   onValidationError,
 }: UseWorkbookSaveOptions): UseWorkbookSaveReturn => {
   const store = useStore();
@@ -58,31 +57,31 @@ export const useWorkbookSave = ({
       });
       showToast({
         type: "error",
-        title: t("validationErrorTitle"),
-        message: t("validationErrorMessage"),
+        titleKey: "validationErrorTitle",
+        messageKey: "validationErrorMessage",
         requiresConfirm: true,
       });
     },
-    [onValidationError, setSelection, showToast, t],
+    [onValidationError, setSelection, showToast],
   );
 
   const handleSaveSuccess = useCallback(() => {
     showToast({
       type: "success",
-      title: t("saveSuccessTitle"),
-      message: t("saveSuccessMessage"),
+      titleKey: "saveSuccessTitle",
+      messageKey: "saveSuccessMessage",
       duration: 3500,
     });
-  }, [showToast, t]);
+  }, [showToast]);
 
   const handleSaveError = useCallback(() => {
     showToast({
       type: "error",
-      title: t("saveErrorTitle"),
-      message: t("saveErrorMessage"),
+      titleKey: "saveErrorTitle",
+      messageKey: "saveErrorMessage",
       requiresConfirm: true,
     });
-  }, [showToast, t]);
+  }, [showToast]);
 
   const handleSave = useCallback(async () => {
     const activeSheetId = store.get(activeSheetIdAtom);

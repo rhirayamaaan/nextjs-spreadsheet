@@ -24,7 +24,7 @@ import {
 import type { FC } from "react";
 import { useI18n } from "@/i18n/useI18n";
 import type { SheetCategory, SheetTemplate } from "../stores/types";
-import { drawerMessages } from "./i18n";
+import { drawerMessages, getCategoryLabel } from "./i18n";
 import styles from "./SheetMenuDrawer.module.css";
 
 export type SheetMenuDrawerProps = {
@@ -314,7 +314,11 @@ export const SheetMenuDrawerPresenter: FC<SheetMenuDrawerPresenterProps> = ({
               {/* カテゴリタイトル */}
               <Box px="4" pt="4" pb="2">
                 <Heading size="4" weight="bold">
-                  {selectedGroup.category.name}
+                  {getCategoryLabel(
+                    selectedGroup.category.id,
+                    selectedGroup.category.name,
+                    t,
+                  )}
                 </Heading>
               </Box>
 
@@ -417,7 +421,7 @@ export const SheetMenuDrawerPresenter: FC<SheetMenuDrawerPresenterProps> = ({
                       >
                         <Flex align="center" gap="2">
                           <Text size="3" weight="medium">
-                            {cat.name}
+                            {getCategoryLabel(cat.id, cat.name, t)}
                           </Text>
                           <Badge size="1" variant="soft" color="gray">
                             {count}

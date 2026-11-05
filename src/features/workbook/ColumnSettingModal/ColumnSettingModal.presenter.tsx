@@ -1,6 +1,8 @@
 import { Dialog, Flex } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { ColumnId, PulldownMode } from "../stores/types";
+import { columnSettingMessages } from "./i18n";
 import { KeyColumnSelectorPresenter } from "./KeyColumnSelector.presenter";
 import { LookupColumnSelectorPresenter } from "./LookupColumnSelector.presenter";
 import { ModalFooterPresenter } from "./ModalFooter.presenter";
@@ -65,12 +67,14 @@ export const ColumnSettingModalPresenter: FC<
   onSave,
   onCancel,
 }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 520, padding: 24 }}>
-        <Dialog.Title>カラムのプルダウン設定</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         <Dialog.Description size="2" mb="4" color="gray">
-          マスターシートのデータを紐付け、セルのプルダウン選択と隣への参照カラム自動連動を設定します。
+          {t("description")}
         </Dialog.Description>
 
         <Flex direction="column" gap="4">

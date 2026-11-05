@@ -1,6 +1,8 @@
 import { Box, Select, Text } from "@radix-ui/themes";
 import type { FC } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import type { CandidateSheet } from "./ColumnSettingModal.presenter";
+import { columnSettingMessages } from "./i18n";
 
 export type SheetSelectorPresenterProps = {
   candidateSheets: CandidateSheet[];
@@ -13,6 +15,8 @@ export const SheetSelectorPresenter: FC<SheetSelectorPresenterProps> = ({
   selectedSheetId,
   onSelectSheet,
 }) => {
+  const { t } = useI18n(columnSettingMessages);
+
   return (
     <Box>
       <Text
@@ -22,7 +26,7 @@ export const SheetSelectorPresenter: FC<SheetSelectorPresenterProps> = ({
         mb="1"
         style={{ display: "block" }}
       >
-        参照先マスターシート
+        {t("sheetSelectorLabel")}
       </Text>
       <Select.Root value={selectedSheetId} onValueChange={onSelectSheet}>
         <Select.Trigger style={{ width: "100%" }} />

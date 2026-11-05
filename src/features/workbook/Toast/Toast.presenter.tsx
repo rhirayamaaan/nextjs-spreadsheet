@@ -6,15 +6,22 @@ import {
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { Button, Callout, Flex, Text } from "@radix-ui/themes";
 import { type FC, useRef } from "react";
+import { useI18n } from "@/i18n/useI18n";
+import { localMessages } from "../i18n";
 import styles from "./Toast.module.css";
 
 export type ToastType = "success" | "error" | "info";
+
+export type ToastMessageKey = keyof (typeof localMessages)["ja"];
 
 export type ToastMessage = {
   id?: string;
   type: ToastType;
   title?: string;
-  message: string;
+  titleKey?: ToastMessageKey;
+  message?: string;
+  messageKey?: ToastMessageKey;
+  params?: Record<string, string | number>;
   duration?: number;
   requiresConfirm?: boolean;
 };
@@ -25,11 +32,19 @@ export type ToastPresenterProps = {
 };
 
 export const ToastPresenter: FC<ToastPresenterProps> = ({ toast, onClose }) => {
+  const { t } = useI18n(localMessages);
   const lastToastRef = useRef(toast);
   if (toast) {
     lastToastRef.current = toast;
   }
   const currentToast = toast ?? lastToastRef.current;
+
+  const displayTitle = currentToast?.titleKey
+    ? t(currentToast.titleKey, currentToast.params)
+    : currentToast?.title;
+  const displayMessage = currentToast?.messageKey
+    ? t(currentToast.messageKey, currentToast.params)
+    : currentToast?.message;
 
   const color =
     currentToast?.type === "error"
@@ -68,16 +83,18 @@ export const ToastPresenter: FC<ToastPresenterProps> = ({ toast, onClose }) => {
             </Callout.Icon>
             <Flex direction="column" gap="2" width="100%">
               <Flex direction="column" gap="1">
-                {currentToast.title && (
+                {displayTitle && (
                   <ToastPrimitive.Title asChild>
                     <Text size="2" weight="bold">
-                      {currentToast.title}
+                      {displayTitle}
                     </Text>
                   </ToastPrimitive.Title>
                 )}
-                <ToastPrimitive.Description asChild>
-                  <Callout.Text size="2">{currentToast.message}</Callout.Text>
-                </ToastPrimitive.Description>
+                {displayMessage && (
+                  <ToastPrimitive.Description asChild>
+                    <Callout.Text size="2">{displayMessage}</Callout.Text>
+                  </ToastPrimitive.Description>
+                )}
               </Flex>
               {currentToast.requiresConfirm && (
                 <Flex justify="end" pt="1">
@@ -88,7 +105,7 @@ export const ToastPresenter: FC<ToastPresenterProps> = ({ toast, onClose }) => {
                       variant="solid"
                       className={styles.actionButton}
                     >
-                      OK
+                      {t("ok")}
                     </Button>
                   </ToastPrimitive.Close>
                 </Flex>

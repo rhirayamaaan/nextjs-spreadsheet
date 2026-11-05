@@ -15,6 +15,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
+import { useI18n } from "@/i18n/useI18n";
 import { useSuspenseQuery } from "@/lib/query";
 import { getSheetDependencyIds } from "../logics/business/buildSheetData";
 import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
@@ -26,6 +27,7 @@ import {
   type RowId,
   type SheetTemplate,
 } from "../stores";
+import { sheetMessages } from "./i18n";
 import {
   type AxisLayout,
   FooterCell,
@@ -94,6 +96,7 @@ const SheetInner: FC<
     getColumnLayout,
   } = useSheetContainer(sheetRef);
 
+  const { t } = useI18n(sheetMessages);
   const virtualRows = rowVirtualizer.getVirtualItems();
   const virtualCols = columnVirtualizer.getVirtualItems();
 
@@ -104,9 +107,11 @@ const SheetInner: FC<
         index: col.index,
         start: col.start,
         size: col.size,
-        label: columnNames[col.key as ColumnId] ?? `列 ${col.index + 1}`,
+        label:
+          columnNames[col.key as ColumnId] ??
+          t("defaultColumnName", { index: col.index + 1 }),
       })),
-    [virtualCols, columnNames],
+    [virtualCols, columnNames, t],
   );
 
   const composedRows = useMemo(
