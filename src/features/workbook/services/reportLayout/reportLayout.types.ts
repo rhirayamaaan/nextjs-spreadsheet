@@ -68,6 +68,69 @@ export interface ReportTableConfig {
   detail: ReportDetailConfig;
 }
 
+export type RgbColor = [number, number, number];
+
+export type ColorValue = string | RgbColor;
+
+export interface ReportColorsConfig {
+  text?: ColorValue;
+  mutedText?: ColorValue;
+  borderColor?: ColorValue;
+  tableHeaderFill?: ColorValue;
+  tableHeaderText?: ColorValue;
+  subtotalLevel1Fill?: ColorValue;
+  subtotalLevel2Fill?: ColorValue;
+  summaryBoxFill?: ColorValue;
+}
+
+export interface ReportTypographyConfig {
+  fontFamily?: string;
+  titleFontSize?: number;
+  subtitleFontSize?: number;
+  metaFontSize?: number;
+  tableHeaderFontSize?: number;
+  tableBodyFontSize?: number;
+  pageFooterFontSize?: number;
+}
+
+export interface ReportTableStyleConfig {
+  startY?: number;
+  cellPaddingMm?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+  gridLineWidthMm?: number;
+}
+
+export interface ReportSummaryBoxLayoutConfig {
+  x?: number;
+  y?: number;
+  width?: number;
+}
+
+export interface ReportHeaderLayoutConfig {
+  titleY?: number;
+  subtitleY?: number;
+  metaLeftX?: number;
+  metaLeftStartY?: number;
+  metaLeftLinePitch?: number;
+  metaRightX?: number;
+  metaRightStartY?: number;
+  metaRightLinePitch?: number;
+  summaryBox?: ReportSummaryBoxLayoutConfig;
+}
+
+export interface ReportDesignConfig {
+  theme?: {
+    colors?: ReportColorsConfig;
+    typography?: ReportTypographyConfig;
+    table?: ReportTableStyleConfig;
+  };
+  headerLayout?: ReportHeaderLayoutConfig;
+}
+
 export interface ReportLayout {
   id: string;
   sheetId: string;
@@ -80,4 +143,5 @@ export interface ReportLayout {
   requiredSingleFilters?: string[];
   header: ReportHeaderConfig;
   table: ReportTableConfig;
+  design?: ReportDesignConfig;
 }

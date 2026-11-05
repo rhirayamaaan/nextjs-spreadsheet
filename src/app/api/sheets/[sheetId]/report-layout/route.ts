@@ -49,6 +49,53 @@ export const departmentCostReportLayout: ReportLayout = {
       },
     },
   },
+  design: {
+    theme: {
+      colors: {
+        text: "#1e1e1e",
+        mutedText: "#323232",
+        borderColor: "#dcdcdc",
+        tableHeaderFill: "#cdcdcd",
+        tableHeaderText: "#141414",
+        subtotalLevel1Fill: "#ebebeb",
+        subtotalLevel2Fill: "#f4f4f4",
+        summaryBoxFill: "#d7d7d7",
+      },
+      typography: {
+        titleFontSize: 14,
+        subtitleFontSize: 9,
+        metaFontSize: 8.5,
+        tableHeaderFontSize: 8.5,
+        tableBodyFontSize: 8.5,
+        pageFooterFontSize: 8,
+      },
+      table: {
+        startY: 56,
+        cellPaddingMm: {
+          top: 1.5,
+          right: 2,
+          bottom: 1.5,
+          left: 2,
+        },
+        gridLineWidthMm: 0.1,
+      },
+    },
+    headerLayout: {
+      titleY: 12,
+      subtitleY: 18,
+      metaLeftX: 10,
+      metaLeftStartY: 25,
+      metaLeftLinePitch: 5,
+      metaRightX: 175,
+      metaRightStartY: 25,
+      metaRightLinePitch: 5,
+      summaryBox: {
+        x: 135,
+        y: 28,
+        width: 65,
+      },
+    },
+  },
   table: {
     columns: [
       {

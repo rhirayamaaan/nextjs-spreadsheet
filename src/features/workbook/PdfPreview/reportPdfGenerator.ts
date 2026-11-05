@@ -1,9 +1,55 @@
 import jsPDF from "jspdf";
 import autoTable, { type RowInput } from "jspdf-autotable";
-import type { ReportLayout } from "../services/reportLayout/reportLayout.types";
+import type {
+  ReportLayout,
+  RgbColor,
+} from "../services/reportLayout/reportLayout.types";
+import { resolveRgbColor } from "./colorUtils";
 
 const NOTO_SANS_JP_REGULAR_TTF = "/fonts/NotoSansJP-Regular.ttf";
 const NOTO_SANS_JP_BOLD_TTF = "/fonts/NotoSansJP-Bold.ttf";
+
+const DEFAULT_THEME_COLORS: Record<string, RgbColor> = {
+  text: [30, 30, 30],
+  mutedText: [50, 50, 50],
+  borderColor: [220, 220, 220],
+  tableHeaderFill: [205, 205, 205],
+  tableHeaderText: [20, 20, 20],
+  subtotalLevel1Fill: [235, 235, 235],
+  subtotalLevel2Fill: [244, 244, 244],
+  summaryBoxFill: [215, 215, 215],
+};
+
+const DEFAULT_TYPOGRAPHY = {
+  titleFontSize: 14,
+  subtitleFontSize: 9,
+  metaFontSize: 8.5,
+  tableHeaderFontSize: 8.5,
+  tableBodyFontSize: 8.5,
+  pageFooterFontSize: 8,
+};
+
+const DEFAULT_TABLE_STYLE = {
+  startY: 56,
+  cellPaddingMm: { top: 1.5, right: 2, bottom: 1.5, left: 2 },
+  gridLineWidthMm: 0.1,
+};
+
+const DEFAULT_HEADER_LAYOUT = {
+  titleY: 12,
+  subtitleY: 18,
+  metaLeftX: 10,
+  metaLeftStartY: 25,
+  metaLeftLinePitch: 5,
+  metaRightX: 175,
+  metaRightStartY: 25,
+  metaRightLinePitch: 5,
+  summaryBox: {
+    x: 135,
+    y: 28,
+    width: 65,
+  },
+};
 
 export interface ReportPdfOptions {
   includeSummary: boolean;
@@ -155,6 +201,97 @@ export const generateReportPdf = async (
   };
 
   const printTimestamp = formatDateTime(new Date());
+
+  // === デザイン規定の解決 (未指定時はデフォルト値へフォールバック) ===
+  const design = layout.design;
+  const themeColors = design?.theme?.colors;
+  const typography = design?.theme?.typography;
+  const tableStyle = design?.theme?.table;
+  const headerLayout = design?.headerLayout;
+
+  const textColor = resolveRgbColor(
+    themeColors?.text,
+    DEFAULT_THEME_COLORS.text,
+  );
+  const mutedTextColor = resolveRgbColor(
+    themeColors?.mutedText,
+    DEFAULT_THEME_COLORS.mutedText,
+  );
+  const borderColor = resolveRgbColor(
+    themeColors?.borderColor,
+    DEFAULT_THEME_COLORS.borderColor,
+  );
+  const tableHeaderFill = resolveRgbColor(
+    themeColors?.tableHeaderFill,
+    DEFAULT_THEME_COLORS.tableHeaderFill,
+  );
+  const tableHeaderText = resolveRgbColor(
+    themeColors?.tableHeaderText,
+    DEFAULT_THEME_COLORS.tableHeaderText,
+  );
+  const subtotalLevel1Fill = resolveRgbColor(
+    themeColors?.subtotalLevel1Fill,
+    DEFAULT_THEME_COLORS.subtotalLevel1Fill,
+  );
+  const subtotalLevel2Fill = resolveRgbColor(
+    themeColors?.subtotalLevel2Fill,
+    DEFAULT_THEME_COLORS.subtotalLevel2Fill,
+  );
+  const summaryBoxFill = resolveRgbColor(
+    themeColors?.summaryBoxFill,
+    DEFAULT_THEME_COLORS.summaryBoxFill,
+  );
+
+  const titleFontSize =
+    typography?.titleFontSize ?? DEFAULT_TYPOGRAPHY.titleFontSize;
+  const subtitleFontSize =
+    typography?.subtitleFontSize ?? DEFAULT_TYPOGRAPHY.subtitleFontSize;
+  const metaFontSize =
+    typography?.metaFontSize ?? DEFAULT_TYPOGRAPHY.metaFontSize;
+  const tableHeaderFontSize =
+    typography?.tableHeaderFontSize ?? DEFAULT_TYPOGRAPHY.tableHeaderFontSize;
+  const tableBodyFontSize =
+    typography?.tableBodyFontSize ?? DEFAULT_TYPOGRAPHY.tableBodyFontSize;
+  const pageFooterFontSize =
+    typography?.pageFooterFontSize ?? DEFAULT_TYPOGRAPHY.pageFooterFontSize;
+
+  const tableStartY = tableStyle?.startY ?? DEFAULT_TABLE_STYLE.startY;
+  const cellPadding = {
+    top:
+      tableStyle?.cellPaddingMm?.top ?? DEFAULT_TABLE_STYLE.cellPaddingMm.top,
+    right:
+      tableStyle?.cellPaddingMm?.right ??
+      DEFAULT_TABLE_STYLE.cellPaddingMm.right,
+    bottom:
+      tableStyle?.cellPaddingMm?.bottom ??
+      DEFAULT_TABLE_STYLE.cellPaddingMm.bottom,
+    left:
+      tableStyle?.cellPaddingMm?.left ?? DEFAULT_TABLE_STYLE.cellPaddingMm.left,
+  };
+  const gridLineWidth =
+    tableStyle?.gridLineWidthMm ?? DEFAULT_TABLE_STYLE.gridLineWidthMm;
+
+  const titleY = headerLayout?.titleY ?? DEFAULT_HEADER_LAYOUT.titleY;
+  const subtitleY = headerLayout?.subtitleY ?? DEFAULT_HEADER_LAYOUT.subtitleY;
+  const metaLeftX = headerLayout?.metaLeftX ?? DEFAULT_HEADER_LAYOUT.metaLeftX;
+  const metaLeftStartY =
+    headerLayout?.metaLeftStartY ?? DEFAULT_HEADER_LAYOUT.metaLeftStartY;
+  const metaLeftLinePitch =
+    headerLayout?.metaLeftLinePitch ?? DEFAULT_HEADER_LAYOUT.metaLeftLinePitch;
+  const metaRightX =
+    headerLayout?.metaRightX ?? DEFAULT_HEADER_LAYOUT.metaRightX;
+  const metaRightStartY =
+    headerLayout?.metaRightStartY ?? DEFAULT_HEADER_LAYOUT.metaRightStartY;
+  const metaRightLinePitch =
+    headerLayout?.metaRightLinePitch ??
+    DEFAULT_HEADER_LAYOUT.metaRightLinePitch;
+
+  const summaryBoxConfig = {
+    x: headerLayout?.summaryBox?.x ?? DEFAULT_HEADER_LAYOUT.summaryBox.x,
+    y: headerLayout?.summaryBox?.y ?? DEFAULT_HEADER_LAYOUT.summaryBox.y,
+    width:
+      headerLayout?.summaryBox?.width ?? DEFAULT_HEADER_LAYOUT.summaryBox.width,
+  };
 
   // === 汎用テーブル構造の構築 ===
   const columns = layout.table.columns;
@@ -313,11 +450,12 @@ export const generateReportPdf = async (
         node.name,
       );
       const isTopLevel = node.level === 1;
+      const subtotalFill = isTopLevel ? subtotalLevel1Fill : subtotalLevel2Fill;
       const subtotalRow: RowInput = [
         {
           content: `${indent}${label}`,
           styles: {
-            fillColor: isTopLevel ? [235, 235, 235] : [244, 244, 244],
+            fillColor: subtotalFill,
             fontStyle: isTopLevel ? "bold" : "normal",
             halign: "left",
           },
@@ -333,7 +471,7 @@ export const generateReportPdf = async (
         subtotalRow.push({
           content: aggType === "sum" ? formatNumber(val, col.format) : "",
           styles: {
-            fillColor: isTopLevel ? [235, 235, 235] : [244, 244, 244],
+            fillColor: subtotalFill,
             fontStyle: isTopLevel ? "bold" : "normal",
             halign: col.align,
           },
@@ -371,20 +509,21 @@ export const generateReportPdf = async (
   autoTable(doc, {
     head: tableHead,
     body: body,
-    startY: 56, // ヘッダーメタ情報エリアの下から開始
-    margin: { top: 56, bottom: 15, left: 10, right: 10 },
+    startY: tableStartY, // ヘッダーメタ情報エリアの下から開始
+    margin: { top: tableStartY, bottom: 15, left: 10, right: 10 },
     theme: "plain",
     styles: {
       font: fontName,
-      fontSize: 8.5,
-      cellPadding: { top: 1.5, right: 2, bottom: 1.5, left: 2 },
-      textColor: [30, 30, 30],
-      lineColor: [220, 220, 220],
-      lineWidth: 0.1,
+      fontSize: tableBodyFontSize,
+      cellPadding: cellPadding,
+      textColor: textColor,
+      lineColor: borderColor,
+      lineWidth: gridLineWidth,
     },
     headStyles: {
-      fillColor: [205, 205, 205],
-      textColor: [20, 20, 20],
+      fillColor: tableHeaderFill,
+      textColor: tableHeaderText,
+      fontSize: tableHeaderFontSize,
       fontStyle: "bold",
       halign: "center",
       valign: "middle",
@@ -400,8 +539,8 @@ export const generateReportPdf = async (
 
       // 各ページ上部ヘッダー描画
       doc.setFont(fontName, "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(50, 50, 50);
+      doc.setFontSize(pageFooterFontSize);
+      doc.setTextColor(...mutedTextColor);
 
       // 右上: 印刷日時 & ページ番号
       doc.text(printTimestamp, 200, 10, { align: "right" });
@@ -409,8 +548,9 @@ export const generateReportPdf = async (
 
       // 中央: 帳票タイトル
       doc.setFont(fontName, "bold");
-      doc.setFontSize(14);
-      doc.text(layout.header.title || layout.name, 105, 12, {
+      doc.setFontSize(titleFontSize);
+      doc.setTextColor(...textColor);
+      doc.text(layout.header.title || layout.name, 105, titleY, {
         align: "center",
       });
 
@@ -421,39 +561,49 @@ export const generateReportPdf = async (
           .replace("{from_month}", fromMonth)
           .replace("{to_month}", toMonth);
         doc.setFont(fontName, "normal");
-        doc.setFontSize(9);
-        doc.text(subTitle, 105, 18, { align: "center" });
+        doc.setFontSize(subtitleFontSize);
+        doc.setTextColor(...textColor);
+        doc.text(subTitle, 105, subtitleY, { align: "center" });
       }
 
       // 左側メタ情報
       doc.setFont(fontName, "normal");
-      doc.setFontSize(8.5);
+      doc.setFontSize(metaFontSize);
+      doc.setTextColor(...textColor);
       layout.header.metaSections.left.forEach((item, idx) => {
         const val = resolveMetaValue(item.field);
-        doc.text(`${item.label.padEnd(5, "　")} ${val}`, 10, 25 + idx * 5);
+        doc.text(
+          `${item.label.padEnd(5, "　")} ${val}`,
+          metaLeftX,
+          metaLeftStartY + idx * metaLeftLinePitch,
+        );
       });
 
       // 右側メタ情報
       layout.header.metaSections.right.forEach((item, idx) => {
-        doc.text(`${item.label}：${item.text ?? ""}`, 175, 25 + idx * 5);
+        doc.text(
+          `${item.label}：${item.text ?? ""}`,
+          metaRightX,
+          metaRightStartY + idx * metaRightLinePitch,
+        );
       });
 
       // サマリーボックス (生産量・歩留等)
       const summaryBox = layout.header.metaSections.summaryBox;
       if (summaryBox && summaryBox.items.length > 0) {
-        const boxX = 135;
-        const boxY = 28;
-        const boxW = 65;
+        const boxX = summaryBoxConfig.x;
+        const boxY = summaryBoxConfig.y;
+        const boxW = summaryBoxConfig.width;
         const itemCount = summaryBox.items.length;
         const colW = boxW / itemCount;
 
         // ラベルヘッダー背景
-        doc.setFillColor(215, 215, 215);
+        doc.setFillColor(...summaryBoxFill);
         doc.rect(boxX, boxY, boxW, 5, "F");
 
         doc.setFont(fontName, "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(pageFooterFontSize);
+        doc.setTextColor(...textColor);
 
         summaryBox.items.forEach((item, idx) => {
           const itemX = boxX + idx * colW + colW / 2;
@@ -475,8 +625,8 @@ export const generateReportPdf = async (
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFont(fontName, "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(pageFooterFontSize);
+    doc.setTextColor(...mutedTextColor);
     // PAGE番号のエリアを白クリアして最新の totalPages で上書き描画
     doc.setFillColor(255, 255, 255);
     doc.rect(178, 11, 23, 4, "F");
