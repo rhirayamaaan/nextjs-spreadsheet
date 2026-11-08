@@ -4,7 +4,7 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import { Flex, Spinner } from "@radix-ui/themes";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import {
   type FC,
   type ForwardedRef,
@@ -21,9 +21,12 @@ import { getSheetDependencyIds } from "../logics/business/buildSheetData";
 import { sheetRecordsQuery } from "../services/sheetRecords/sheetRecords.query";
 import {
   activeColumnSummaryValuesAtom,
+  activeSheetModeAtom,
   type ColumnId,
+  clearSelectedCellsAtom,
   hasActiveColumnTotalsAtom,
   isColumnId,
+  moveSelectionAtom,
   type RowId,
   type SheetTemplate,
 } from "../stores";
@@ -33,7 +36,10 @@ import {
   FooterCell,
   type SheetPresenterProps,
 } from "./Sheet.presenter";
-import { type SheetHandle, useSheetContainer } from "./useSheet.container";
+import { useSheetClipboard } from "./useSheetClipboard";
+import { useSheetColumns } from "./useSheetColumns";
+import { useSheetKeyboard } from "./useSheetKeyboard";
+import { type SheetHandle, useSheetVirtualizer } from "./useSheetVirtualizer";
 
 export type { SheetHandle };
 
@@ -77,25 +83,57 @@ const SheetInner: FC<
   children,
   sheetRef,
 }) => {
-  // 仮想スクロール・キーボード操作・DnD 制御フック (Ref・スクロール制御は内部で完全カプセル化)
+  const sheetMode = useAtomValue(activeSheetModeAtom);
+  const moveSelection = useSetAtom(moveSelectionAtom);
+  const clearSelectedCells = useSetAtom(clearSelectedCellsAtom);
+
+  // 1. 仮想スクロール & レイアウト計測 Hook
   const {
     parentRef,
     rowVirtualizer,
     columnVirtualizer,
+    displayRowOrder,
+    columnOrder,
+    selection,
+    activeCell,
+    setActiveCell,
+    getRowLayout,
+    getColumnLayout,
+    ensureCellVisible,
+    focusSheet,
+    handleMouseDown,
+    handleScroll,
+  } = useSheetVirtualizer({ sheetRef });
+
+  // 2. カラム並び替え (DnD) & カラムリサイズ Hook
+  const {
     sortableColumnOrder,
     columnNames,
-    selection,
+    activeColumnConfigs,
     sensors,
     handleDragStart,
     handleDragEnd,
     handleChangeColumnWidth,
-    handleMouseDown,
-    handleKeyDown,
-    handleScroll,
+  } = useSheetColumns();
+
+  // 3. キーボードナビゲーション & 追従スクロール Hook
+  const { handleKeyDown } = useSheetKeyboard({
+    parentRef,
+    selection,
+    activeCell,
+    setActiveCell,
+    sheetMode,
+    displayRowOrder,
+    columnOrder,
+    activeColumnConfigs,
+    moveSelection,
+    clearSelectedCells,
+    ensureCellVisible,
     focusSheet,
-    getRowLayout,
-    getColumnLayout,
-  } = useSheetContainer(sheetRef);
+  });
+
+  // 4. クリップボード貼り付け & 選択終了監視 Hook
+  useSheetClipboard();
 
   const { t } = useI18n(sheetMessages);
   const virtualRows = rowVirtualizer.getVirtualItems();

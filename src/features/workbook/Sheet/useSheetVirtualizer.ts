@@ -1,14 +1,5 @@
-import {
-  type DragEndEvent,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   type ForwardedRef,
   type MouseEvent as ReactMouseEvent,
@@ -16,28 +7,15 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from "react";
 import {
   activeCellAtom,
-  activeColumnConfigsAtom,
-  activeSheetIdAtom,
-  activeSheetModeAtom,
-  type ColumnId,
-  clearSelectedCellsAtom,
-  columnNamesAtom,
   columnOrderAtom,
   columnWidthOverridesAtom,
   displayRowOrderAtom,
   hasActiveColumnTotalsAtom,
-  moveSelectionAtom,
-  pasteRowsAtom,
-  reorderColumnsWithFollowersAtom,
   selectionAtom,
-  sortableColumnOrderAtom,
-  workbookStatusAtom,
 } from "../stores";
-import { useSheetKeyboard } from "./useSheetKeyboard";
 
 const HEADER_HEIGHT = 30;
 const FOOTER_HEIGHT = 30;
@@ -47,54 +25,20 @@ export type SheetHandle = {
   scrollToCell: (rowIndex: number, colIndex: number) => void;
 };
 
-export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
+export type UseSheetVirtualizerParams = {
+  sheetRef?: ForwardedRef<SheetHandle>;
+};
+
+export const useSheetVirtualizer = ({
+  sheetRef,
+}: UseSheetVirtualizerParams = {}) => {
   const parentRef = useRef<HTMLDivElement>(null);
-  const activeSheetId = useAtomValue(activeSheetIdAtom);
-  const [columnWidthOverrides, setColumnWidthOverrides] = useAtom(
-    columnWidthOverridesAtom,
-  );
-
+  const columnWidthOverrides = useAtomValue(columnWidthOverridesAtom);
   const displayRowOrder = useAtomValue(displayRowOrderAtom);
-  const sheetMode = useAtomValue(activeSheetModeAtom);
   const columnOrder = useAtomValue(columnOrderAtom);
-  const sortableColumnOrder = useAtomValue(sortableColumnOrderAtom);
-
-  const columnNames = useAtomValue(columnNamesAtom);
-  const activeColumnConfigs = useAtomValue(activeColumnConfigsAtom);
   const hasFooter = useAtomValue(hasActiveColumnTotalsAtom);
   const [activeCell, setActiveCell] = useAtom(activeCellAtom);
   const selection = useAtomValue(selectionAtom);
-  const moveSelection = useSetAtom(moveSelectionAtom);
-  const clearSelectedCells = useSetAtom(clearSelectedCellsAtom);
-  const setStatus = useSetAtom(workbookStatusAtom);
-
-  const [activeId, setActiveId] = useState<string | number | bigint | null>(
-    null,
-  );
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  // Tab switch scroll reset: activeSheetId が変化した際にスクロール位置を原点にリセット
-  const prevActiveSheetIdRef = useRef(activeSheetId);
-  useEffect(() => {
-    if (prevActiveSheetIdRef.current !== activeSheetId) {
-      prevActiveSheetIdRef.current = activeSheetId;
-      setActiveCell(null);
-      if (parentRef.current) {
-        parentRef.current.scrollTop = 0;
-        parentRef.current.scrollLeft = 0;
-      }
-    }
-  }, [activeSheetId, setActiveCell]);
 
   const rowVirtualizer = useVirtualizer({
     count: displayRowOrder.length,
@@ -119,81 +63,6 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
       columnVirtualizer.measure();
     }
   }, [columnWidthOverrides, columnVirtualizer]);
-
-  const reorderColumns = useSetAtom(reorderColumnsWithFollowersAtom);
-
-  const handleReorderColumn = useCallback(
-    (activeColId: ColumnId, overColId: ColumnId) => {
-      reorderColumns({ activeColId, overColId });
-    },
-    [reorderColumns],
-  );
-
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(event.active.id);
-  }, []);
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (over && active.id !== over.id) {
-        handleReorderColumn(active.id as ColumnId, over.id as ColumnId);
-      }
-      setActiveId(null);
-    },
-    [handleReorderColumn],
-  );
-
-  const handleChangeColumnWidth = useCallback(
-    (id: string | number | bigint, width: number) => {
-      setColumnWidthOverrides((prev) => ({ ...prev, [id as ColumnId]: width }));
-    },
-    [setColumnWidthOverrides],
-  );
-
-  const pasteRows = useSetAtom(pasteRowsAtom);
-
-  useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      if (sheetMode === "inquiry") return;
-
-      const activeElement = document.activeElement;
-      const isInput =
-        activeElement instanceof HTMLElement &&
-        (activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA" ||
-          activeElement.isContentEditable);
-
-      if (isInput) return;
-
-      const text = event.clipboardData?.getData("text/plain");
-      if (!text) return;
-
-      const rowsData = text
-        .split(/\r?\n/)
-        .filter((row) => row.length > 0)
-        .map((row) => row.split("\t"));
-
-      if (rowsData.length > 0) {
-        pasteRows(rowsData);
-      }
-    };
-
-    window.addEventListener("paste", handlePaste);
-    return () => {
-      window.removeEventListener("paste", handlePaste);
-    };
-  }, [pasteRows, sheetMode]);
-
-  useEffect(() => {
-    const handleMouseUp = () => {
-      setStatus((prev) => (prev === "selecting" ? "idle" : prev));
-    };
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [setStatus]);
 
   const getRowLayout = useCallback(
     (index: number) => {
@@ -261,7 +130,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
   );
 
   // 親から命令的にセルスクロールを実行できるように handle を公開
-  useImperativeHandle(ref, () => ({ scrollToCell }), [scrollToCell]);
+  useImperativeHandle(sheetRef, () => ({ scrollToCell }), [scrollToCell]);
 
   const ensureCellVisible = useCallback(
     (targetRow: number, targetCol: number) => {
@@ -330,39 +199,21 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
     }
   }, [activeCell, setActiveCell, focusSheet, selection]);
 
-  const { handleKeyDown } = useSheetKeyboard({
-    parentRef,
-    selection,
-    activeCell,
-    setActiveCell,
-    sheetMode,
-    displayRowOrder,
-    columnOrder,
-    activeColumnConfigs,
-    moveSelection,
-    clearSelectedCells,
-    ensureCellVisible,
-    focusSheet,
-  });
-
   return {
     parentRef,
     rowVirtualizer,
     columnVirtualizer,
+    displayRowOrder,
     columnOrder,
-    sortableColumnOrder,
-    columnNames,
     selection,
-    activeId,
-    sensors,
-    handleDragStart,
-    handleDragEnd,
-    handleChangeColumnWidth,
-    handleMouseDown,
-    handleKeyDown,
-    handleScroll,
-    focusSheet,
+    activeCell,
+    setActiveCell,
     getRowLayout,
     getColumnLayout,
+    scrollToCell,
+    ensureCellVisible,
+    focusSheet,
+    handleMouseDown,
+    handleScroll,
   };
 };
