@@ -4,6 +4,7 @@ import {
   memo,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  type UIEvent as ReactUIEvent,
   type Ref,
   useCallback,
   useState,
@@ -411,6 +412,7 @@ export type SheetPresenterProps = BodyProps &
     renderFooterCell?: (col: AxisLayout) => ReactNode;
     onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
     onMouseDown?: (event: ReactMouseEvent<HTMLDivElement>) => void;
+    onScroll?: (event: ReactUIEvent<HTMLDivElement>) => void;
   };
 
 export const SheetPresenter: FC<SheetPresenterProps> = ({
@@ -427,6 +429,7 @@ export const SheetPresenter: FC<SheetPresenterProps> = ({
   renderFooterCell,
   onKeyDown,
   onMouseDown,
+  onScroll,
   ref,
 }) => {
   const footerHeight = hasFooter ? FOOTER_HEIGHT : 0;
@@ -438,6 +441,7 @@ export const SheetPresenter: FC<SheetPresenterProps> = ({
       tabIndex={-1}
       onKeyDown={onKeyDown}
       onMouseDown={onMouseDown}
+      onScroll={onScroll}
       className={styles.sheet}
     >
       <div

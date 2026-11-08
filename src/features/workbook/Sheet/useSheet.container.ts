@@ -11,7 +11,6 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   type ForwardedRef,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
@@ -31,7 +30,6 @@ import {
   columnWidthOverridesAtom,
   displayRowOrderAtom,
   hasActiveColumnTotalsAtom,
-  isSubtotalRowId,
   moveSelectionAtom,
   pasteRowsAtom,
   reorderColumnsWithFollowersAtom,
@@ -39,6 +37,7 @@ import {
   sortableColumnOrderAtom,
   workbookStatusAtom,
 } from "../stores";
+import { useSheetKeyboard } from "./useSheetKeyboard";
 
 const HEADER_HEIGHT = 30;
 const FOOTER_HEIGHT = 30;
@@ -89,12 +88,13 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
   useEffect(() => {
     if (prevActiveSheetIdRef.current !== activeSheetId) {
       prevActiveSheetIdRef.current = activeSheetId;
+      setActiveCell(null);
       if (parentRef.current) {
         parentRef.current.scrollTop = 0;
         parentRef.current.scrollLeft = 0;
       }
     }
-  }, [activeSheetId]);
+  }, [activeSheetId, setActiveCell]);
 
   const rowVirtualizer = useVirtualizer({
     count: displayRowOrder.length,
@@ -309,152 +309,41 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
 
   const handleMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
-      if (event.target === event.currentTarget && event.button === 0) {
+      if (event.button !== 0) return;
+      const target = event.target as HTMLElement | null;
+      const isInteractive = target?.closest(
+        "input, textarea, select, [role='menuitem'], [data-radix-collection-item]",
+      );
+      if (!isInteractive) {
         focusSheet();
       }
     },
     [focusSheet],
   );
 
-  const handleKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!selection) return;
+  const handleScroll = useCallback(() => {
+    if (activeCell !== null) {
+      setActiveCell(null);
+      focusSheet();
+    } else if (document.activeElement === document.body && selection) {
+      focusSheet();
+    }
+  }, [activeCell, setActiveCell, focusSheet, selection]);
 
-      // セル編集中（input等）からの Enter / Tab / Escape バブリング時は
-      // シートコンテナへのフォーカス復帰と移動先スクロールのみ行う
-      if (activeCell !== null) {
-        if (event.nativeEvent.isComposing) return;
-        if (event.key === "Enter" || event.key === "Tab") {
-          event.preventDefault();
-          const deltaRow =
-            event.key === "Enter" ? (event.shiftKey ? -1 : 1) : 0;
-          const deltaCol = event.key === "Tab" ? (event.shiftKey ? -1 : 1) : 0;
-          const nextRow = Math.max(
-            0,
-            Math.min(
-              displayRowOrder.length - 1,
-              selection.start.row + deltaRow,
-            ),
-          );
-          const nextCol = Math.max(
-            0,
-            Math.min(columnOrder.length - 1, selection.start.col + deltaCol),
-          );
-          ensureCellVisible(nextRow, nextCol);
-          queueMicrotask(() => {
-            parentRef.current?.focus({ preventScroll: true });
-          });
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          queueMicrotask(() => {
-            parentRef.current?.focus({ preventScroll: true });
-          });
-        }
-        return;
-      }
-
-      const startEditableCell = (initialValue: string) => {
-        if (sheetMode === "inquiry") return false;
-        const { row, col } = selection.start;
-        const rowId = displayRowOrder[row];
-        if (!rowId || isSubtotalRowId(rowId)) return false;
-        const colId = columnOrder[col];
-        if (!colId) return false;
-        const config = activeColumnConfigs[colId];
-        if (config?.type === "lookup" || config?.readOnly) {
-          return false;
-        }
-        setActiveCell({ row, col, initialValue });
-        return true;
-      };
-
-      if (
-        event.nativeEvent.isComposing ||
-        event.key === "Process" ||
-        event.keyCode === 229
-      ) {
-        startEditableCell("");
-        return;
-      }
-
-      const moveAndScroll = (
-        deltaRow: number,
-        deltaCol: number,
-        extend: boolean,
-      ) => {
-        const base = extend ? selection.end : selection.start;
-        const nextRow = Math.max(
-          0,
-          Math.min(displayRowOrder.length - 1, base.row + deltaRow),
-        );
-        const nextCol = Math.max(
-          0,
-          Math.min(columnOrder.length - 1, base.col + deltaCol),
-        );
-        moveSelection({ deltaRow, deltaCol, extend });
-        ensureCellVisible(nextRow, nextCol);
-      };
-
-      switch (event.key) {
-        case "ArrowUp":
-          event.preventDefault();
-          moveAndScroll(-1, 0, event.shiftKey);
-          return;
-        case "ArrowDown":
-          event.preventDefault();
-          moveAndScroll(1, 0, event.shiftKey);
-          return;
-        case "ArrowLeft":
-          event.preventDefault();
-          moveAndScroll(0, -1, event.shiftKey);
-          return;
-        case "ArrowRight":
-          event.preventDefault();
-          moveAndScroll(0, 1, event.shiftKey);
-          return;
-        case "Enter":
-          event.preventDefault();
-          moveAndScroll(event.shiftKey ? -1 : 1, 0, false);
-          return;
-        case "Tab":
-          event.preventDefault();
-          moveAndScroll(0, event.shiftKey ? -1 : 1, false);
-          return;
-        case "Delete":
-        case "Backspace":
-          if (sheetMode === "inquiry") return;
-          event.preventDefault();
-          clearSelectedCells();
-          return;
-        default:
-          break;
-      }
-
-      // 単一印字文字の入力（Ctrl / Cmd / Alt 併用時は除外）
-      if (
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey &&
-        event.key.length === 1
-      ) {
-        if (startEditableCell(event.key)) {
-          event.preventDefault();
-        }
-      }
-    },
-    [
-      activeCell,
-      selection,
-      displayRowOrder,
-      columnOrder,
-      activeColumnConfigs,
-      sheetMode,
-      setActiveCell,
-      moveSelection,
-      clearSelectedCells,
-      ensureCellVisible,
-    ],
-  );
+  const { handleKeyDown } = useSheetKeyboard({
+    parentRef,
+    selection,
+    activeCell,
+    setActiveCell,
+    sheetMode,
+    displayRowOrder,
+    columnOrder,
+    activeColumnConfigs,
+    moveSelection,
+    clearSelectedCells,
+    ensureCellVisible,
+    focusSheet,
+  });
 
   return {
     parentRef,
@@ -471,6 +360,7 @@ export const useSheetContainer = (ref?: ForwardedRef<SheetHandle>) => {
     handleChangeColumnWidth,
     handleMouseDown,
     handleKeyDown,
+    handleScroll,
     focusSheet,
     getRowLayout,
     getColumnLayout,

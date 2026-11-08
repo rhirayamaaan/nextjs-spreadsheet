@@ -91,6 +91,7 @@ const SheetInner: FC<
     handleChangeColumnWidth,
     handleMouseDown,
     handleKeyDown,
+    handleScroll,
     focusSheet,
     getRowLayout,
     getColumnLayout,
@@ -190,6 +191,7 @@ const SheetInner: FC<
           renderFooterCell,
           onKeyDown: handleKeyDown,
           onMouseDown: handleMouseDown,
+          onScroll: handleScroll,
         })}
       </SortableContext>
     </DndContext>

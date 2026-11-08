@@ -183,9 +183,8 @@ const CellInner: FC<InnerProps> = memo(
         if (event.button !== 0) return;
         if (isEditing) return;
 
-        if (event.shiftKey) {
-          event.preventDefault();
-        }
+        // セルボタンへのフォーカス移動・ブラウザテキスト選択を阻止し、シートコンテナへのフォーカスを維持
+        event.preventDefault();
 
         blurActiveElement(event.currentTarget);
         setEditingCell(null);
