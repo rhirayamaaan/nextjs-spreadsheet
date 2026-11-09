@@ -81,6 +81,9 @@ const WorkbookRoot: FC = () => {
         titleKey: "validationErrorTitle",
         messageKey: "validationErrorMessage",
         requiresConfirm: true,
+        onClose: () => {
+          sheetRef.current?.focusSheet();
+        },
       });
     },
     [setSelection, showToast],

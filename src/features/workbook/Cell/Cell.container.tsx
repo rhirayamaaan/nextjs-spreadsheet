@@ -163,10 +163,10 @@ const CellInner: FC<InnerProps> = memo(
         setEditingCell(null);
         if (move) {
           moveSelection({ ...move, extend: false });
+          queueMicrotask(() => {
+            onFinishEditing?.();
+          });
         }
-        queueMicrotask(() => {
-          onFinishEditing?.();
-        });
       },
       [value, setValue, setEditingCell, moveSelection, onFinishEditing],
     );

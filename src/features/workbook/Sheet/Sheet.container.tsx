@@ -39,6 +39,7 @@ import {
 import { useSheetClipboard } from "./useSheetClipboard";
 import { useSheetColumns } from "./useSheetColumns";
 import { useSheetKeyboard } from "./useSheetKeyboard";
+import { useSheetOutsideClick } from "./useSheetOutsideClick";
 import { type SheetHandle, useSheetVirtualizer } from "./useSheetVirtualizer";
 
 export type { SheetHandle };
@@ -134,6 +135,13 @@ const SheetInner: FC<
 
   // 4. クリップボード貼り付け & 選択終了監視 Hook
   useSheetClipboard();
+
+  // 5. シート外クリック検知 & 編集セル確定 Hook
+  useSheetOutsideClick({
+    parentRef,
+    activeCell,
+    setActiveCell,
+  });
 
   const { t } = useI18n(sheetMessages);
   const virtualRows = rowVirtualizer.getVirtualItems();

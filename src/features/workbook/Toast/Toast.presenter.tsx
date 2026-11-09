@@ -24,6 +24,7 @@ export type ToastMessage = {
   params?: Record<string, string | number>;
   duration?: number;
   requiresConfirm?: boolean;
+  onClose?: () => void;
 };
 
 export type ToastPresenterProps = {
@@ -62,6 +63,7 @@ export const ToastPresenter: FC<ToastPresenterProps> = ({ toast, onClose }) => {
           open={Boolean(toast)}
           onOpenChange={(open) => {
             if (!open) {
+              currentToast?.onClose?.();
               onClose();
             }
           }}

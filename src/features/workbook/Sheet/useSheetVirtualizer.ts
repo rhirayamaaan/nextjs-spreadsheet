@@ -23,6 +23,7 @@ const STATUS_COL_WIDTH = 50;
 
 export type SheetHandle = {
   scrollToCell: (rowIndex: number, colIndex: number) => void;
+  focusSheet: () => void;
 };
 
 export type UseSheetVirtualizerParams = {
@@ -129,8 +130,15 @@ export const useSheetVirtualizer = ({
     [getRowLayout, getColumnLayout],
   );
 
-  // 親から命令的にセルスクロールを実行できるように handle を公開
-  useImperativeHandle(sheetRef, () => ({ scrollToCell }), [scrollToCell]);
+  const focusSheet = useCallback(() => {
+    parentRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  // 親から命令的にセルスクロールやフォーカスを実行できるように handle を公開
+  useImperativeHandle(sheetRef, () => ({ scrollToCell, focusSheet }), [
+    scrollToCell,
+    focusSheet,
+  ]);
 
   const ensureCellVisible = useCallback(
     (targetRow: number, targetCol: number) => {
@@ -171,10 +179,6 @@ export const useSheetVirtualizer = ({
     },
     [getRowLayout, getColumnLayout, hasFooter],
   );
-
-  const focusSheet = useCallback(() => {
-    parentRef.current?.focus({ preventScroll: true });
-  }, []);
 
   const handleMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {

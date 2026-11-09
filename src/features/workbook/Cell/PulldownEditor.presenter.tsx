@@ -91,6 +91,15 @@ export const PulldownEditorPresenter: FC<PulldownEditorPresenterProps> = ({
   };
 
   const handleCellBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const related = e.relatedTarget as HTMLElement | null;
+    if (
+      related &&
+      (related.closest("[data-radix-popper-content-wrapper]") ||
+        related.closest("[role='dialog']") ||
+        related.closest("[role='listbox']"))
+    ) {
+      return;
+    }
     commitValue(e.currentTarget.value);
   };
 
