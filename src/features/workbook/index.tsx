@@ -131,7 +131,6 @@ const WorkbookRoot: FC<WorkbookProps> = ({ customValidators }) => {
     sheetName: activeSheet?.name,
     hasActiveSheet: Boolean(activeSheetId),
     onSave: handleSave,
-    onOpenMenu: () => setIsDrawerOpen(true),
     isSaving,
   });
 

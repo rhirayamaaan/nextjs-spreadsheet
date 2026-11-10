@@ -1,5 +1,57 @@
 .toolbar {
   height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  flex-shrink: 0;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--gray-a5);
   background-color: var(--gray-2);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.actionGroup {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.exportDropdownTrigger {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.readOnlyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.reportMenuItemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.reportMenuItemTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reportMenuItemHint {
+  font-size: var(--font-size-1);
+  color: var(--gray-9);
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
 }

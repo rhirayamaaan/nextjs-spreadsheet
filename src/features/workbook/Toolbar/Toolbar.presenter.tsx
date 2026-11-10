@@ -1,11 +1,20 @@
 import {
   CheckIcon,
+  ChevronDownIcon,
   DownloadIcon,
+  EyeOpenIcon,
   FileTextIcon,
-  HamburgerMenuIcon,
   ReaderIcon,
 } from "@radix-ui/react-icons";
-import { Button, Flex, SegmentedControl, Select } from "@radix-ui/themes";
+import {
+  Badge,
+  Button,
+  DropdownMenu,
+  Flex,
+  SegmentedControl,
+  Select,
+  Tooltip,
+} from "@radix-ui/themes";
 import { type FC, useCallback } from "react";
 import { useCurrentLocale } from "@/i18n/context";
 import { useI18n } from "@/i18n/useI18n";
@@ -33,7 +42,6 @@ export type ToolbarPresenterProps = {
 };
 
 export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
-  sheetName,
   hasActiveSheet,
   sheetMode = "edit",
   onModeChange,
@@ -41,7 +49,6 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
   onPreviewPdf,
   onPreviewReportPdf,
   onSave,
-  onOpenMenu,
   isExportingExcel,
   isExportingPdf,
   isExportingReportPdf,
@@ -63,77 +70,118 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
     [setLocale],
   );
 
-  const displayName = sheetName || t("defaultSheetName");
+  const isExporting =
+    isExportingExcel || isExportingPdf || isExportingReportPdf;
+
+  const isSaveDisabled = !hasActiveSheet || isSaving || sheetMode === "inquiry";
+
+  const saveDisabledReason = !hasActiveSheet
+    ? t("saveDisabledNoSheet")
+    : sheetMode === "inquiry"
+      ? t("saveDisabledInquiryMode")
+      : undefined;
 
   return (
-    <Flex align="center" gap="2" px="4" py="2" className={styles.toolbar}>
-      {onOpenMenu && (
-        <Button
-          type="button"
-          onClick={onOpenMenu}
-          variant="soft"
-          color="gray"
-          aria-label={t("sheetMenu")}
-        >
-          <HamburgerMenuIcon />
-          {t("sheetMenu")}
-        </Button>
-      )}
-      <Button
-        type="button"
-        onClick={onExport}
-        disabled={isExportingExcel}
-        loading={isExportingExcel}
-        color="green"
-        variant="solid"
-      >
-        <DownloadIcon />
-        {isExportingExcel
-          ? t("exportingExcel", { sheetName: displayName })
-          : t("exportToExcel", { sheetName: displayName })}
-      </Button>
-      <Button
-        type="button"
-        onClick={onPreviewPdf}
-        disabled={isExportingPdf}
-        loading={isExportingPdf}
-        color="red"
-        variant="solid"
-      >
-        <FileTextIcon />
-        {isExportingPdf
-          ? t("generatingPdf", { sheetName: displayName })
-          : t("printPreview", { sheetName: displayName })}
-      </Button>
-      <Button
-        type="button"
-        onClick={onPreviewReportPdf}
-        disabled={isExportingReportPdf || isReportPdfDisabled}
-        loading={isExportingReportPdf}
-        color="red"
-        variant="solid"
-        title={isReportPdfDisabled ? reportPdfDisabledReason : undefined}
-      >
-        <ReaderIcon />
-        {isExportingReportPdf
-          ? t("generatingReportPdf", { sheetName: displayName })
-          : t("reportPreview", { sheetName: displayName })}
-      </Button>
-      <Flex align="center" gap="2" style={{ marginLeft: "auto" }}>
-        {onModeChange && (
-          <SegmentedControl.Root
-            value={sheetMode}
-            onValueChange={(val) => onModeChange(val as SheetMode)}
+    <div className={styles.toolbar}>
+      <Flex align="center" gap="3">
+        {/* 出力ドロップダウン (Secondary action: variant="surface") */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Button
+              type="button"
+              variant="surface"
+              disabled={!hasActiveSheet}
+              loading={isExporting}
+              className={styles.exportDropdownTrigger}
+            >
+              <DownloadIcon />
+              {t("export")}
+              <ChevronDownIcon />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
             size="2"
+            style={{ minWidth: 240, maxWidth: 320 }}
           >
-            <SegmentedControl.Item value="edit">
-              {t("modeEdit")}
-            </SegmentedControl.Item>
-            <SegmentedControl.Item value="inquiry">
-              {t("modeInquiry")}
-            </SegmentedControl.Item>
-          </SegmentedControl.Root>
+            <DropdownMenu.Item onClick={onExport} disabled={isExportingExcel}>
+              <DownloadIcon />
+              {t("exportExcel")}
+            </DropdownMenu.Item>
+            <DropdownMenu.Item onClick={onPreviewPdf} disabled={isExportingPdf}>
+              <FileTextIcon />
+              {t("printPreview")}
+            </DropdownMenu.Item>
+            {onPreviewReportPdf && (
+              <DropdownMenu.Item
+                onClick={onPreviewReportPdf}
+                disabled={isExportingReportPdf || isReportPdfDisabled}
+                style={
+                  isReportPdfDisabled && reportPdfDisabledReason
+                    ? {
+                        height: "auto",
+                        minHeight: 36,
+                        paddingTop: 8,
+                        paddingBottom: 8,
+                        alignItems: "flex-start",
+                      }
+                    : undefined
+                }
+                title={
+                  isReportPdfDisabled ? reportPdfDisabledReason : undefined
+                }
+              >
+                <div className={styles.reportMenuItemContent}>
+                  <div className={styles.reportMenuItemTitle}>
+                    <ReaderIcon />
+                    {t("reportPreview")}
+                  </div>
+                  {isReportPdfDisabled && reportPdfDisabledReason && (
+                    <span className={styles.reportMenuItemHint}>
+                      {reportPdfDisabledReason}
+                    </span>
+                  )}
+                </div>
+              </DropdownMenu.Item>
+            )}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+
+        {/* 編集・照会モード切替（左寄せ配置） */}
+        {onModeChange && (
+          <Flex align="center" gap="2">
+            <SegmentedControl.Root
+              value={sheetMode}
+              onValueChange={(val) => onModeChange(val as SheetMode)}
+              size="2"
+              disabled={!hasActiveSheet}
+            >
+              <SegmentedControl.Item value="edit" title={t("modeEditTooltip")}>
+                {t("modeEdit")}
+              </SegmentedControl.Item>
+              <SegmentedControl.Item
+                value="inquiry"
+                title={t("modeInquiryTooltip")}
+              >
+                {t("modeInquiry")}
+              </SegmentedControl.Item>
+            </SegmentedControl.Root>
+            {sheetMode === "inquiry" && hasActiveSheet && (
+              <Badge
+                color="gray"
+                variant="soft"
+                size="2"
+                className={styles.readOnlyBadge}
+              >
+                <EyeOpenIcon />
+                {t("readOnlyBadge")}
+              </Badge>
+            )}
+          </Flex>
         )}
+      </Flex>
+
+      {/* 右側のアクショングループ（言語切替・保存ボタン） */}
+      <div className={styles.actionGroup}>
         <Select.Root
           value={locale}
           disabled={isPending}
@@ -145,20 +193,25 @@ export const ToolbarPresenter: FC<ToolbarPresenterProps> = ({
             <Select.Item value="en">English</Select.Item>
           </Select.Content>
         </Select.Root>
-        {onSave && sheetMode !== "inquiry" && (
-          <Button
-            type="button"
-            onClick={onSave}
-            disabled={!hasActiveSheet || isSaving}
-            loading={isSaving}
-            color="blue"
-            variant="solid"
-          >
-            <CheckIcon />
-            {isSaving ? t("saving") : t("save")}
-          </Button>
+
+        {/* 保存ボタン (Primary action: variant="solid") */}
+        {onSave && (
+          <Tooltip content={saveDisabledReason ?? t("saveTooltip")}>
+            <span style={{ display: "inline-flex" }}>
+              <Button
+                type="button"
+                onClick={onSave}
+                disabled={isSaveDisabled}
+                loading={isSaving}
+                variant="solid"
+              >
+                <CheckIcon />
+                {isSaving ? t("saving") : t("save")}
+              </Button>
+            </span>
+          </Tooltip>
         )}
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 };
