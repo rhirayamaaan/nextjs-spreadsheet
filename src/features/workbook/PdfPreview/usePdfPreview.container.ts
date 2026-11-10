@@ -1,4 +1,4 @@
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useMemo, useState } from "react";
 import { useCurrentLocale } from "@/i18n/context";
 import { reportLayoutQuery } from "../services/reportLayout/reportLayout.query";
@@ -26,7 +26,9 @@ export const usePdfPreview = (): PdfPreviewPresenterProps => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { locale } = useCurrentLocale();
-  const [reportLayout] = useAtom(reportLayoutQuery(activeSheetId ?? ""));
+  const reportLayout = useAtomValue(
+    reportLayoutQuery.sync(activeSheetId ?? ""),
+  );
   const [records] = useAtom(visibleRecordsAtom);
 
   const localizedReportLayout = useMemo(() => {

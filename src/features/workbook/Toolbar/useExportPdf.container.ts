@@ -1,4 +1,4 @@
-import { useAtom, useSetAtom, useStore } from "jotai";
+import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import jsPDF from "jspdf";
 import autoTable, { type Styles } from "jspdf-autotable";
 import { useCallback, useMemo, useState } from "react";
@@ -31,7 +31,9 @@ export const useExportPdf = () => {
   const store = useStore();
   const { locale } = useCurrentLocale();
   const [activeSheetId] = useAtom(activeSheetIdAtom);
-  const [reportLayout] = useAtom(reportLayoutQuery(activeSheetId ?? ""));
+  const reportLayout = useAtomValue(
+    reportLayoutQuery.sync(activeSheetId ?? ""),
+  );
   const [records] = useAtom(visibleRecordsAtom);
 
   const localizedReportLayout = useMemo(() => {
