@@ -77,6 +77,10 @@
   background-color: var(--red-3);
 }
 
+.cell--validating {
+  background-color: var(--blue-2);
+}
+
 .cell--pulldown {
   cursor: pointer;
 }
@@ -87,6 +91,24 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+
+.cell__validatingIndicator {
+  margin-left: auto;
+  color: var(--blue-9);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  animation: cellSpin 1s linear infinite;
+}
+
+@keyframes cellSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .cell__pulldownIndicator {

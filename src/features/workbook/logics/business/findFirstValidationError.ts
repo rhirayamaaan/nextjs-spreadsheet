@@ -1,14 +1,15 @@
-import {
-  type CellStatusInfo,
-  type ColumnConfig,
-  type ColumnId,
-  type ColumnValidationRule,
-  isSubtotalRowId,
-  type RowId,
-  type RowStatus,
-  type SheetData,
-  type ValidationErrorInfo,
+import type {
+  CellStatusInfo,
+  ColumnConfig,
+  ColumnId,
+  ColumnValidationRule,
+  RowId,
+  RowStatus,
+  SheetData,
+  ValidationErrorInfo,
 } from "../../stores/types";
+import { isSubtotalRowId } from "../../stores/types";
+import type { CustomValidatorRegistry } from "../../validators";
 import { getParentColumnInfo, validateCellRules } from "./validation";
 
 export type FirstValidationError = {
@@ -36,6 +37,8 @@ export const findFirstValidationError = ({
   rowStatuses,
   customStatuses,
   columnNames,
+  sheetId,
+  customValidators,
 }: {
   visibleRows: RowId[];
   columns: ColumnId[];
@@ -47,6 +50,8 @@ export const findFirstValidationError = ({
   rowStatuses: Record<RowId, RowStatus>;
   customStatuses: Record<string, CellStatusInfo>;
   columnNames?: Record<ColumnId, string>;
+  sheetId?: string;
+  customValidators?: CustomValidatorRegistry;
 }): FirstValidationError | null => {
   // 1. 各プルダウン列のマスタ検証用 O(1) インデックスを事前生成 (500,000回のループとProxyアクセスを撲滅)
   const masterIndexes = new Map<ColumnId, MasterIndex>();
@@ -201,8 +206,18 @@ export const findFirstValidationError = ({
       const nonRefRules = allRules.filter((rule) => rule.type !== "reference");
       if (nonRefRules.length === 0) continue;
 
+      const getRowValue = (targetColId: ColumnId | string) => {
+        const k = `${rowId}-${targetColId}`;
+        return k in cellEdits ? cellEdits[k] : (baseValues[k] ?? "");
+      };
+
       const result = validateCellRules(nonRefRules, cellValue, {
         duplicateValues: columnDuplicates.get(colId),
+        sheetId,
+        rowId,
+        colId,
+        getRowValue,
+        customValidators,
       });
       if (!result.valid) {
         return {
@@ -210,6 +225,7 @@ export const findFirstValidationError = ({
           colIndex: c,
           rowId,
           colId,
+          message: result.message,
           errorInfo: result.errorInfo,
         };
       }

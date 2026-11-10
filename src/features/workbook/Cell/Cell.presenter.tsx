@@ -2,6 +2,7 @@ import {
   CalendarIcon,
   CaretDownIcon,
   ExclamationTriangleIcon,
+  ReloadIcon,
 } from "@radix-ui/react-icons";
 import { Tooltip } from "@radix-ui/themes";
 import clsx from "clsx";
@@ -89,9 +90,11 @@ export const CellPresenter: FC<CellPresenterProps> = ({
   const handleDoubleClick =
     isLookup || isReadOnly || isSubtotal ? undefined : onDoubleClick;
 
-  const resolvedErrorMessage = errorInfo
-    ? t(validationMessageKeyMap[errorInfo.key], errorInfo.params)
-    : statusMessage;
+  const resolvedErrorMessage =
+    statusMessage ||
+    (errorInfo
+      ? t(validationMessageKeyMap[errorInfo.key], errorInfo.params)
+      : undefined);
 
   const isSubtotalLabel =
     isSubtotal &&
@@ -114,6 +117,7 @@ export const CellPresenter: FC<CellPresenterProps> = ({
         styles.cell,
         status === "edited" && styles["cell--edited"],
         status === "error" && styles["cell--error"],
+        status === "validating" && styles["cell--validating"],
         isLookup && styles["cell--lookup"],
         isSubtotal && styles["cell--subtotal"],
         isReadOnly && !isSubtotal && !isLookup && styles["cell--readonly"],
@@ -162,6 +166,13 @@ export const CellPresenter: FC<CellPresenterProps> = ({
             <Tooltip content={resolvedErrorMessage}>
               <span className={styles.cell__errorIndicator}>
                 <ExclamationTriangleIcon width={14} height={14} />
+              </span>
+            </Tooltip>
+          )}
+          {status === "validating" && (
+            <Tooltip content={statusMessage || "検証中..."}>
+              <span className={styles.cell__validatingIndicator}>
+                <ReloadIcon width={12} height={12} />
               </span>
             </Tooltip>
           )}

@@ -33,6 +33,8 @@ export const isRowId = (id: unknown): id is RowId =>
 export const isColumnId = (id: unknown): id is ColumnId =>
   ColumnIdSchema.safeParse(id).success;
 
+import type { CustomValidatorName } from "../validators/names";
+
 export type CellAddress = {
   rowId: RowId;
   colId: ColumnId;
@@ -56,7 +58,7 @@ export type MoveDirection = {
 
 export type WorkbookStatus = "idle" | "selecting" | "editing";
 export type RowStatus = "added" | "edited" | "deleted" | "none";
-export type CellStatus = "none" | "edited" | "error";
+export type CellStatus = "none" | "edited" | "error" | "validating";
 export type DateTimeFormat =
   | "yyyy-MM-dd"
   | "yyyy-MM-dd HH:mm"
@@ -159,7 +161,8 @@ export type ColumnValidationRule =
   | { type: "minLength"; length: number }
   | { type: "reference" }
   | { type: "datetime"; format: DateTimeFormat }
-  | { type: "unique" };
+  | { type: "unique" }
+  | { type: "custom"; name: CustomValidatorName; options?: unknown };
 
 export type ColumnTemplateType =
   | { type: "text" }

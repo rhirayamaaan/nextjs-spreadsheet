@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom, useSetAtom } from "jotai";
+import { useHydrateAtoms } from "jotai/utils";
 import dynamic from "next/dynamic";
 import { type FC, Suspense, useCallback, useRef, useState } from "react";
 import { useI18n } from "@/i18n/useI18n";
@@ -26,6 +27,7 @@ import { useSheetMenuDrawer } from "./SheetMenuDrawer/useSheetMenuDrawer.contain
 import { SheetTabsPresenter } from "./SheetTabs.presenter";
 import {
   clearColumnFilterAtom,
+  injectedCustomValidatorsAtom,
   type RowId,
   removeColumnBindingAtom,
   selectionAtom,
@@ -39,10 +41,26 @@ import { useToolbar } from "./Toolbar/useToolbar.container";
 import { useColumnModals } from "./useColumnModals.container";
 import { useSheetLoader } from "./useSheetLoader.container";
 import { useWorkbookSave } from "./useWorkbookSave.container";
+import type { CustomValidatorRegistry } from "./validators";
 import { WorkbookPresenter } from "./Workbook.presenter";
 import { WorkbookLoadingPresenter } from "./WorkbookLoading.presenter";
 
-const WorkbookRoot: FC = () => {
+export type WorkbookProps = {
+  customValidators?: CustomValidatorRegistry;
+};
+
+const WorkbookRoot: FC<WorkbookProps> = ({ customValidators }) => {
+  // 1. 初回レンダー時にフレーム遅延なく宣言的注入
+  useHydrateAtoms([[injectedCustomValidatorsAtom, customValidators]]);
+
+  // 2. Props が動的に変更された場合もレンダーフェーズ中に同期（useEffect 不要）
+  const [prevValidators, setPrevValidators] = useState(customValidators);
+  const setInjected = useSetAtom(injectedCustomValidatorsAtom);
+  if (customValidators !== prevValidators) {
+    setPrevValidators(customValidators);
+    setInjected(customValidators);
+  }
+
   const {
     activeSheet,
     activeSheetId,
@@ -70,7 +88,7 @@ const WorkbookRoot: FC = () => {
   const setSelection = useSetAtom(selectionAtom);
 
   const handleValidationError = useCallback(
-    (error: { rowIndex: number; colIndex: number }) => {
+    (error: { rowIndex: number; colIndex: number; message?: string }) => {
       setSelection({
         start: { row: error.rowIndex, col: error.colIndex },
         end: { row: error.rowIndex, col: error.colIndex },
@@ -79,7 +97,8 @@ const WorkbookRoot: FC = () => {
       showToast({
         type: "error",
         titleKey: "validationErrorTitle",
-        messageKey: "validationErrorMessage",
+        message: error.message,
+        messageKey: error.message ? undefined : "validationErrorMessage",
         requiresConfirm: true,
         onClose: () => {
           sheetRef.current?.focusSheet();
@@ -255,9 +274,9 @@ const WorkbookRoot: FC = () => {
   );
 };
 
-const WorkbookRootWithSuspense: FC = () => (
+const WorkbookRootWithSuspense: FC<WorkbookProps> = (props) => (
   <Suspense fallback={<WorkbookLoadingPresenter />}>
-    <WorkbookRoot />
+    <WorkbookRoot {...props} />
   </Suspense>
 );
 

@@ -8,6 +8,10 @@ import type {
   SheetData,
   ValidationErrorInfo,
 } from "../../stores/types";
+import {
+  type CustomValidatorRegistry,
+  resolveCustomValidator,
+} from "../../validators";
 import { parseDateTimeString } from "./datetime";
 
 /**
@@ -45,7 +49,10 @@ export const isValidDateTime = (
  * 高速ルール検証（15万セルを数ミリ秒で判定するため Zod インスタンス生成をバイパス）
  */
 export const checkRuleValid = (
-  rule: Exclude<ColumnValidationRule, { type: "reference" | "unique" }>,
+  rule: Exclude<
+    ColumnValidationRule,
+    { type: "reference" | "unique" | "custom" }
+  >,
   value: string,
 ): boolean => {
   switch (rule.type) {
@@ -89,7 +96,10 @@ export const checkRuleValid = (
  * 各単一バリデーションルールを Zod スキーマへマッピング
  */
 export const ruleToZodSchema = (
-  rule: Exclude<ColumnValidationRule, { type: "reference" | "unique" }>,
+  rule: Exclude<
+    ColumnValidationRule,
+    { type: "reference" | "unique" | "custom" }
+  >,
 ): z.ZodType<string> => {
   switch (rule.type) {
     case "required":
@@ -137,7 +147,7 @@ export const ruleToZodSchema = (
  * バリデーションルール違反時のエラー情報（i18n キー・パラメータ）へマッピング
  */
 export const ruleToValidationErrorInfo = (
-  rule: Exclude<ColumnValidationRule, { type: "reference" }>,
+  rule: Exclude<ColumnValidationRule, { type: "reference" | "custom" }>,
 ): ValidationErrorInfo => {
   switch (rule.type) {
     case "maxLength":
@@ -160,10 +170,16 @@ export type ValidationContext = {
   parentColName?: string;
   targetColName?: string;
   duplicateValues?: Set<string>;
+  sheetId?: string;
+  rowId?: RowId;
+  colId?: ColumnId;
+  getRowValue?: (colId: ColumnId | string) => string;
+  customValidators?: CustomValidatorRegistry;
 };
 
 export type ValidationResult = {
   valid: boolean;
+  message?: string;
   errorInfo?: ValidationErrorInfo;
 };
 
@@ -234,6 +250,49 @@ export const validateReferenceRule = (
 };
 
 /**
+ * 同期カスタムルールの検証（早期リターンガード節）
+ */
+export const validateCustomRule = (
+  rule: Extract<ColumnValidationRule, { type: "custom" }>,
+  value: string,
+  context?: ValidationContext,
+): ValidationResult => {
+  // サーバー通信バリデータ（server: プレフィックス）はセル確定時に非同期で実行するため、同期ループではスキップ
+  if (rule.name.startsWith("server:")) {
+    return { valid: true };
+  }
+
+  const validator = resolveCustomValidator(
+    rule.name,
+    context?.sheetId,
+    context?.customValidators,
+  );
+  if (!validator) {
+    return { valid: true };
+  }
+
+  const res = validator({
+    value,
+    colId: context?.colId ?? ("" as ColumnId),
+    rowId: context?.rowId ?? ("" as RowId),
+    sheetId: context?.sheetId ?? "",
+    getRowValue: context?.getRowValue ?? (() => ""),
+    options: rule.options,
+  });
+
+  // 非同期 Promise または正常終了ならパス
+  if (!res || res instanceof Promise || res.valid) {
+    return { valid: true };
+  }
+
+  return {
+    valid: false,
+    message: res.message,
+    errorInfo: res.errorInfo ?? (res.message ? undefined : { key: "invalid" }),
+  };
+};
+
+/**
  * バリデーションルール配列を手前から順次評価する関数（パイプライン・早期終了）
  * 途中のルールで違反があった場合、即座に false とエラー情報（i18nキー・パラメータ）を返却
  */
@@ -259,6 +318,14 @@ export const validateCellRules = (
           valid: false,
           errorInfo: { key: "unique" },
         };
+      }
+      continue;
+    }
+
+    if (rule.type === "custom") {
+      const customResult = validateCustomRule(rule, value, context);
+      if (!customResult.valid) {
+        return customResult;
       }
       continue;
     }

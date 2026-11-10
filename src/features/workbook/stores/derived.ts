@@ -34,7 +34,12 @@ import {
   type RowId,
 } from "./types";
 import { activeCellAtom, activeSheetIdAtom } from "./ui";
-import { activeColumnValidationsAtom } from "./validation";
+import {
+  activeColumnValidationsAtom,
+  asyncValidationErrorsAtom,
+  customValidatorRegistryAtom,
+  validatingCellsAtom,
+} from "./validation";
 
 export const isCellEditingFamily = atomFamily(
   ({ row, col }: { row: number; col: number }) =>
@@ -306,10 +311,22 @@ export const cellStatusFamily = atomFamily(
           return { status: "none" };
         }
 
+        // 0. 非同期検証通信中の場合は validating ステータスを最優先表示
+        const validatingCells = get(validatingCellsAtom);
+        if (validatingCells.has(key)) {
+          return { status: "validating", message: "検証中..." };
+        }
+
         // 1. バリデーションエラーや明示的なカスタムステータスを優先
         const customStatuses = get(cellCustomStatusesAtom);
         if (customStatuses[key] && customStatuses[key].status !== "none") {
           return customStatuses[key];
+        }
+
+        // 1.5 非同期バリデーションによって返されたエラーがあれば優先表示
+        const asyncErrors = get(asyncValidationErrorsAtom);
+        if (asyncErrors[key] && asyncErrors[key].status !== "none") {
+          return asyncErrors[key];
         }
 
         // 2. Lookup 列は読み取り専用のため変更なし扱い
@@ -350,6 +367,14 @@ export const cellStatusFamily = atomFamily(
           ? get(columnDuplicateValuesFamily(address.colId))
           : undefined;
 
+        const getRowValue = (targetColId: ColumnId | string) => {
+          const k = `${address.rowId}-${targetColId}`;
+          return k in edits ? edits[k] : (get(baseCellValuesAtom)[k] ?? "");
+        };
+
+        const customValidators = get(customValidatorRegistryAtom);
+        const activeSheetId = get(activeSheetIdAtom) ?? undefined;
+
         const validationResult = validateCellRules(validations, cellValue, {
           pulldownConfig,
           masterSheetData,
@@ -358,11 +383,17 @@ export const cellStatusFamily = atomFamily(
           parentColName,
           targetColName,
           duplicateValues,
+          sheetId: activeSheetId,
+          rowId: address.rowId,
+          colId: address.colId,
+          getRowValue,
+          customValidators,
         });
 
         if (!validationResult.valid) {
           return {
             status: "error",
+            message: validationResult.message,
             errorInfo: validationResult.errorInfo,
           };
         }

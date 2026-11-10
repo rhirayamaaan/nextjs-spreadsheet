@@ -25,7 +25,11 @@ export const productionVolumeTemplate: SheetTemplate = {
       field: "type",
       headerName: "タイプ",
       type: { type: "text" },
-      validations: [{ type: "required" }, { type: "string" }],
+      validations: [
+        { type: "required" },
+        { type: "string" },
+        { type: "custom", name: "server:validateProductionType" },
+      ],
       width: 120,
       align: "left",
     },
@@ -33,7 +37,9 @@ export const productionVolumeTemplate: SheetTemplate = {
       field: "category",
       headerName: "データ種別",
       type: { type: "text" },
-      validations: [{ type: "required" }],
+      validations: [
+        { type: "custom", name: "production-volume:requireCategoryIfSpecial" },
+      ],
       width: 140,
       align: "left",
     },
@@ -329,7 +335,9 @@ export const MOCK_SHEET_TEMPLATES: Record<string, SheetTemplate> = {
   [costDepartmentTemplate.id]: costDepartmentTemplate,
 };
 
-export const MOCK_INITIAL_OPEN_SHEET_IDS: string[] = [];
+export const MOCK_INITIAL_OPEN_SHEET_IDS: string[] = [
+  productionVolumeTemplate.id,
+];
 
 export const MOCK_FAVORITE_SHEET_IDS: string[] = Object.values(
   MOCK_SHEET_TEMPLATES,

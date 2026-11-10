@@ -9,12 +9,23 @@ export const fetchSheetRecords = async (
   return data.records;
 };
 
+export type SaveSheetRecordsResponse = {
+  success: boolean;
+  sheetId: string;
+  savedAt?: string;
+  errors?: Array<{
+    rowId: string;
+    colId: string;
+    message: string;
+  }>;
+};
+
 export const saveSheetRecordsApi = (
   sheetId: string,
   sheetName: string,
   diff: unknown,
-): Promise<{ success: boolean; sheetId: string; savedAt: string }> => {
-  return apiClient.post<{ success: boolean; sheetId: string; savedAt: string }>(
+): Promise<SaveSheetRecordsResponse> => {
+  return apiClient.post<SaveSheetRecordsResponse>(
     `/api/sheets/${sheetId}/records`,
     {
       sheetId,

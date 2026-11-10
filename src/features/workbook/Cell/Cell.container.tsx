@@ -7,6 +7,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
+import { useAsyncCellValidation } from "../logics/useAsyncCellValidation";
 import {
   activeCellAtom,
   activeColumnConfigFamily,
@@ -150,6 +151,8 @@ const CellInner: FC<InnerProps> = memo(
     const datetimeFormat = isDatetimePicker ? config.format : undefined;
     const pulldownMode = isPulldown ? config.pulldown.mode : undefined;
 
+    const { validateCellAsync } = useAsyncCellValidation();
+
     const handleDoubleClick = useCallback(() => {
       if (isLookup || isReadOnly || isSubtotal) return;
       setEditingCell({ row, col });
@@ -159,6 +162,7 @@ const CellInner: FC<InnerProps> = memo(
       (newVal: string, move?: MoveDirection) => {
         if (newVal !== value) {
           setValue(newVal);
+          validateCellAsync({ rowId, colId, newValue: newVal });
         }
         setEditingCell(null);
         if (move) {
@@ -168,7 +172,16 @@ const CellInner: FC<InnerProps> = memo(
           });
         }
       },
-      [value, setValue, setEditingCell, moveSelection, onFinishEditing],
+      [
+        value,
+        setValue,
+        setEditingCell,
+        moveSelection,
+        onFinishEditing,
+        validateCellAsync,
+        rowId,
+        colId,
+      ],
     );
 
     const handleCancel = useCallback(() => {

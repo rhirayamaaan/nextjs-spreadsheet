@@ -1,5 +1,6 @@
 import { useSetAtom, useStore } from "jotai";
 import { useCallback, useState } from "react";
+import { ApiError } from "@/lib/query";
 import { applyEditsToRecords } from "./logics/business/buildSheetData";
 import {
   type FirstValidationError,
@@ -11,16 +12,21 @@ import {
   activeColumnConfigsAtom,
   activeColumnValidationsAtom,
   activeSheetIdAtom,
+  asyncValidationErrorsAtom,
   baseCellValuesAtom,
+  type ColumnId,
   cellCustomStatusesAtom,
   cellEditsAtom,
   columnNamesAtom,
   columnOrderAtom,
   commitSheetEditsAtom,
+  customValidatorRegistryAtom,
+  type RowId,
   referencedSheetsDataAtom,
   rowStatusesAtom,
   selectionAtom,
   sheetTemplatesAtom,
+  validatingCellsAtom,
   visibleRowOrderAtom,
 } from "./stores";
 import type { ToastMessage } from "./Toast/Toast.presenter";
@@ -58,7 +64,8 @@ export const useWorkbookSave = ({
       showToast({
         type: "error",
         titleKey: "validationErrorTitle",
-        messageKey: "validationErrorMessage",
+        message: error.message,
+        messageKey: error.message ? undefined : "validationErrorMessage",
         requiresConfirm: true,
       });
     },
@@ -87,13 +94,61 @@ export const useWorkbookSave = ({
     const activeSheetId = store.get(activeSheetIdAtom);
     if (!activeSheetId) return;
 
+    const validatingCells = store.get(validatingCellsAtom);
+    if (validatingCells.size > 0) {
+      showToast({
+        type: "error",
+        titleKey: "validationErrorTitle",
+        message: "現在セルの検証中です。検証が完了してから保存してください。",
+        requiresConfirm: true,
+      });
+      return;
+    }
+
     setIsSaving(true);
     // UI のローディング表示を優先描画
     await new Promise((resolve) => setTimeout(resolve, 0));
 
+    const visibleRows = store.get(visibleRowOrderAtom);
+    const columns = store.get(columnOrderAtom);
+
+    const applyServerErrors = (
+      errors: Array<{ rowId: string; colId: string; message: string }>,
+    ) => {
+      const nextCustomStatuses = { ...store.get(cellCustomStatusesAtom) };
+      for (const err of errors) {
+        const key = `${err.rowId}-${err.colId}`;
+        nextCustomStatuses[key] = {
+          status: "error",
+          message: err.message,
+        };
+      }
+      store.set(cellCustomStatusesAtom, nextCustomStatuses);
+
+      const firstServerErr = errors[0];
+      const serverRowId = firstServerErr.rowId as RowId;
+      const serverColId = firstServerErr.colId as ColumnId;
+      const rowIndex = visibleRows.indexOf(serverRowId);
+      const colIndex = columns.indexOf(serverColId);
+
+      if (rowIndex !== -1 && colIndex !== -1) {
+        handleValidationError({
+          rowIndex,
+          colIndex,
+          rowId: serverRowId,
+          colId: serverColId,
+          message: firstServerErr.message,
+        });
+      } else {
+        showToast({
+          type: "error",
+          titleKey: "validationErrorTitle",
+          messageKey: "validationErrorMessage",
+        });
+      }
+    };
+
     try {
-      const visibleRows = store.get(visibleRowOrderAtom);
-      const columns = store.get(columnOrderAtom);
       const columnConfigs = store.get(activeColumnConfigsAtom);
       const columnValidations = store.get(activeColumnValidationsAtom);
       const columnNames = store.get(columnNamesAtom);
@@ -101,11 +156,15 @@ export const useWorkbookSave = ({
       const cellEdits = store.get(cellEditsAtom);
       const baseValues = store.get(baseCellValuesAtom);
       const rowStatuses = store.get(rowStatusesAtom);
-      const customStatuses = store.get(cellCustomStatusesAtom);
+      const customStatuses = {
+        ...store.get(cellCustomStatusesAtom),
+        ...store.get(asyncValidationErrorsAtom),
+      };
       const templates = store.get(sheetTemplatesAtom);
       const sheetTemplate = templates[activeSheetId];
 
       // 1. バリデーションチェック (O(1) 高速インデックス検証)
+      const customValidators = store.get(customValidatorRegistryAtom);
       const firstError = findFirstValidationError({
         visibleRows,
         columns,
@@ -117,6 +176,8 @@ export const useWorkbookSave = ({
         rowStatuses,
         customStatuses,
         columnNames,
+        sheetId: activeSheetId,
+        customValidators,
       });
 
       if (firstError) {
@@ -139,6 +200,12 @@ export const useWorkbookSave = ({
         },
       );
 
+      // サーバー側一括検証エラーのハンドリング (200 レスポンスでエラーが返る場合)
+      if (!res.success && res.errors && res.errors.length > 0) {
+        applyServerErrors(res.errors);
+        return;
+      }
+
       if (!res.success) {
         throw new Error("Save operation reported failure");
       }
@@ -153,12 +220,33 @@ export const useWorkbookSave = ({
 
       handleSaveSuccess();
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.data &&
+        typeof error.data === "object" &&
+        "errors" in error.data &&
+        Array.isArray((error.data as { errors?: unknown[] }).errors)
+      ) {
+        const errors = (
+          error.data as {
+            errors: Array<{ rowId: string; colId: string; message: string }>;
+          }
+        ).errors;
+        applyServerErrors(errors);
+        return;
+      }
       console.error("[SaveSheet] Save failed:", error);
       handleSaveError();
     } finally {
       setIsSaving(false);
     }
-  }, [store, handleValidationError, handleSaveSuccess, handleSaveError]);
+  }, [
+    store,
+    handleValidationError,
+    handleSaveSuccess,
+    handleSaveError,
+    showToast,
+  ]);
 
   return {
     handleSave,
